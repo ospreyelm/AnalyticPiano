@@ -1,9 +1,8 @@
-define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
-  _,
-  MicroEvent,
-  Tone
-) {
-  /**
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Tone from "Tone";
+
+/**
    * MidiDevice object is responsible for knowing the MIDI input/output
    * devices that are available for sending/receiving messages.
    *
@@ -77,7 +76,7 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
   var STICKY_MUTE = null;
   $.ajax({
     type: "GET",
-    url: this.location.origin + "/ajax/preferences/",
+    url: window.location.origin + "/ajax/preferences/",
     async: false,
     success: function (response) {
       if (!response["valid"]) {
@@ -283,7 +282,7 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
    */
   MidiDevice.prototype.selectInput = function (index, inputs) {
     var some_valid_selection = false;
-    for (i = 0, len = inputs.length; i < len; i++) {
+    for (var i = 0, len = inputs.length; i < len; i++) {
       if (this.isValidSelection(this.inputs, i)) {
         this._inputidx = i;
         this._input = this.inputs[i];
@@ -479,5 +478,4 @@ define(["lodash", "microevent", "Tone" /* Tone.js 14.8.3 */], function (
 
   MicroEvent.mixin(MidiDevice);
 
-  return MidiDevice;
-});
+export default MidiDevice;

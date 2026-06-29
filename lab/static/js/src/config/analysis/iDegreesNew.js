@@ -1,8 +1,4 @@
-// First character of input should be mod-12 element (0123456789yz) where 0 = pc of keynote.
-// Second character of input should be mod-7 element (klmnopq) where k = note-name class of keynote.
-
-/* global define: false */
-define({
+export default {
   "0k": { numeral: "1", solfege: "La", do_based_solfege: "Do" },
   "1l": { numeral: "b2", solfege: "Te", do_based_solfege: "Ra" },
   "2l": { numeral: "2", solfege: "Ti", do_based_solfege: "Re" },
@@ -16,4 +12,4 @@ define({
   "9p": { numeral: "#6", solfege: "Fi", do_based_solfege: "La" },
   yq: { numeral: "7", solfege: "So", do_based_solfege: "Te" },
   zq: { numeral: "#7", solfege: "Si", do_based_solfege: "Ti" },
-});
+};

@@ -48,12 +48,5 @@ var exportsObj = {
   _getIdentificationDisplayLabel: _getIdentificationDisplayLabel,
 };
 
-if (typeof define === "function" && define.amd) {
-  define(function () {
-    return exportsObj;
-  });
-}
+export default exportsObj;
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = exportsObj;
-}

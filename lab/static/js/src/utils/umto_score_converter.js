@@ -1,44 +1,11 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("lodash"),
-      require("app/models/key_signature"),
-      require("app/components/music/chordal_spelling"),
-      require("app/components/music/chordal_umto_staff_distribution"),
-      require("app/utils/chordal_barlines_logic"),
-      require("app/utils/measure_engine")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define([
-      "lodash",
-      "app/models/key_signature",
-      "app/components/music/chordal_spelling",
-      "app/components/music/chordal_umto_staff_distribution",
-      "app/utils/chordal_barlines_logic",
-      "app/utils/measure_engine"
-    ], factory);
-  } else {
-    root.UMTOScoreConverter = factory(
-      root._,
-      root.KeySignature,
-      root.ChordalSpelling,
-      root.ChordalUMTOStaffDistribution,
-      root.ChordalBarlinesLogic,
-      root.MeasureEngine
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (
-  _,
-  KeySignature,
-  ChordalSpelling,
-  ChordalUMTOStaffDistribution,
-  ChordalBarlinesLogic,
-  MeasureEngine
-) {
-  "use strict";
+import _ from "lodash";
+import KeySignature from "app/models/key_signature";
+import ChordalSpelling from "app/components/music/chordal_spelling";
+import ChordalUMTOStaffDistribution from "app/components/music/chordal_umto_staff_distribution";
+import ChordalBarlinesLogic from "app/utils/chordal_barlines_logic";
+import MeasureEngine from "app/utils/measure_engine";
 
-  function convertChordalUMTOToProcessedScore(umto) {
+function convertChordalUMTOToProcessedScore(umto) {
     var meta = _.cloneDeep(umto.metadata || {});
     if (meta.meter && !meta.time) meta.time = meta.meter;
     var hasMeter = !!meta.time;
@@ -207,8 +174,7 @@
     return processed;
   }
 
-  return {
-    convertChordalUMTOToProcessedScore: convertChordalUMTOToProcessedScore,
+export default {
+  convertChordalUMTOToProcessedScore: convertChordalUMTOToProcessedScore,
     convertUMTOToProcessedScore: convertUMTOToProcessedScore
-  };
-});
+};

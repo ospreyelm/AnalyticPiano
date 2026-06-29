@@ -1,13 +1,10 @@
-// Module that defines the available MIDI INSTRUMENT_MAP
+import _ from "lodash";
+import Config from "app/config";
 
-/* global define: false */
-define(["lodash", "app/config"], function (_, Config) {
-  "use strict";
-
-  var ENABLED = Config.get("instruments.enabled");
+var ENABLED = Config.get("instruments.enabled");
   var INSTRUMENT_MAP = Config.get("instruments.instrumentMap");
 
-  return {
+  export default  {
     numberOf: function (name) {
       var num;
       for (num in INSTRUMENT_MAP) {
@@ -29,4 +26,3 @@ define(["lodash", "app/config"], function (_, Config) {
       });
     },
   };
-});

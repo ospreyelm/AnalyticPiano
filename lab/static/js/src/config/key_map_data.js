@@ -1,22 +1,13 @@
-/* Key map data: spelling, pitch classes, and display names for all major/minor keys */
-/* Read only */
 
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) { module.exports = factory(); }
-  else if (typeof define === "function" && define.amd) { define([], factory); }
-  else { root.KeyMapData = factory(); }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  /* Major and minor keys are identified by unique three character strings
+/* Major and minor keys are identified by unique three character strings
    * with the following format:
    *
    *    [i|j] prefix for minor key or major key
    *    [A-G] letter name from A to G
    *    [_|#|b] natural, sharp, flat
    */
-  return {
+  export default  {
     h: {
       /* key undefined a.k.a "key is none" */
       spelling: [
@@ -639,4 +630,3 @@
       signature: "#######",
     },
   };
-});

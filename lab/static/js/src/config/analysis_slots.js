@@ -1,12 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) { module.exports = factory(); }
-  else if (typeof define === "function" && define.amd) { define([], factory); }
-  else { root.AnalysisSlots = factory(); }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  var TYPES = [
+
+var TYPES = [
     { id: "roman_numerals",     label: "Roman numerals",       allowedZones: ["below"], anchor: "slice" },
     { id: "roman_numerals_exp", label: "Roman numerals (exp)", allowedZones: ["below"], anchor: "slice" },
     { id: "thoroughbass",       label: "Figured bass",         allowedZones: ["below"], anchor: "slice" },
@@ -40,12 +34,11 @@
     return { above: above, below: below };
   }
 
-  return {
-    TYPES: TYPES,
+export default {
+  TYPES: TYPES,
     descriptor: descriptor,
     allowedZones: allowedZones,
     canPlace: canPlace,
     typesForZone: typesForZone,
     normalizeSlots: normalizeSlots,
-  };
-});
+};

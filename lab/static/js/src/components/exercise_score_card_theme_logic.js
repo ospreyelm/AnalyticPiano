@@ -33,12 +33,5 @@ var theme = {
   },
 };
 
-if (typeof define === "function" && define.amd) {
-  define(function () {
-    return theme;
-  });
-}
+export default theme;
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = theme;
-}

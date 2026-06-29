@@ -1,5 +1,7 @@
-define(["jquery", "lodash"], function ($, _) {
-  var ThemeSelectorWidget = function (targetEl) {
+import $ from "jquery";
+import _ from "lodash";
+
+var ThemeSelectorWidget = function (targetEl) {
     this.el = $('<ul class="theme-thumbnails"></ul>');
     this.targetEl = $(targetEl); // set theme on this el
     this.themes = []; // available themes
@@ -53,5 +55,4 @@ define(["jquery", "lodash"], function ($, _) {
     },
   });
 
-  return ThemeSelectorWidget;
-});
+export default ThemeSelectorWidget;

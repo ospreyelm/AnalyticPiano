@@ -1,10 +1,9 @@
-define(["lodash", "microevent", "./chord", "./chord_bank"], function (
-  _,
-  MicroEvent,
-  Chord,
-  ChordBank
-) {
-  var ExerciseChordBank = function (settings) {
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Chord from "./chord";
+import ChordBank from "./chord_bank";
+
+var ExerciseChordBank = function (settings) {
     ChordBank.call(this, settings);
     this._currentIndex = 0;
     this._enableBanking = false;
@@ -39,7 +38,7 @@ define(["lodash", "microevent", "./chord", "./chord_bank"], function (
 
     current = this.current();
 
-    MAKE_NEW = !this._items[index];
+    var MAKE_NEW = !this._items[index];
 
     if (MAKE_NEW) {
       var chord = new Chord();
@@ -84,5 +83,4 @@ define(["lodash", "microevent", "./chord", "./chord_bank"], function (
     return this;
   };
 
-  return ExerciseChordBank;
-});
+export default ExerciseChordBank;

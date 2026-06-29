@@ -1,7 +1,7 @@
-define(["jquery", "lodash"], function ($, _) {
-  "use strict";
+import $ from "jquery";
+import _ from "lodash";
 
-  /**
+/**
    * SkillMap component for visualizing the knowledge graph using Cytoscape.js.
    */
   var SkillMap = {
@@ -198,5 +198,4 @@ define(["jquery", "lodash"], function ($, _) {
     }
   };
 
-  return SkillMap;
-});
+export default SkillMap;

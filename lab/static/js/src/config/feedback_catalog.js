@@ -1,16 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.FeedbackCatalog = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  // entry: { category, surface, title, body, detail, defaultTimeoutMs }
+
+// entry: { category, surface, title, body, detail, defaultTimeoutMs }
   var CATALOG = {
     // click / soft constraints / mode / device (Phase 1)
     "harmonization.click.note_cap":       { category: "soft_constraint", surface: "control", title: "Chord is full.", body: "Remove a note to add another.", detail: null, defaultTimeoutMs: 1800 },
@@ -84,5 +74,6 @@
       skillTags: ctx.skillTags || [], ts: typeof ts === "number" ? ts : null };
   }
 
-  return { get: get, format: format, render: render, resolveGradeFeedbackId: resolveGradeFeedbackId, buildEvent: buildEvent };
-});
+export default {
+  get: get, format: format, render: render, resolveGradeFeedbackId: resolveGradeFeedbackId, buildEvent: buildEvent
+};

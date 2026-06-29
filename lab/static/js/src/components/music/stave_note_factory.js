@@ -1,12 +1,9 @@
-define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
-  _,
-  Vex,
-  Analyze,
-  Config
-) {
-  "use strict";
+import _ from "lodash";
+import Vex from "vexflow";
+import Analyze from "app/utils/analyze";
+import Config from "app/config";
 
-  var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
+var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
 
   var DEFAULT_RHYTHM_VALUE = Config.get("general.defaultRhythmValue");
 
@@ -652,5 +649,4 @@ define(["lodash", "vexflow", "app/utils/analyze", "app/config"], function (
     },
   });
 
-  return StaveNoteFactory;
-});
+export default StaveNoteFactory;

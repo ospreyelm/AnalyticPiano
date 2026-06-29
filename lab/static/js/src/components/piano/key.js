@@ -1,10 +1,7 @@
-/**
- * Piano key UI.
- */
-define(["lodash", "app/components/component"], function (_, Component) {
-  "use strict";
+import _ from "lodash";
+import Component from "app/components/component";
 
-  /**
+/**
    * Key up state.
    * @type {string}
    * @const
@@ -498,5 +495,4 @@ define(["lodash", "app/components/component"], function (_, Component) {
     },
   };
 
-  return PianoKeyFactory;
-});
+export default PianoKeyFactory;

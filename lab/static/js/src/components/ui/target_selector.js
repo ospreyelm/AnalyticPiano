@@ -1,5 +1,7 @@
-define(["jquery", "app/components/component"], function ($, Component) {
-  /**
+import $ from "jquery";
+import Component from "app/components/component";
+
+/**
    * TargetSelectorComponent presents a small panel after a Play Save that
    * lets the teacher choose where the new exercise should go.
    *
@@ -162,5 +164,4 @@ define(["jquery", "app/components/component"], function ($, Component) {
     Component.prototype.destroy.call(this);
   };
 
-  return TargetSelectorComponent;
-});
+export default TargetSelectorComponent;

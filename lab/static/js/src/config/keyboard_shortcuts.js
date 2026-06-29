@@ -1,4 +1,4 @@
-define({
+export default {
   // Application note on/off keyboard shortcuts.
 
   // Maps a key to an integer relative to the C *one octave below*
@@ -124,4 +124,4 @@ define({
     221: "]",
     222: "'",
   },
-});
+};

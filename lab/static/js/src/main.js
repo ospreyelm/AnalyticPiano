@@ -1,34 +1,27 @@
-define([
-  "module",
-  "app/components/app/play",
-  "app/components/app/exercise",
-  "app/components/app/manage",
-], function (module) {
-  // The "main" module simply looks at the configure "app_module",
-  // loads it with requirejs, and then executes the "ready" function.
-  // The application module to load should be specified in the global
-  // requirejs config like this:
-  //
-  //		requirejs.config({
-  //			config: {
-  //				'app/main': {
-  //					'app_module': 'path/to/my/app/module'
-  //				}
-  //			}
-  //		});
-  //
-  // Note: the requirejs config is set outside this module in one of the base
-  // templates.
+import $ from "jquery";
+import PlayApp from "app/components/app/play";
+import ExerciseApp from "app/components/app/exercise";
+import ManageApp from "app/components/app/manage";
+import DebugAnalysisApp from "app/components/app/debug_analysis";
 
-  var config = module.config();
-  if (!config.app_module) {
-    throw new Error(
-      "Application module not configured. Please pass a config value for 'app_module' to the 'main' module."
-    );
-  }
+// Read requirejs config block from template payload if present, otherwise default to exercise
+let appModule = null;
+try {
+  appModule = window.requirejs.s.contexts._.config.config['app/main'].app_module;
+} catch (e) {
+  appModule = window.app_module || "app/components/app/exercise";
+}
 
-  require([config.app_module], function (app) {
-    // Execute the app.ready() function when the DOM is ready.
-    $(document).ready(app.ready);
-  });
-});
+const appModules = {
+  "app/components/app/play": PlayApp,
+  "app/components/app/exercise": ExerciseApp,
+  "app/components/app/manage": ManageApp,
+  "app/components/app/debug_analysis": DebugAnalysisApp,
+};
+
+const app = appModules[appModule];
+if (!app) {
+  throw new Error("Unknown application module: " + appModule);
+}
+
+$(document).ready(app.ready);

@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.KeyboardRangeLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function addMidi(out, seen, value) {
+function addMidi(out, seen, value) {
     var midi = Number(value);
     if (!isFinite(midi)) return;
     if (midi < 0 || midi > 127) return;
@@ -137,9 +126,8 @@
     return { min: min, max: max };
   }
 
-  return {
-    collectTargetMidis: collectTargetMidis,
+export default {
+  collectTargetMidis: collectTargetMidis,
     getShortcutNoteBounds: getShortcutNoteBounds,
     resolveKeyboardRange: resolveKeyboardRange
-  };
-});
+};

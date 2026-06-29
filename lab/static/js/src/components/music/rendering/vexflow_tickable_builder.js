@@ -1,32 +1,8 @@
-/* global define: false */
+import Vex from "vexflow";
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
+import HarmonizationRealizationLogic from "app/models/harmonization_realization_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("./vexflow_adapter_logic"),
-      require("../../../models/harmonization_realization_logic")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/components/music/rendering/vexflow_adapter_logic",
-        "app/models/harmonization_realization_logic",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowTickableBuilder = factory(
-      root.Vex,
-      root.VexflowAdapterLogic,
-      root.HarmonizationRealizationLogic
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, VexflowAdapterLogic, HarmonizationRealizationLogic) {
-  "use strict";
-
-  // barAlterations: mutable {step+octave -> alter} tracking within one measure.
+// barAlterations: mutable {step+octave -> alter} tracking within one measure.
   // Pass a shared object across all itemToTickable calls in the same measure+staff
   // so that G# earlier in the bar causes G♮ later to render an explicit natural.
   function itemToTickable(clef, item, octaveShift, idState, keySignatureAlterations, onset, measureIndex, showNotation, isAnalysisMatch, harmonizationOptions, barAlterations) {
@@ -294,9 +270,8 @@
     return voice;
   }
 
-  return {
-    itemToTickable: itemToTickable,
+export default {
+  itemToTickable: itemToTickable,
     buildVoice: buildVoice,
     buildHarmonizationOverlayVoice: buildHarmonizationOverlayVoice,
-  };
-});
+};

@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.ExerciseDefinitionLabelLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function normalizeAnalysisLabel(label) {
+function normalizeAnalysisLabel(label) {
     if (label === null || label === undefined) {
       return "";
     }
@@ -164,8 +153,8 @@
     return choices.slice(0, 5);
   }
 
-  return {
-    normalizeAnalysisLabel: normalizeAnalysisLabel,
+export default {
+  normalizeAnalysisLabel: normalizeAnalysisLabel,
     FIGURE_TOKEN_MAP: FIGURE_TOKEN_MAP,
     expandFiguredBassToken: expandFiguredBassToken,
     stripFiguredBassTokens: stripFiguredBassTokens,
@@ -173,5 +162,4 @@
     computeNoteNameFromEvent: computeNoteNameFromEvent,
     buildAnalysisWindows: buildAnalysisWindows,
     buildChoices: buildChoices,
-  };
-});
+};

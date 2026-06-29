@@ -1,12 +1,8 @@
-/* global define: false */
-define(["lodash", "microevent", "app/config"], function (
-  _,
-  MicroEvent,
-  Config
-) {
-  "use strict";
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Config from "app/config";
 
-  /**
+/**
    * Defines the default key.
    * @type {string}
    * @const
@@ -579,5 +575,4 @@ define(["lodash", "microevent", "app/config"], function (
 
   MicroEvent.mixin(KeySignature);
 
-  return KeySignature;
-});
+export default KeySignature;

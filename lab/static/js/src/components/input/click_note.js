@@ -1,11 +1,10 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/events",
-  "app/components/component",
-  "app/components/input/click_note_logic",
-], function ($, _, EVENTS, Component, ClickNoteLogic) {
-  var ClickNoteInputComponent = function (settings) {
+import $ from "jquery";
+import _ from "lodash";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import ClickNoteLogic from "app/components/input/click_note_logic";
+
+var ClickNoteInputComponent = function (settings) {
     this.settings = settings || {};
     this.sheet = this.settings.sheet || null;
     this.exerciseContext = this.settings.exerciseContext || null;
@@ -474,5 +473,4 @@ define([
     },
   });
 
-  return ClickNoteInputComponent;
-});
+export default ClickNoteInputComponent;

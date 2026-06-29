@@ -1,8 +1,6 @@
-/* global define: false */
-define(["jquery"], function ($) {
-  "use strict";
+import $ from "jquery";
 
-  var STORAGE_KEY = "harmonylab.playback.tempo";
+var STORAGE_KEY = "harmonylab.playback.tempo";
   var DEFAULT_TEMPO = 100;
 
   function getSavedTempo() {
@@ -82,5 +80,4 @@ define(["jquery"], function ($) {
     });
   }
 
-  return renderPlaybackControls;
-});
+export default renderPlaybackControls;

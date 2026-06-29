@@ -1,5 +1,8 @@
-define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"], function (_, Analyze, HarmonizationGraderLogic) {
-  /**
+import _ from "lodash";
+import Analyze from "app/utils/analyze";
+import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
+
+/**
    * ExerciseGrader object is responsible for grading a given inputChords for
    * an exercise.
    *
@@ -55,6 +58,9 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
         len,
         result,
         score,
+        expected_notes,
+        actual_notes,
+        delivered_unison_idx,
         active_idx = problems.length;
 
       score_map[CORRECT] = 0;
@@ -251,7 +257,7 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
           Number.isInteger(result.unison_idx.expected) &&
           result.unison_idx.delivered !== null &&
           Number.isInteger(result.unison_idx.delivered) &&
-          !unison_idx_match
+          !unison_idx_ok
         ) {
           mistake = true;
           console.log('unison error');
@@ -411,13 +417,13 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
       var analysisBool = this.analysisBool(expected, delivered, analysis_types);
 
       if (analysisBool) {
-        for (i = 0, len = delivered.length; i < len; i++) {
+        for (var i = 0, len = delivered.length; i < len; i++) {
           var midi = delivered[i];
           result.note[midi] = CORRECT;
           result.count[CORRECT].push(midi);
         }
       } else {
-        for (i = 0, len = delivered.length; i < len; i++) {
+        for (var i = 0, len = delivered.length; i < len; i++) {
           var midi = delivered[i];
           result.note[midi] = INCORRECT;
           result.count[INCORRECT].push(midi);
@@ -534,7 +540,7 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
         : this.analysisBool(expected, delivered, [fig_type]);
 
       if (analysisBool) {
-        for (i = 0, len = delivered.length; i < len; i++) {
+        for (var i = 0, len = delivered.length; i < len; i++) {
           if (i == 0) continue; // bass assessed already
 
           var midi = delivered[i];
@@ -542,7 +548,7 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
           result.count[CORRECT].push(midi);
         }
       } else {
-        for (i = 0, len = delivered.length; i < len; i++) {
+        for (var i = 0, len = delivered.length; i < len; i++) {
           if (i == 0) continue; // bass assessed already
 
           var midi = delivered[i];
@@ -575,7 +581,7 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
         i < len;
         i++
       ) {
-        midi = delivered[i];
+        var midi = delivered[i];
 
         if (expected.indexOf(midi) === 0) {
           /* bass only */
@@ -628,7 +634,7 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
         i < len;
         i++
       ) {
-        midi = delivered[i];
+        var midi = delivered[i];
 
         if (expected.indexOf(midi) === expected.length - 1) {
           /* soprano only */
@@ -653,5 +659,4 @@ define(["lodash", "app/utils/analyze", "app/models/harmonization_grader_logic"],
     },
   });
 
-  return ExerciseGrader;
-});
+export default ExerciseGrader;

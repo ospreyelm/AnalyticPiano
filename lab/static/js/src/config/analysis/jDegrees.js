@@ -1,8 +1,4 @@
-// 0=keynote
-// "2/1" means note is 2 semitones and 1 steps above keynote
-
-/* global define: false */
-define({
+export default {
   "0/0": { numeral: "1", solfege: "Do" },
   "1/0": { numeral: "#1", solfege: "Di" },
   "1/1": { numeral: "b2", solfege: "Ra" },
@@ -20,4 +16,4 @@ define({
   "10/5": { numeral: "#6", solfege: "Li" },
   "10/6": { numeral: "b7", solfege: "Te" },
   "11/6": { numeral: "7", solfege: "Ti" },
-});
+};

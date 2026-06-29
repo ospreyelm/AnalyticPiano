@@ -1,17 +1,6 @@
-/* global define: false */
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("../music/rendering/vexflow_adapter_logic"));
-  } else if (typeof define === "function" && define.amd) {
-    define(["app/components/music/rendering/vexflow_adapter_logic"], factory);
-  } else {
-    root.ClickNoteLogic = factory(root.VexflowAdapterLogic);
-  }
-})(typeof self !== "undefined" ? self : this, function (VexflowAdapterLogic) {
-  "use strict";
-
-  var STEP_SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+var STEP_SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   var LADDER = ["C", "D", "E", "F", "G", "A", "B"];
   var LEDGER_HALF_STEPS = 12;
 
@@ -219,8 +208,8 @@
     return out.sort(function (a, b) { return a - b; });
   }
 
-  return {
-    pickSystem: pickSystem,
+export default {
+  pickSystem: pickSystem,
     pickStave: pickStave,
     stepFromTopLine: stepFromTopLine,
     pickColumn: pickColumn,
@@ -228,5 +217,4 @@
     defaultSourceMode: defaultSourceMode,
     capRemaining: capRemaining,
     buildCommitSnapshot: buildCommitSnapshot,
-  };
-});
+};

@@ -1,41 +1,11 @@
-/* global define: false */
+import Vex from "vexflow";
+import ScoreTimeline from "app/components/music/score_timeline";
+import Analyze from "app/utils/analyze";
+import KeySignature from "app/models/key_signature";
+import KeyContext from "app/models/key_context_logic";
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("../score_timeline"),
-      require("../../../utils/analyze"),
-      require("../../../models/key_signature"),
-      require("../../../models/key_context_logic"),
-      require("./vexflow_adapter_logic")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/components/music/score_timeline",
-        "app/utils/analyze",
-        "app/models/key_signature",
-        "app/models/key_context_logic",
-        "app/components/music/rendering/vexflow_adapter_logic",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowRenderConfig = factory(
-      root.Vex,
-      root.ScoreTimeline,
-      root.Analyze,
-      root.KeySignature,
-      root.KeyContext,
-      root.VexflowAdapterLogic
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, ScoreTimeline, Analyze, KeySignature, KeyContext, VexflowAdapterLogic) {
-  "use strict";
-
-  // Stage 1: derive render-wide config (analysis mode, harmonization overlays,
+// Stage 1: derive render-wide config (analysis mode, harmonization overlays,
   // y-offsets, key signature alterations) that doesn't change across measures.
   // Returns null when the score has no measures (render() should bail out).
   function buildRenderConfig(score, opts, canvas) {
@@ -230,8 +200,7 @@
     };
   }
 
-  return {
-    buildRenderConfig: buildRenderConfig,
+export default {
+  buildRenderConfig: buildRenderConfig,
     selectMeasureWindow: selectMeasureWindow,
-  };
-});
+};

@@ -1,23 +1,12 @@
-define([
-  "module",
-  "lodash",
-  "jquery",
-  "app/components/events",
-  "app/components/app",
-  "app/components/ui/main_menu",
-  // 'app/components/notifications',
-  "app/components/form/exercise_form",
-], function (
-  module,
-  _,
-  $,
-  EVENTS,
-  AppComponent,
-  MainMenuComponent,
-  // NotificationsComponent,
-  ExerciseFormComponent
-) {
-  /**
+import _ from "lodash";
+import $ from "jquery";
+import { getModuleConfig } from "app/utils/module_config";
+import EVENTS from "app/components/events";
+import AppComponent from "app/components/app";
+import MainMenuComponent from "app/components/ui/main_menu";
+import ExerciseFormComponent from "app/components/form/exercise_form";
+
+/**
    * AppManageComponent class.
    *
    * Creates the sandbox environment for playing and experimenting
@@ -34,8 +23,8 @@ define([
   AppManageComponent.prototype = new AppComponent();
 
   AppManageComponent.ready = function () {
-    var app = new AppManageComponent();
-    app.init();
+    window.app = new AppManageComponent();
+    window.app.init();
     console.log("initialized manage component");
   };
 
@@ -75,7 +64,7 @@ define([
       function () {
         var c = new ExerciseFormComponent({
           el: "#exerciseform",
-          config: module.config(),
+          config: getModuleConfig("app/components/app/manage"),
         });
         c.init(this);
         this.addComponent(c);
@@ -279,5 +268,4 @@ define([
   //     });
   // };
 
-  return AppManageComponent;
-});
+export default AppManageComponent;

@@ -1,26 +1,7 @@
-/* global define: false */
+import Vex from "vexflow";
+import VexflowStaffVoiceBuilder from "app/components/music/rendering/vexflow_staff_voice_builder";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("./vexflow_staff_voice_builder")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/components/music/rendering/vexflow_staff_voice_builder",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowMeasureLayout = factory(root.Vex, root.VexflowStaffVoiceBuilder);
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, VexflowStaffVoiceBuilder) {
-  "use strict";
-
-  // Count noteheads in a measure (respects optional voice filtering)
+// Count noteheads in a measure (respects optional voice filtering)
   function countNoteheads(meas, opts) {
     var total = 0;
     ['treble', 'bass'].forEach(function(staffName) {
@@ -234,7 +215,6 @@
     };
   }
 
-  return {
-    computeMeasureLayout: computeMeasureLayout,
-  };
-});
+export default {
+  computeMeasureLayout: computeMeasureLayout,
+};

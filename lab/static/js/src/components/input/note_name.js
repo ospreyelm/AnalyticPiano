@@ -1,11 +1,9 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/events",
-  "app/components/component",
-], function ($, _, EVENTS, Component) {
+import $ from "jquery";
+import _ from "lodash";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
 
-  // Key code → diatonic step name (letters a–g only)
+// Key code → diatonic step name (letters a–g only)
   var STEP_FOR_CODE = {
     65: "a", 66: "b", 67: "c", 68: "d", 69: "e", 70: "f", 71: "g"
   };
@@ -389,5 +387,4 @@ define([
 
   });
 
-  return NoteNameInputComponent;
-});
+export default NoteNameInputComponent;

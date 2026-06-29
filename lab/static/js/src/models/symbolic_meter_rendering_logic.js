@@ -1,15 +1,6 @@
-(function (root, factory) {
-  if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else {
-    root.SymbolicMeterRenderingLogic = factory();
-  }
-})(this, function () {
-  "use strict";
 
-  function getTimeSignatureFontStack() {
+
+function getTimeSignatureFontStack() {
     return '"Bravura Text","Finale Maestro Text","Petaluma Script","Noto Music",serif';
   }
 
@@ -25,8 +16,7 @@
       '</span></span>';
   }
 
-  return {
-    getTimeSignatureFontStack: getTimeSignatureFontStack,
+export default {
+  getTimeSignatureFontStack: getTimeSignatureFontStack,
     renderTimeSignatureMarkup: renderTimeSignatureMarkup,
-  };
-});
+};

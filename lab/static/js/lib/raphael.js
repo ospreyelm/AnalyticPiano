@@ -399,7 +399,7 @@
         return eve;
       })
     : (glob.eve = eve);
-})(this);
+})(typeof window !== "undefined" ? window : globalThis);
 // ┌─────────────────────────────────────────────────────────────────────┐ \\
 // │ "Raphaël 2.1.0" - JavaScript Vector Library                         │ \\
 // ├─────────────────────────────────────────────────────────────────────┤ \\
@@ -420,7 +420,7 @@
     // Raphael adds itself to window
     factory(glob, glob.eve);
   }
-})(this, function (window, eve) {
+})(typeof window !== "undefined" ? window : globalThis, function (window, eve) {
   /*\
      * Raphael
      [ method ]
@@ -6281,7 +6281,7 @@
      | })(Raphael.ninja());
     \*/
   R.ninja = function () {
-    oldRaphael.was ? (g.win.Raphael = oldRaphael.is) : delete Raphael;
+    oldRaphael.was ? (g.win.Raphael = oldRaphael.is) : (delete window.Raphael);
     return R;
   };
   /*\
@@ -8984,7 +8984,10 @@
   // EXPOSE
   // SVG and VML are appended just before the EXPOSE line
   // Even with AMD, Raphael should be defined globally
-  oldRaphael.was ? (g.win.Raphael = R) : (Raphael = R);
+  oldRaphael.was ? (g.win.Raphael = R) : (g.win.Raphael = R);
 
   return R;
 });
+
+export default window.Raphael;
+

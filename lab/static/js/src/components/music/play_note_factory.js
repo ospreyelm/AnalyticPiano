@@ -1,12 +1,9 @@
-define([
-  "lodash",
-  "vexflow",
-  "app/utils/analyze",
-  "./stave_note_factory",
-], function (_, Vex, Analyze, StaveNoteFactory) {
-  "use strict";
+import _ from "lodash";
+import Vex from "vexflow";
+import Analyze from "app/utils/analyze";
+import StaveNoteFactory from "./stave_note_factory";
 
-  /**
+/**
    * PlayNoteFactory class.
    *
    * This class knows how to create Vex.Flow.StaveNote objects for play sheet.
@@ -195,5 +192,4 @@ define([
     },
   });
 
-  return PlayNoteFactory;
-});
+export default PlayNoteFactory;

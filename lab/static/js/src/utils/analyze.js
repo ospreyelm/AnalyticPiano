@@ -1,8 +1,8 @@
-/* Analysis functions */
-/* global define: false */
+import _ from "lodash";
+import Vex from "vexflow";
+import Config from "app/config";
 
-define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
-  /* Wraps all the analysis methods and configuration data. */
+/* Wraps all the analysis methods and configuration data. */
   var Analyze = function (keySignature, options) {
     if (!keySignature) {
       throw new Error("Missing key signature!");
@@ -542,7 +542,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       notes = notes.sort();
       // uv denotes upper voices, omitting bass
       var uv_pcs = [];
-      for (i = 1, len = notes.length; i < len; i++) {
+      for (var i = 1, len = notes.length; i < len; i++) {
         var uv_pc = notes[i] % 12
         if (!_.contains(uv_pcs, uv_pc)) uv_pcs.push(uv_pc);
       }
@@ -588,7 +588,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       var min_span = false;
       var min_penult_span = false;
       var floor = false;
-      for (i = 0, len = pcs.length; i < len; i++) {
+      for (var i = 0, len = pcs.length; i < len; i++) {
         // var upward_displacements = pcs.map(pc => (12 + pc - pcs[i]) % 12).reduce((a, b) => a + b, 0);
 
         var span = (12 - pcs[i] + pcs[(len + i - 1) % len]) % 12;
@@ -1104,7 +1104,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
     get_color: function (note, notes) {
       /* Color in pitches on the sheet music to highlight musical phenomena. */
 
-      var i, len;
+      var i, len, other, itvl;
       if (this.Piano.highlightMode["solobass"]) {
         if (note == notes[0]) {
           return "";
@@ -1192,7 +1192,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       var scale_pcs = vfmus.getScaleTones(key_pc, intervals);
 
       var note_names = [];
-      var i;
+      var i, letter, pc;
       for (i = 0; i < 7; i++) {
         letter = vfrts[(i + key_mod7) % 7];
         pc = scale_pcs[i];
@@ -1216,7 +1216,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
     },
     get_offset: function (note_name) {
       /* return displacement from the diatonic scale in semitones */
-      offset = null;
+      var offset = null;
       [0, 1, -1, 2, -2, 3, -3].some((n) => {
         var probe_name = this.inflect(note_name, n);
         return this.is_diatonic(probe_name) ? (offset = -1 * n) : false;
@@ -1249,7 +1249,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
       var bass_name = this.getNoteName(bass_midi, midi_nums);
 
       var intervals = [];
-      var i, len;
+      var i, len, prefix;
       for (i = 1, len = midi_nums.length; i < len; i++) {
         var midi = midi_nums[i];
         var name = this.getNoteName(midi, midi_nums);
@@ -1297,6 +1297,7 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
     currently_first_inversion_dominant_tetrad: function () {
       var midi_nums = []; /* GET CURRENT MIDI NUMBERS: NOT WIRED IN YET */
       /* see app/models/chord */
+      var i; /* not wired in yet; declared to satisfy strict mode */
       return (
         [0, 3, 6, 8] ==
         this.pcs_order_of_lowest_appearance(midi_nums)
@@ -1449,5 +1450,4 @@ define(["lodash", "vexflow", "app/config"], function (_, Vex, Config) {
 
   _.extend(Analyze.prototype, spellingAndAnalysisFunctions);
 
-  return Analyze;
-});
+export default Analyze;

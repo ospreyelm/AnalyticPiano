@@ -1,4 +1,4 @@
-define({
+export default {
   midiPluginError: {
     title: "MIDI Error",
     description:
@@ -9,4 +9,4 @@ define({
     description:
       "Your browser doesn't support MIDI input — use your computer keyboard to play notes instead."
   }
-});
+};

@@ -1,5 +1,6 @@
-define([], function () {
-  return {
+
+
+export default  {
     playback: {
       short: "Play each chord in the score.",
       help:  "Use your keyboard (QWERTY) or the on-screen piano to play every note in the chord at the same time. Match the pitches shown — any octave works.",
@@ -63,4 +64,3 @@ define([], function () {
       ],
     },
   };
-});

@@ -1,11 +1,8 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/component",
-], function ($, _, Component) {
-  "use strict";
+import $ from "jquery";
+import _ from "lodash";
+import Component from "app/components/component";
 
-  /**
+/**
    * LabelInputComponent
    *
    * Renders one <select> dropdown per problem, positioned under each chord
@@ -148,5 +145,4 @@ define([
     }
   });
 
-  return LabelInputComponent;
-});
+export default LabelInputComponent;

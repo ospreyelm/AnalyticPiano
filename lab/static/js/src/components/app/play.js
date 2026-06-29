@@ -1,41 +1,22 @@
-define([
-  "lodash",
-  "jquery",
-  "app/components/component",
-  "app/components/app",
-  "app/components/piano",
-  "app/components/music",
-  "app/components/music/play_sheet",
-  "app/components/midi",
-  "app/components/notifications",
-  "app/components/input/shortcuts",
-  "app/components/input/note_name",
-  "app/components/ui/main_menu",
-  "app/components/ui/music_controls",
-  "app/components/feedback_service",
-  "app/models/chord_bank",
-  "app/models/key_signature",
-  "app/models/midi_device",
-], function (
-  _,
-  $,
-  Component,
-  AppComponent,
-  PianoComponent,
-  MusicComponent,
-  PlaySheetComponent,
-  MidiComponent,
-  NotificationsComponent,
-  KeyboardShortcutsComponent,
-  NoteNameInputComponent,
-  MainMenuComponent,
-  MusicControlsComponent,
-  FeedbackService,
-  ChordBank,
-  KeySignature,
-  MidiDevice
-) {
-  /**
+import _ from "lodash";
+import $ from "jquery";
+import Component from "app/components/component";
+import AppComponent from "app/components/app";
+import PianoComponent from "app/components/piano";
+import MusicComponent from "app/components/music";
+import PlaySheetComponent from "app/components/music/play_sheet";
+import MidiComponent from "app/components/midi";
+import NotificationsComponent from "app/components/notifications";
+import KeyboardShortcutsComponent from "app/components/input/shortcuts";
+import NoteNameInputComponent from "app/components/input/note_name";
+import MainMenuComponent from "app/components/ui/main_menu";
+import MusicControlsComponent from "app/components/ui/music_controls";
+import FeedbackService from "app/components/feedback_service";
+import ChordBank from "app/models/chord_bank";
+import KeySignature from "app/models/key_signature";
+import MidiDevice from "app/models/midi_device";
+
+/**
    * AppPlayComponent class.
    *
    * Creates the sandbox environment for playing and experimenting
@@ -158,6 +139,7 @@ define([
     }
 
     app = new AppPlayComponent();
+    window.app = app;
     app.init();
     app.log("App ready");
 
@@ -167,5 +149,4 @@ define([
     }
   };
 
-  return AppPlayComponent;
-});
+export default AppPlayComponent;

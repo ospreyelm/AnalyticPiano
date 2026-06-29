@@ -1,8 +1,7 @@
-/* global define:false */
-define(["lodash", "jquery"], function (_, $) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
 
-  /**
+/**
    * Defines the html template.
    * @type {function}
    * @const
@@ -196,5 +195,4 @@ define(["lodash", "jquery"], function (_, $) {
     }
   };
 
-  return Modal;
-});
+export default Modal;

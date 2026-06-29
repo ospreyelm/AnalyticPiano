@@ -1,38 +1,18 @@
-/**
- * @fileoverview Defines an interface for reading app configuration values.
- */
-define([
-  "lodash",
-  "app/config/general",
-  "app/config/error_text",
-  "app/config/highlight",
-  "app/config/instruments",
-  "app/config/keyboard_shortcuts",
-  "app/config/analysis/hChords",
-  "app/config/analysis/hIntervals",
-  "app/config/analysis/iChords",
-  "app/config/analysis/iDegrees",
-  "app/config/analysis/ijIntervals",
-  "app/config/analysis/jChords",
-  "app/config/analysis/jDegrees",
-], function (
-  _,
-  ConfigGeneral,
-  ConfigErrorText,
-  ConfigHighlight,
-  ConfigInstruments,
-  ConfigKeyboardShortcuts,
-  ConfigAnalysis_hChords,
-  ConfigAnalysis_hIntervals,
-  ConfigAnalysis_iChords,
-  ConfigAnalysis_iDegrees,
-  ConfigAnalysis_ijIntervals,
-  ConfigAnalysis_jChords,
-  ConfigAnalysis_jDegrees
-) {
-  "use strict";
+import _ from "lodash";
+import ConfigGeneral from "app/config/general";
+import ConfigErrorText from "app/config/error_text";
+import ConfigHighlight from "app/config/highlight";
+import ConfigInstruments from "app/config/instruments";
+import ConfigKeyboardShortcuts from "app/config/keyboard_shortcuts";
+import ConfigAnalysis_hChords from "app/config/analysis/hChords";
+import ConfigAnalysis_hIntervals from "app/config/analysis/hIntervals";
+import ConfigAnalysis_iChords from "app/config/analysis/iChords";
+import ConfigAnalysis_iDegrees from "app/config/analysis/iDegrees";
+import ConfigAnalysis_ijIntervals from "app/config/analysis/ijIntervals";
+import ConfigAnalysis_jChords from "app/config/analysis/jChords";
+import ConfigAnalysis_jDegrees from "app/config/analysis/jDegrees";
 
-  /**
+/**
    * Defines an interface to retrieve config values.
    *
    * @namespace Config
@@ -110,5 +90,4 @@ define([
     },
   };
 
-  return Config;
-});
+export default Config;

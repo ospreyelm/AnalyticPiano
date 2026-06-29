@@ -1,9 +1,4 @@
-// The input consists of two positive integers, indicating the interval size
-// in semitones and the interval size in scale steps.
-
-/* global define: false */
-
-define({
+export default {
   "1/0": { label: "A1" }, // chromatic semitone
   "1/1": { label: "m2" }, // half step, diatonic semitone
   "2/1": { label: "M2" }, // whole step
@@ -63,4 +58,4 @@ define({
   "30/17": { label: "A18" }, // tritone
   "30/18": { label: "d19" }, // tritone
   "31/18": { label: "P19" },
-});
+};

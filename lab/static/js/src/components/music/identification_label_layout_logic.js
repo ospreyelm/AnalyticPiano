@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.IdentificationLabelLayoutLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function getKeyLabelPosition(opts) {
+function getKeyLabelPosition(opts) {
     opts = opts || {};
     var slotX = typeof opts.slotX === "number" ? opts.slotX : 0;
     var slotY = typeof opts.slotY === "number" ? opts.slotY : 0;
@@ -36,7 +25,6 @@
     return { x: Math.round(x), y: Math.round(y) };
   }
 
-  return {
-    getKeyLabelPosition: getKeyLabelPosition,
-  };
-});
+export default {
+  getKeyLabelPosition: getKeyLabelPosition,
+};

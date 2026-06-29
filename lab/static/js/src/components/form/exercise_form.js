@@ -1,25 +1,13 @@
-define([
-  "lodash",
-  "jquery",
-  "app/components/events",
-  "app/components/component",
-  "app/models/key_signature",
-  "app/widgets/key_signature",
-  "app/widgets/analyze",
-  "app/widgets/highlight",
-], function (
-  _,
-  $,
-  EVENTS,
-  Component,
-  KeySignature,
-  KeySignatureWidget,
-  AnalyzeWidget,
-  HighlightWidget
-) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import KeySignature from "app/models/key_signature";
+import KeySignatureWidget from "app/widgets/key_signature";
+import AnalyzeWidget from "app/widgets/analyze";
+import HighlightWidget from "app/widgets/highlight";
 
-  var ExerciseFormComponent = function (settings) {
+var ExerciseFormComponent = function (settings) {
     this.settings = settings || {};
     this.widgets = {};
     this.$el = $(settings.el || "#exerciseform");
@@ -377,5 +365,4 @@ define([
     return data;
   };
 
-  return ExerciseFormComponent;
-});
+export default ExerciseFormComponent;

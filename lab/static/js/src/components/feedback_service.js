@@ -1,13 +1,10 @@
-define([
-  "lodash",
-  "jquery",
-  "app/components/events",
-  "app/components/component",
-  "app/config/feedback_catalog"
-], function (_, $, EVENTS, Component, FeedbackCatalog) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import FeedbackCatalog from "app/config/feedback_catalog";
 
-  /**
+/**
    * FeedbackService — single funnel for student-facing feedback.
    * emit(id, opts): params, surface(override), anchorRect, controlEl, inlineEl, context
    */
@@ -126,5 +123,4 @@ define([
     return ctx;
   };
 
-  return FeedbackService;
-});
+export default FeedbackService;

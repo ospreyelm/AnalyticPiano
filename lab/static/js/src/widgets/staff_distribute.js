@@ -1,13 +1,9 @@
-/* global define:false */
-define(["lodash", "jquery", "microevent", "app/config"], function (
-  _,
-  $,
-  MicroEvent,
-  Config
-) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import MicroEvent from "microevent";
+import Config from "app/config";
 
-  const VALID_STAFF_DISTRIBUTIONS = Config.get(
+const VALID_STAFF_DISTRIBUTIONS = Config.get(
     "general.validStaffDistributions"
   );
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
@@ -123,5 +119,4 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
 
   MicroEvent.mixin(StaffDistributionWidget);
 
-  return StaffDistributionWidget;
-});
+export default StaffDistributionWidget;

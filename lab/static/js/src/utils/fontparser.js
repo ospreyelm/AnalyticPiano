@@ -1,5 +1,4 @@
-define(function () {
-  var FontParser = {
+var FontParser = {
     /**
      * Parses a string of text to locate sub-strings that require a
      * different font.
@@ -78,5 +77,4 @@ define(function () {
     },
   };
 
-  return FontParser;
-});
+export default FontParser;

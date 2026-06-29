@@ -1,13 +1,9 @@
-/* global define:false */
-define(["lodash", "jquery", "microevent", "app/config"], function (
-  _,
-  $,
-  MicroEvent,
-  Config
-) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import MicroEvent from "microevent";
+import Config from "app/config";
 
-  var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
+var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
 
   var AnalyzeWidget = function (settings, is_exercise_view = false) {
     this.is_exercise_view = is_exercise_view || false;
@@ -345,5 +341,4 @@ define(["lodash", "jquery", "microevent", "app/config"], function (
 
   MicroEvent.mixin(AnalyzeWidget);
 
-  return AnalyzeWidget;
-});
+export default AnalyzeWidget;

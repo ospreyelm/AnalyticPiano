@@ -1,10 +1,8 @@
-/* global define: false */
-define(
-  ["app/models/key_sig_exercise_logic", "vexflow", "jquery"],
-  function (logic, Vex, $) {
-    "use strict";
+import logic from "app/models/key_sig_exercise_logic";
+import Vex from "vexflow";
+import $ from "jquery";
 
-    var SHARPS_KEY = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
+var SHARPS_KEY = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
     var FLATS_KEY  = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
 
     function renderKeySignatureStaff(container, prompt) {
@@ -134,6 +132,6 @@ define(
       },
     };
 
-    return { KeySigExercise: KeySigExercise };
-  }
-);
+export default {
+  KeySigExercise: KeySigExercise
+};

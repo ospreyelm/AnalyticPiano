@@ -1,8 +1,8 @@
-/* global define:false */
-define(["lodash", "jquery", "app/config"], function (_, $, Config) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import Config from "app/config";
 
-  var KEY_MAP = Config.get("general.keyMap");
+var KEY_MAP = Config.get("general.keyMap");
   var KEY_DISPLAY_GROUPS = Config.get("general.keyDisplayGroups");
   var KEY_SIGNATURE_MAP = Config.get("general.keySignatureMap");
 
@@ -146,5 +146,4 @@ define(["lodash", "jquery", "app/config"], function (_, $, Config) {
     },
   });
 
-  return KeySignatureWidget;
-});
+export default KeySignatureWidget;
