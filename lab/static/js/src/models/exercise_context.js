@@ -101,6 +101,7 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
     this.harmonizationTier = null;
     this._harmonizationActiveMidiOverride = null;
     this._harmonizationRejected = null; // { midi, spellings, measureIndex, onset, reasons } — cleared on next column
+    this._reviewDisplayOnly = false;
 
     _.bindAll(this, ["grade", "triggerTimer", "validateGradingAlignment"]);
 
@@ -361,6 +362,7 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       this.trigger("graded");
     },
     gradeHarmonizationMidiSet: function (activeMidi) {
+      if (this._reviewDisplayOnly) return;
       this._harmonizationActiveMidiOverride = activeMidi || [];
       try {
         this.grade();

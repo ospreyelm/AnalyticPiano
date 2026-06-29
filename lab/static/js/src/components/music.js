@@ -387,6 +387,24 @@ import KeySignature from "app/models/key_signature";
             scex.harmonizationTier = null;
           }
 
+          // Restore saved harmonization sonorities in review mode (display-only).
+          // Init-time restore lives in exercise.js getModels(); this re-applies it
+          // on in-app navigation (Previous/Next), which otherwise wipes the saved
+          // pass and leaves note-entry controls active. Also clears the display-
+          // only flag + body class when leaving a harmonization review so a
+          // non-harmonization exercise's click-note input is not hidden.
+          var harmonyUiEl = document.querySelector(".harmony-ui");
+          if (newData.reviewMode && newData.reviewHarmonizationSonorities &&
+              scex._isHarmonizationExercise && scex._isHarmonizationExercise()) {
+            scex.acceptedHarmonizationSonorities = _.cloneDeep(newData.reviewHarmonizationSonorities);
+            scex._harmonizationPointer = scex.acceptedHarmonizationSonorities.length;
+            scex._reviewDisplayOnly = true;
+            if (harmonyUiEl) harmonyUiEl.classList.add("harmonization-review-display");
+          } else {
+            scex._reviewDisplayOnly = false;
+            if (harmonyUiEl) harmonyUiEl.classList.remove("harmonization-review-display");
+          }
+
           scex.displayChords = scex.createDisplayChords();
           scex.exerciseChords = scex.createExerciseChords();
 

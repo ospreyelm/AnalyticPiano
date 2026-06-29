@@ -168,6 +168,24 @@ import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
       }
     }
 
+    if (
+      definition.reviewMode &&
+      definition.reviewHarmonizationSonorities &&
+      models.exerciseContext._isHarmonizationExercise &&
+      models.exerciseContext._isHarmonizationExercise()
+    ) {
+      models.exerciseContext.acceptedHarmonizationSonorities = _.cloneDeep(
+        definition.reviewHarmonizationSonorities
+      );
+      models.exerciseContext._harmonizationPointer =
+        models.exerciseContext.acceptedHarmonizationSonorities.length;
+      models.exerciseContext._reviewDisplayOnly = true;
+      var harmonyUiEl = document.querySelector(".harmony-ui");
+      if (harmonyUiEl) {
+        harmonyUiEl.classList.add("harmonization-review-display");
+      }
+    }
+
     models.keySignature = new KeySignature(
       models.exerciseDefinition.getKey(),
       models.exerciseDefinition.getKeySignature()

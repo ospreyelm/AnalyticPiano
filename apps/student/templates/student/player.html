@@ -102,7 +102,7 @@
 
     {% if is_review_mode %}
       <div class="s-player-input-hint" data-player-hint="review">
-        Review mode — your result is preserved, practice freely.
+        {% if is_harmonization_review %}Review mode — showing your saved result.{% else %}Review mode — your result is preserved, practice freely.{% endif %}
       </div>
     {% endif %}
 
@@ -215,11 +215,14 @@
         wrap.insertBefore(midiHint, harmonyUi);
       }
 
+      newData.harmonizationReview = !!(newData.reviewMode && newData.reviewHarmonizationSonorities);
       if (newData.reviewMode) {
         var reviewHint = document.createElement('div');
         reviewHint.className = 's-player-input-hint';
         reviewHint.setAttribute('data-player-hint', 'review');
-        reviewHint.innerText = 'Review mode — your result is preserved, practice freely.';
+        reviewHint.innerText = newData.harmonizationReview
+          ? 'Review mode — showing your saved result.'
+          : 'Review mode — your result is preserved, practice freely.';
         wrap.insertBefore(reviewHint, harmonyUi);
       }
     };

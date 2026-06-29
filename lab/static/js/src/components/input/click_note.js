@@ -170,6 +170,7 @@ var ClickNoteInputComponent = function (settings) {
 
     _onCanvasMove: function (e) {
       if (!this.enabled) return;
+      if (this.exerciseContext && this.exerciseContext._reviewDisplayOnly) return;
       var resolved = this._resolve(e);
       var key = resolved ? (resolved.midi + ":" + resolved.column.onset) : null;
       if (key === this._lastGhostKey) return;
@@ -189,6 +190,7 @@ var ClickNoteInputComponent = function (settings) {
 
     _onCanvasClick: function (e) {
       if (!this.enabled) return;
+      if (this.exerciseContext && this.exerciseContext._reviewDisplayOnly) return;
       var resolved = this._resolve(e);
       if (!resolved) {
         // A valid-but-inactive column resolves only when the onset gate is removed.
@@ -288,6 +290,7 @@ var ClickNoteInputComponent = function (settings) {
 
     _onKeyDown: function (e) {
       if (!this.enabled || !this._activeColumn) return;
+      if (this.exerciseContext && this.exerciseContext._reviewDisplayOnly) return;
       // Avoid interfering with text inputs
       var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;

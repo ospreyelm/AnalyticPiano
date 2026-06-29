@@ -437,6 +437,138 @@ class PlayerViewTests(TransactionTestCase):
         self.assertIn(b'"disableComputerKeyboardInput": true', response.content)
         self.assertIn(b'"mode": "playback"', response.content)
         self.assertIn(b'"analysisType": "note_name"', response.content)
+
+    def test_player_definition_harmonization_review_embeds_sonorities(self):
+        harm_exercise = make_umto_exercise(
+            self.author,
+            description="Harmonization review test",
+            mode=InteractionMode.HARMONIZATION,
+            skill_tags=["unit:1"],
+        )
+        harm_playlist = Playlist.objects.create(
+            name="Harmonization Playlist",
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1"],
+            tags=["unit:1"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=harm_playlist,
+            exercise=harm_exercise,
+            order=1,
+        )
+        # No PlaylistCourseOrdered => resolve_course_for_playlist returns None
+        sonorities = [{"midi": [60, 64, 67], "targetIndex": 0, "ts": 1}]
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=harm_playlist,
+            course=None,
+            data=[{
+                "id": harm_exercise.id,
+                "harmonization_accepted_sonorities": sonorities,
+                "error_tally": 0,
+                "performed_at": "2026-06-28 00:00:00",
+            }],
+        )
+
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 1})
+            + f"?playlist={harm_playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["reviewMode"])
+        self.assertEqual(payload["mode"], "harmonization")
+        self.assertEqual(payload["reviewHarmonizationSonorities"], sonorities)
+
+    def test_player_definition_identification_review_no_sonorities(self):
+        # self.exercise is a non-harmonization exercise; review mode via IdentificationAttempt
+        IdentificationAttempt.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            exercise=self.exercise,
+            answers={"0": "Student answer"},
+            correct_answers={"0": "Answer key"},
+            score={"correct": 1, "incorrect": 0, "unanswered": 0},
+            is_page_submit=True,
+            mode="submit",
+        )
+
+        response = self.client.get(
+            reverse("student:player-definition", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["reviewMode"])
+        self.assertNotIn("reviewHarmonizationSonorities", payload)
+
+    def test_player_html_context_sets_is_harmonization_review_flag(self):
+        harm_exercise = make_umto_exercise(
+            self.author,
+            description="Harmonization HTML review test",
+            mode=InteractionMode.HARMONIZATION,
+            skill_tags=["unit:1"],
+        )
+        harm_playlist = Playlist.objects.create(
+            name="Harmonization HTML Playlist",
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1"],
+            tags=["unit:1"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            playlist=harm_playlist,
+            exercise=harm_exercise,
+            order=1,
+        )
+        # No PlaylistCourseOrdered => resolve_course_for_playlist returns None
+        sonorities = [{"midi": [60, 64, 67], "targetIndex": 0, "ts": 1}]
+        PerformanceData.objects.create(
+            user=self.student,
+            playlist=harm_playlist,
+            course=None,
+            data=[{
+                "id": harm_exercise.id,
+                "harmonization_accepted_sonorities": sonorities,
+                "error_tally": 0,
+                "performed_at": "2026-06-28 00:00:00",
+            }],
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={harm_playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_review_mode"])
+        self.assertIs(response.context["is_harmonization_review"], True)
+
+    def test_player_html_context_is_harmonization_review_false_for_identification(self):
+        IdentificationAttempt.objects.create(
+            user=self.student,
+            playlist=self.playlist,
+            exercise=self.exercise,
+            answers={"0": "Student answer"},
+            correct_answers={"0": "Answer key"},
+            score={"correct": 1, "incorrect": 0, "unanswered": 0},
+            is_page_submit=True,
+            mode="submit",
+        )
+
+        response = self.client.get(
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_review_mode"])
+        self.assertIs(response.context["is_harmonization_review"], False)
+
+
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class Unit4PersonalizedServingViewTests(TransactionTestCase):
     reset_sequences = True

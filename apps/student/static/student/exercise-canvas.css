@@ -608,3 +608,14 @@
 .ident-popup-btn:hover {
   background: var(--surface-2, #f0f0f0);
 }
+
+/*
+ * Harmonization review is pure display: hide note-entry controls (accidental
+ * palette, Clear, Lock chord, and the MIDI/Click source toggle). Navigation
+ * (Previous/Reset/Next), playback, and the score remain visible.
+ */
+.harmonization-review-display .click-note-input,
+.harmonization-review-display .input-source-mode-toggle,
+.harmonization-review-display #ident-input-toggle-container {
+  display: none !important;
+}

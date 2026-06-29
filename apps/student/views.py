@@ -172,6 +172,24 @@ def resolve_course_for_playlist(user, playlist):
     return fallback.course if fallback else None
 
 
+def _attach_harmonization_review(exercise_context, user, playlist, course, exercise):
+    """Embed the student's best stored harmonization pass for review mode.
+
+    No-op unless the exercise is a harmonization exercise and a pass exists.
+    """
+    if exercise_context.get("mode") != "harmonization":
+        return
+    pd = (
+        PerformanceData.objects.filter(user=user, playlist=playlist, course=course)
+        .first()
+    )
+    if not pd:
+        return
+    sonorities = pd.get_best_harmonization_pass(exercise.id)
+    if sonorities:
+        exercise_context["reviewHarmonizationSonorities"] = sonorities
+
+
 def _get_available_unit_numbers(user) -> set[str]:
     available = set()
     playlists = accessible_playlist_queryset(user).order_by("name")
@@ -991,6 +1009,10 @@ class PlayerView(View):
             if merged_answers:
                 exercise_context["reviewAnswers"] = merged_answers
 
+            _attach_harmonization_review(
+                exercise_context, request.user, playlist, course, exercise
+            )
+
         all_ids = served_ids
         completed_ids = get_completed_exercise_ids(request.user, playlist)
         completed_nums = [
@@ -1084,6 +1106,10 @@ class PlayerView(View):
                 "exercise_num": exercise_num,
                 "total_exercises": served_count if served_count > 0 else exercise_num,
                 "is_review_mode": state.mode == "review",
+                "is_harmonization_review": (
+                    state.mode == "review"
+                    and exercise_context.get("mode") == "harmonization"
+                ),
                 "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
                 "exercise_config_json": json.dumps(exercise_context),
                 "debug_exercise_db_json": debug_exercise_db_json,
@@ -1109,6 +1135,10 @@ class PlayerView(View):
             "exercise_num": exercise_num,
             "total_exercises": served_count if served_count > 0 else exercise_num,
             "is_review_mode": state.mode == "review",
+            "is_harmonization_review": (
+                state.mode == "review"
+                and exercise_context.get("mode") == "harmonization"
+            ),
             "disable_computer_keyboard_input": exercise_context["disableComputerKeyboardInput"],
             "debug_exercise_db_json": debug_exercise_db_json,
         }
@@ -1185,6 +1215,10 @@ class PlayerDefinitionView(View):
 
             if merged_answers:
                 exercise_context["reviewAnswers"] = merged_answers
+
+            _attach_harmonization_review(
+                exercise_context, request.user, playlist, course, exercise
+            )
 
         return JsonResponse(exercise_context)
 
