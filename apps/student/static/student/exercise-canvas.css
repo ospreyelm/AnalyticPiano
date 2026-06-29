@@ -615,6 +615,7 @@
  * (Previous/Reset/Next), playback, and the score remain visible.
  */
 .harmonization-review-display .click-note-input,
+.harmonization-review-display .input-source-mode-toggle,
 .harmonization-review-display #ident-input-toggle-container {
   display: none !important;
 }

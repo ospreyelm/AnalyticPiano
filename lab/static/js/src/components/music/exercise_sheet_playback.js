@@ -149,6 +149,7 @@ export default  {
       var isChorale = definition.isChorale && definition.isChorale();
       var isHarmonization = definition.isHarmonization && definition.isHarmonization();
       if (!isChorale && !isHarmonization) return;
+      if (this.exerciseContext && this.exerciseContext._reviewDisplayOnly) return;
 
       // Start timer on first interaction
       if (state === "on") {
