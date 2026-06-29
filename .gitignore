@@ -26,9 +26,18 @@ venv/
 .prettierignore
 .venv/
 .worktrees/
+.claude/worktrees/
 .superpowers/
 .gstack/
+
+# Local artifacts / scratch output
+*.bak
+*.dump
+*.patch
+local_db.dump
 
 # Node / Vite
 node_modules/
 lab/static/dist/
+*.mscz~
+*.msbackup/
