@@ -222,6 +222,13 @@ CATALOG = [
             "python manage.py audit_figure_realization_coverage --limit 20",
         ),
     ]),
+    ("Simulation / QA", [
+        (
+            "simulate_adaptive_playlists",
+            "Run a multi-student adaptive playlist simulation (3 students × 5 steps) and assert diversity, no-duplicates, and adaptivity properties. Writes playlist_simulation_report.json.",
+            "python manage.py simulate_adaptive_playlists --output /tmp/report.json",
+        ),
+    ]),
     ("Factory library / infrastructure", [
         (
             "ensure_factory_account",

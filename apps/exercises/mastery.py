@@ -279,6 +279,7 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     # If this is part of a playlist journey, check history first.
     prior_exercise_id = None
     prior_fingerprint = None
+    seen_exercise_ids: set = set()
     if playlist and user_obj and user_obj.is_authenticated:
         try:
             perf = PerformanceData.objects.filter(user=user_obj, playlist=playlist, course=course).first()
@@ -300,6 +301,11 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
                             ):
                                 pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
                                 return pinned_id, pinned_key
+                # Collect all exercise IDs already served in this session for full-history deduplication.
+                for entry in perf.data:
+                    entry_id = (entry or {}).get('id')
+                    if entry_id:
+                        seen_exercise_ids.add(entry_id[:6])
                 if exercise_num > 1 and len(perf.data) >= exercise_num - 1:
                     prior_exercise_id = (perf.data[exercise_num - 2] or {}).get("id")
         except Exception:
@@ -407,7 +413,14 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     # (lowest mastery index) with the lowest complexity.
     candidates = list(eligible.only("id", "skill_tags", "complexity", "data"))
 
-    if prior_exercise_id:
+    # History-aware deduplication: exclude all exercises the student has already
+    # been served this session. Falls back to the prior-exercise-only filter for
+    # non-adaptive contexts that have no PerformanceData.
+    if seen_exercise_ids:
+        unseen = [ex for ex in candidates if ex.id not in seen_exercise_ids]
+        if unseen:
+            candidates = unseen
+    elif prior_exercise_id:
         non_identical_candidates = [ex for ex in candidates if ex.id != prior_exercise_id[:6]]
         if non_identical_candidates:
             candidates = non_identical_candidates
