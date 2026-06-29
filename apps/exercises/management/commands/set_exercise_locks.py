@@ -10,6 +10,8 @@ class Command(BaseCommand):
 
         for performance in performances:
             for exercise in performance.data:
+                if exercise.get('is_placeholder'):
+                    continue
                 performed_exercises.setdefault(exercise["id"], [])
                 performed_exercises[exercise["id"]].append(performance.user_id)
         performed_exercises = {k: list(set(v)) for k, v in performed_exercises.items()}

@@ -59,7 +59,18 @@ def get_ordered_exercise_ids_for_serving(user, playlist: Playlist) -> list[str]:
     return shuffled_ids[:UNIT4_SERVED_EXERCISE_COUNT]
 
 
-def get_served_exercise_id(user, playlist: Playlist, exercise_num: int) -> str | None:
+def get_served_exercise_id(user, playlist: Playlist, exercise_num: int, course=None) -> str | None:
+    if getattr(playlist, 'is_adaptive', False) or getattr(playlist, 'is_dynamic', False):
+        perf = PerformanceData.objects.filter(
+            user=user, playlist=playlist, course=course
+        ).first()
+        if perf and len(perf.data) >= exercise_num:
+            slot = perf.data[exercise_num - 1]
+            slot_id = slot.get('id')
+            if slot_id:
+                return slot_id[:6]
+        return None
+
     ordered_ids = get_ordered_exercise_ids_for_serving(user, playlist)
     if exercise_num < 1 or exercise_num > len(ordered_ids):
         return None
