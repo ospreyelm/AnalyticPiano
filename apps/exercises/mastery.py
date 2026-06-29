@@ -281,22 +281,28 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
     prior_fingerprint = None
     if playlist and user_obj and user_obj.is_authenticated:
         try:
-            perf = PerformanceData.objects.get(user=user_obj, playlist=playlist)
-            # If the user has a record for this slot (exercise_num), use it.
-            if len(perf.data) >= exercise_num:
-                exercise_data = perf.data[exercise_num - 1]
-                pinned_id = exercise_data.get('id')
-                if pinned_id:
-                    # Validate pinned exercise still exists before returning.
-                    # If it was deleted (e.g. playlist rebuilt), fall through to fresh selection.
-                    pinned_base = pinned_id[:6]
-                    pinned_ex = Exercise.objects.filter(id=pinned_base).first()
-                    if pinned_ex and ExercisePlaylistOrdered.objects.filter(playlist=playlist, exercise=pinned_ex).exists():
-                        pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
-                        return pinned_id, pinned_key
-            if exercise_num > 1 and len(perf.data) >= exercise_num - 1:
-                prior_exercise_id = (perf.data[exercise_num - 2] or {}).get("id")
-        except PerformanceData.DoesNotExist:
+            perf = PerformanceData.objects.filter(user=user_obj, playlist=playlist, course=course).first()
+            if perf is not None:
+                # If the user has a record for this slot (exercise_num), use it.
+                if len(perf.data) >= exercise_num:
+                    exercise_data = perf.data[exercise_num - 1]
+                    # Skip placeholder slots — reserved but not yet submitted; fall through to fresh selection.
+                    if not exercise_data.get('is_placeholder', False):
+                        pinned_id = exercise_data.get('id')
+                        if pinned_id:
+                            # Validate pinned exercise still exists before returning.
+                            # If it was deleted (e.g. playlist rebuilt), fall through to fresh selection.
+                            pinned_base = pinned_id[:6]
+                            pinned_ex = Exercise.objects.filter(id=pinned_base).first()
+                            if pinned_ex and (
+                                (playlist.is_adaptive or getattr(playlist, 'is_dynamic', False))
+                                or ExercisePlaylistOrdered.objects.filter(playlist=playlist, exercise=pinned_ex).exists()
+                            ):
+                                pinned_key = pinned_id[6:] if len(pinned_id) > 6 else None
+                                return pinned_id, pinned_key
+                if exercise_num > 1 and len(perf.data) >= exercise_num - 1:
+                    prior_exercise_id = (perf.data[exercise_num - 2] or {}).get("id")
+        except Exception:
             pass
 
     if prior_exercise_id:
@@ -438,10 +444,41 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
             keys_to_pick = common_keys
         
         raw_choice = rng.choice(keys_to_pick)
-        
-        # Convert pseudo-key from choice (e.g. 'C', 'G') to signature code
-        from apps.exercises.constants import pseudo_key_to_sig
-        target_key = pseudo_key_to_sig.get(raw_choice, raw_choice)
+
+        # Keep raw_choice (pseudo-key name like 'G', 'F') as target_key.
+        # exercise_context.py calls pseudo_key_to_sig.get(target_key) expecting pseudo-key names.
+        # Storing/returning the sig code ('#') would cause pseudo_key_to_sig.get('#') → None → no transposition.
+        target_key = raw_choice
+
+    # JIT slot reservation for adaptive/dynamic playlists
+    if user_obj and user_obj.is_authenticated and playlist and (
+        playlist.is_adaptive or getattr(playlist, 'is_dynamic', False)
+    ):
+        perf, _ = PerformanceData.objects.get_or_create(
+            user=user_obj, playlist=playlist, course=course
+        )
+        sentinel = {
+            "id": None,
+            "is_placeholder": True,
+            "error_tally": None,
+            "performance_duration_in_seconds": None,
+            "is_submitted": False,
+        }
+        # Pad gaps with inert sentinels
+        while len(perf.data) < exercise_num - 1:
+            perf.data.append(dict(sentinel))
+
+        # target_id stores the pseudo-key name (raw_choice) not the sig code
+        target_id = best_ex.id + (target_key or "")
+
+        slot_sentinel = dict(sentinel, id=target_id)
+        if len(perf.data) < exercise_num:
+            perf.data.append(slot_sentinel)
+        else:
+            existing = perf.data[exercise_num - 1]
+            if not existing.get("is_submitted"):
+                existing["id"] = target_id
+        perf.save()
 
     return best_ex, target_key
 
