@@ -1,12 +1,9 @@
-define([
-  "lodash",
-  "microevent",
-  "app/config",
-  "app/components/events",
-], function (_, MicroEvent, Config, EVENTS) {
-  "use strict";
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Config from "app/config";
+import EVENTS from "app/components/events";
 
-  const VALID_STAFF_DISTRIBUTIONS = Config.get(
+const VALID_STAFF_DISTRIBUTIONS = Config.get(
     "general.validStaffDistributions"
   );
   const VOICE_COUNT_FOR_KEYBOARD_STYLE = Config.get(
@@ -748,5 +745,4 @@ define([
 
   MicroEvent.mixin(Chord); // make object observable
 
-  return Chord;
-});
+export default Chord;

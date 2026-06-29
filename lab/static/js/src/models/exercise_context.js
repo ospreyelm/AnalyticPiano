@@ -1,33 +1,18 @@
-define([
-  "lodash",
-  "jquery",
-  "microevent",
-  "./exercise_chord",
-  "./exercise_chord_bank",
-  "app/config",
-  "app/components/events",
-  "./exercise_completion_flow_logic",
-  "./identification_submit_flow_logic",
-  "app/models/harmonization_grader_logic",
-  "app/models/voice_leading_logic",
-  "app/models/exercise_context_timer_logic",
-  "app/models/exercise_context_ident_page_logic",
-], function (
-  _,
-  $,
-  MicroEvent,
-  ExerciseChord,
-  ExerciseChordBank,
-  Config,
-  EVENTS,
-  ExerciseCompletionFlow,
-  IdentificationSubmitFlow,
-  HarmonizationGraderLogic,
-  VoiceLeadingLogic,
-  TimerLogic,
-  IdentPageLogic
-) {
-  var AUTO_ADVANCE = Config.get("general.autoAdvance");
+import _ from "lodash";
+import $ from "jquery";
+import MicroEvent from "microevent";
+import ExerciseChord from "./exercise_chord";
+import ExerciseChordBank from "./exercise_chord_bank";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import ExerciseCompletionFlow from "./exercise_completion_flow_logic";
+import IdentificationSubmitFlow from "./identification_submit_flow_logic";
+import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
+import VoiceLeadingLogic from "app/models/voice_leading_logic";
+import TimerLogic from "app/models/exercise_context_timer_logic";
+import IdentPageLogic from "app/models/exercise_context_ident_page_logic";
+
+var AUTO_ADVANCE = Config.get("general.autoAdvance");
   var AUTO_ADVANCE_DELAY = Config.get("general.autoAdvanceDelay");
 
   var AUTO_REPEAT = Config.get("general.autoRepeat");
@@ -39,7 +24,7 @@ define([
 
   $.ajax({
     type: "GET",
-    url: this.location.origin + "/ajax/preferences/",
+    url: window.location.origin + "/ajax/preferences/",
     async: false,
     success: function (response) {
       if (!response["valid"]) {
@@ -74,18 +59,18 @@ define([
    * @constructor
    */
   var ExerciseContext = function (settings) {
-    this.settings = settings || {};
+    var self = this;
+    self.settings = settings || {};
 
     _.each(
       ["definition", "grader", "inputChords"],
       function (attr) {
-        if (!(attr in this.settings)) {
+        if (!(attr in self.settings)) {
           throw new Error(
             "missing settings." + attr + " constructor parameter"
           );
         }
-      },
-      this
+      }
     );
 
     this.definition = this.settings.definition;
@@ -1314,7 +1299,7 @@ define([
         ? this.getVisibleProblems()
         : this.definition.getProblems();
       var CORRECT = this.grader.STATE.CORRECT;
-      var g_problem, chord, chords, rhythm;
+      var g_problem, chord, chords, rhythm, full_context, unison_idx;
 
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].visible;
@@ -1376,6 +1361,7 @@ define([
       var exercise_chords = [];
       var chords;
       var rhythm;
+      var chord, unison_idx;
 
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].notes;
@@ -1402,5 +1388,4 @@ define([
 
   MicroEvent.mixin(ExerciseContext);
 
-  return ExerciseContext;
-});
+export default ExerciseContext;

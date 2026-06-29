@@ -4,6 +4,8 @@
 {% block main_class %}t-main--workspace{% endblock %}
 
 {% block head_extra %}
+{% load django_vite %}
+{% vite_hmr_client %}
 <link href="{% static 'student/exercise-canvas.css' %}" rel="stylesheet">
 <link href="{% static 'teacher/teacher-play.css' %}" rel="stylesheet">
 <style>
@@ -14,17 +16,16 @@
 {% endblock %}
 
 {% block js_require %}
-<script src="{% static 'js/lib/require.js' %}"></script>
-<script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
 {% autoescape off %}
-<script>requirejs.config({{ requirejs.config_json }});</script>
-<script>window.appStaticUrl = '{% static '' %}';</script>
-{% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
+<script>
+  window.appConfig = {{ requirejs.config_json }};
+  window.appStaticUrl = '{% static '' %}';
+</script>
 {% endautoescape %}
 {% endblock %}
 
 {% block js_extra %}
-<script>require(['app/main']);</script>
+{% vite_asset 'lab/static/js/src/main.js' %}
 {% endblock %}
 
 {% block content %}

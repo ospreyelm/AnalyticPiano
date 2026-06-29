@@ -1,26 +1,7 @@
-/* global define: false */
+import Vex from "vexflow";
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("./vexflow_adapter_logic")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/components/music/rendering/vexflow_adapter_logic",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowStaveFactory = factory(root.Vex, root.VexflowAdapterLogic);
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, VexflowAdapterLogic) {
-  "use strict";
-
-  // Add a key signature with a minor->relative-major fallback for older VexFlow builds
+// Add a key signature with a minor->relative-major fallback for older VexFlow builds
   function addKeySignatureSafe(stave, key) {
     if (!key) return;
     var k = VexflowAdapterLogic.normalizeKeyForVexFlow(key);
@@ -58,8 +39,7 @@
     return stave;
   }
 
-  return {
-    addKeySignatureSafe: addKeySignatureSafe,
+export default {
+  addKeySignatureSafe: addKeySignatureSafe,
     makeStave: makeStave,
-  };
-});
+};

@@ -10478,3 +10478,5 @@
     });
   }
 })(window);
+export default window.jQuery;
+

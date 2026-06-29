@@ -1,14 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("../../utils/chordal_barlines_logic"));
-  } else if (typeof define === "function" && define.amd) {
-    define(["app/utils/chordal_barlines_logic"], factory);
-  } else { root.PlaySaveLogic = factory(root.ChordalBarlinesLogic); }
-})(typeof self !== "undefined" ? self : this, function (Barlines) {
-  "use strict";
+import Barlines from "app/utils/chordal_barlines_logic";
 
-  var BELOW_CONTENT_KEY = {
+var BELOW_CONTENT_KEY = {
     roman_numerals: "roman_numeral",
     roman_numerals_exp: "roman_numeral",
     thoroughbass: "figured_bass",
@@ -76,10 +68,9 @@
     };
   }
 
-  return {
-    buildChordRows: buildChordRows,
+export default {
+  buildChordRows: buildChordRows,
     buildAnalysisSlices: buildAnalysisSlices,
     canonicalDestinationLabel: canonicalDestinationLabel,
     buildCanonicalSaveFields: buildCanonicalSaveFields
-  };
-});
+};

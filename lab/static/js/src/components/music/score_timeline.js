@@ -1,9 +1,6 @@
-/* global define: false */
 
-define([], function () {
-  "use strict";
 
-  function durToTicks(d) {
+function durToTicks(d) {
     var base = { 'w': 4096, 'h': 2048, 'q': 1024, '8': 512, '16': 256, '32': 128 }[d.type] || 1024;
     var dots = d.dots || 0;
     var tickVal = base;
@@ -138,5 +135,6 @@ define([], function () {
     return cumulativeOnsetByMeasure;
   }
 
-  return { buildTimeline: buildTimeline, buildMeasureOffsets: buildMeasureOffsets };
-});
+export default {
+  buildTimeline: buildTimeline, buildMeasureOffsets: buildMeasureOffsets
+};

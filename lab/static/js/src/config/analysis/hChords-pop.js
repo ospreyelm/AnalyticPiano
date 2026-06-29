@@ -1,13 +1,4 @@
-// Input should consist of mod-12 elements excluding 0 (123456789yz)
-// where 0 = pc of bass. E.g. "47" means chord is composed in intervals of
-// four and seven semitones above the bass.
-//
-// In label output, use "&R" for name of root and "&X" for name of bass pitch;
-// use "&dim;" for diminished sign and "&hdim;" for half-diminished sign.
-
-/* global define: false */
-
-define({
+export default {
   // major triad
 
   47: {
@@ -295,4 +286,4 @@ define({
     root: "y",
     rootstepwise: "6",
   }, // e.g. F/G
-});
+};

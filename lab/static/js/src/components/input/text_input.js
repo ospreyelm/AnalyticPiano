@@ -1,11 +1,8 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/component",
-], function ($, _, Component) {
-  "use strict";
+import $ from "jquery";
+import _ from "lodash";
+import Component from "app/components/component";
 
-  var VALID_NOTE_RE = /^([a-g])(#{1,2}|b{1,2})?$/;
+var VALID_NOTE_RE = /^([a-g])(#{1,2}|b{1,2})?$/;
 
   /**
    * TextInputComponent
@@ -357,5 +354,4 @@ define([
     }
   });
 
-  return TextInputComponent;
-});
+export default TextInputComponent;

@@ -1,9 +1,8 @@
-define(["lodash", "app/components/component", "app/widgets/modal"], function (
-  _,
-  Component,
-  Modal
-) {
-  /**
+import _ from "lodash";
+import Component from "app/components/component";
+import Modal from "app/widgets/modal";
+
+/**
    * ModalComponent is a simple component that listens for a "modal" event
    * on the parent component and then shows a modal dialog.
    *
@@ -39,5 +38,4 @@ define(["lodash", "app/components/component", "app/widgets/modal"], function (
     Modal.msg(modalConfig.title, modalConfig.content);
   };
 
-  return ModalComponent;
-});
+export default ModalComponent;

@@ -1,8 +1,6 @@
+import _ from "lodash";
+
 /**
- * @fileoverview Defines a namespace for common utility functions.
- */
-define(["lodash"], function (_) {
-  /**
    * Defines a namespace for utility functions.
    *
    * @namespace
@@ -162,5 +160,4 @@ define(["lodash"], function (_) {
     },
   };
 
-  return util;
-});
+export default util;

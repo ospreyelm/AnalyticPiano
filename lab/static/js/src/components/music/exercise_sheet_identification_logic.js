@@ -1,12 +1,6 @@
-/* global define: false */
-define([
-  "lodash",
-], function (
-  _
-) {
-  "use strict";
+import _ from "lodash";
 
-  return {
+export default  {
     _IDENT_INPUT_MODE_KEY: "harmonylab.identInputMode",
 
     _getStoredIdentInputMode: function (definition) {
@@ -184,4 +178,3 @@ define([
         "submit";
     },
   };
-});

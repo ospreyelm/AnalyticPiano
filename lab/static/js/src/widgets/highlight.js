@@ -1,14 +1,10 @@
-/* global define:false */
-define(["lodash", "jquery", "microevent", "app/config", "app/util"], function (
-  _,
-  $,
-  MicroEvent,
-  Config,
-  util
-) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import MicroEvent from "microevent";
+import Config from "app/config";
+import util from "app/util";
 
-  var HIGHLIGHT_COLORS = Config.get("highlight.colors");
+var HIGHLIGHT_COLORS = Config.get("highlight.colors");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
 
   var HighlightWidget = function (settings, is_exercise_view = false) {
@@ -162,5 +158,4 @@ define(["lodash", "jquery", "microevent", "app/config", "app/util"], function (
 
   MicroEvent.mixin(HighlightWidget);
 
-  return HighlightWidget;
-});
+export default HighlightWidget;

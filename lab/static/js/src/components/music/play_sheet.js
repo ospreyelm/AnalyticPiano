@@ -1,50 +1,25 @@
-/* global define: false */
-define([
-  "jquery",
-  "lodash",
-  "vexflow",
-  "file-saver",
-  "app/config",
-  "app/components/component",
-  "./stave",
-  "./stave_notater",
-  "./play_note_factory",
-  "./score_model",
-  "./rendering/vexflow_adapter",
-  "app/components/music/score_timeline",
-  "app/models/score_player",
-  "app/components/music/playback_controls",
-  "app/utils/analyze",
-  "./chordal_spelling",
-  "./play_save_logic",
-  "app/utils/chordal_barlines_logic",
-  "app/config/analysis_slots",
-  "./play_authoring_toolbar",
-], function (
-  $,
-  _,
-  Vex,
-  FileSaver,
-  Config,
-  Component,
-  Stave,
-  StaveNotater,
-  PlayNoteFactory,
-  ScoreModel,
-  VexflowAdapter,
-  ScoreTimeline,
-  ScorePlayer,
-  renderPlaybackControls,
-  Analyze,
-  ChordalSpelling,
-  PlaySaveLogic,
-  ChordalBarlinesLogic,
-  AnalysisSlots,
-  PlayAuthoringToolbar
-) {
-  "use strict";
+import $ from "jquery";
+import _ from "lodash";
+import Vex from "vexflow";
+import FileSaver from "file-saver";
+import Config from "app/config";
+import Component from "app/components/component";
+import Stave from "./stave";
+import StaveNotater from "./stave_notater";
+import PlayNoteFactory from "./play_note_factory";
+import ScoreModel from "./score_model";
+import VexflowAdapter from "./rendering/vexflow_adapter";
+import ScoreTimeline from "app/components/music/score_timeline";
+import ScorePlayer from "app/models/score_player";
+import renderPlaybackControls from "app/components/music/playback_controls";
+import Analyze from "app/utils/analyze";
+import ChordalSpelling from "./chordal_spelling";
+import PlaySaveLogic from "./play_save_logic";
+import ChordalBarlinesLogic from "app/utils/chordal_barlines_logic";
+import AnalysisSlots from "app/config/analysis_slots";
+import PlayAuthoringToolbar from "./play_authoring_toolbar";
 
-  /**
+/**
    * Defines the size of the chord bank (how many chords to display on
    * screen).
    * @type {number}
@@ -1336,5 +1311,4 @@ define([
     },
   });
 
-  return PlaySheetComponent;
-});
+export default PlaySheetComponent;

@@ -1,10 +1,6 @@
-/* global define: false */
-define([
-  "lodash"
-], function (_) {
-  "use strict";
+import _ from "lodash";
 
-  var INCORRECT = "incorrect";
+var INCORRECT = "incorrect";
   var CORRECT = "correct";
   var PARTIAL = "partial";
 
@@ -124,5 +120,4 @@ define([
     }
   });
 
-  return IdentificationGrader;
-});
+export default IdentificationGrader;

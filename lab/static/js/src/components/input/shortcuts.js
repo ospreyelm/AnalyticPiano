@@ -1,17 +1,22 @@
-define([
-  "lodash",
-  "app/config",
-  "app/components/events",
-  "app/components/component",
-  "./keyboard",
-  "app/components/input/note_entry_gate_logic",
-], function (_, Config, EVENTS, Component, KeyboardInputComponent, NoteEntryGate) {
-  /**
+import _ from "lodash";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import KeyboardInputComponent from "./keyboard";
+import NoteEntryGate from "app/components/input/note_entry_gate_logic";
+
+/**
    * Defines the keyboard shortcuts.
    * @type {object}
    * @const
    */
   var SHORTS = Config.get("keyboardShortcuts");
+
+  /**
+   * Tracks whether the UI sustain pedal is currently engaged.
+   * @type {boolean}
+   */
+  var SUSTAINING = false;
 
   /**
    * Defines whether keyboard shortcuts are enabled/disabled by default.
@@ -351,5 +356,4 @@ define([
     },
   });
 
-  return KeyboardShortcutsComponent;
-});
+export default KeyboardShortcutsComponent;

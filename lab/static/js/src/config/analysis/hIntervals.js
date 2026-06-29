@@ -1,9 +1,4 @@
-// The input is a positive integer, indicating the interval size in
-// semitones.
-
-/* global define: false */
-
-define({
+export default {
   1: { label: "m2", stepwise: "1", spellbass: "iE_" },
   2: { label: "M2", stepwise: "1", spellbass: "iG_" },
   3: { label: "m3", stepwise: "2", spellbass: "iE_" },
@@ -65,4 +60,4 @@ define({
     root: "0",
     rootstepwise: "0",
   },
-});
+};

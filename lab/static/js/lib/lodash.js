@@ -5418,4 +5418,6 @@
     // in a browser or Rhino
     window._ = _;
   }
-})(this);
+})(typeof window !== "undefined" ? window : globalThis);
+
+export default window._;

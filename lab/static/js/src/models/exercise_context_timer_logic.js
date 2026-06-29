@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.ExerciseContextTimerLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  var SEMIBREVE_FRACTION = {
+var SEMIBREVE_FRACTION = {
     W: 1.5,  w: 1,
     H: 0.75, h: 0.5,
     Q: 0.375, q: 0.25,
@@ -117,8 +106,8 @@
     }
   }
 
-  return {
-    SEMIBREVE_FRACTION: SEMIBREVE_FRACTION,
+export default {
+  SEMIBREVE_FRACTION: SEMIBREVE_FRACTION,
     createTimerState: createTimerState,
     formatDurationString: formatDurationString,
     computeTempoIntervals: computeTempoIntervals,
@@ -126,5 +115,4 @@
     computeCentisemibrevesPerMin: computeCentisemibrevesPerMin,
     computeTempoStats: computeTempoStats,
     computeTempoRating: computeTempoRating,
-  };
-});
+};

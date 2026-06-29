@@ -147,7 +147,8 @@ INSTALLED_APPS = (
     "widget_tweaks",
     "django_better_admin_arrayfield",
     "import_export",
-    "django_filters"
+    "django_filters",
+    "django_vite",
     # 'django_openid_auth',
 )
 
@@ -386,3 +387,15 @@ CACHES = {
 }
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000
+
+# django-vite configuration
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": DEBUG,
+        "dev_server_host": "localhost",
+        "dev_server_port": 5173,
+        "static_url_prefix": "dist",
+        "manifest_path": path.join(ROOT_DIR, "lab", "static", "dist", "manifest.json"),
+    }
+}
+

@@ -1,15 +1,6 @@
-/* MIDI instrument map: maps instrument number (0-127) to name, shortName, and category */
-/* Read only */
 
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) { module.exports = factory(); }
-  else if (typeof define === "function" && define.amd) { define([], factory); }
-  else { root.InstrumentsMap = factory(); }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  return {
+export default  {
     0: {
       name: "Acoustic Grand Piano",
       shortName: "Piano",
@@ -529,4 +520,3 @@
       category: "Sound effects",
     },
   };
-});

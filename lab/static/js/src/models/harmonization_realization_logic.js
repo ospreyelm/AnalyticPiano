@@ -1,4 +1,7 @@
+import ST from "app/components/music/score_timeline";
+
 "use strict";
+
 
 // Supported atoms in descending tick order. Each atom matches the CIR duration
 // shape used by score_timeline.js and vexflow_adapter.js.
@@ -68,7 +71,8 @@ function spellMidi(midi, pcMap) {
   return { step: entry.step, alter: entry.alter, octave: octave };
 }
 
-var _ScoreTimeline = null;
+var _ScoreTimeline = ST;
+
 
 function getScoreTimeline() {
   if (_ScoreTimeline) return _ScoreTimeline;
@@ -279,11 +283,5 @@ var exports = {
   __setScoreTimeline: __setScoreTimeline
 };
 
-if (typeof define === "function" && define.amd) {
-  define(["app/components/music/score_timeline"], function (ST) {
-    __setScoreTimeline(ST);
-    return exports;
-  });
-} else if (typeof module !== "undefined") {
-  module.exports = exports;
-}
+export default exports;
+

@@ -1,12 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) { module.exports = factory(); }
-  else if (typeof define === "function" && define.amd) { define([], factory); }
-  else { root.NoteEntryGateLogic = factory(); }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  var TEXT_INPUT_TYPES = { text: true, search: true, email: true, url: true, tel: true, password: true, number: true };
+
+var TEXT_INPUT_TYPES = { text: true, search: true, email: true, url: true, tel: true, password: true, number: true };
 
   function shouldSuspendNoteEntry(tagName, inputType, isContentEditable) {
     if (isContentEditable) return true;
@@ -20,5 +14,6 @@
     return false;
   }
 
-  return { shouldSuspendNoteEntry: shouldSuspendNoteEntry };
-});
+export default {
+  shouldSuspendNoteEntry: shouldSuspendNoteEntry
+};

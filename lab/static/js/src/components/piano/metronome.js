@@ -1,17 +1,11 @@
-/**
- * @fileoverview Piano metronome control UI.
- */
-define([
-  "lodash",
-  "jquery",
-  "app/config",
-  "app/components/component",
-  "app/models/metronome",
-  "app/util",
-], function (_, $, Config, Component, Metronome, util) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import Config from "app/config";
+import Component from "app/components/component";
+import Metronome from "app/models/metronome";
+import util from "app/util";
 
-  /**
+/**
    * Banks after a metronome tick. Expressed as a fraction of the tempo.
    *
    * @type {number}
@@ -227,5 +221,4 @@ define([
     },
   });
 
-  return MetronomeComponent;
-});
+export default MetronomeComponent;

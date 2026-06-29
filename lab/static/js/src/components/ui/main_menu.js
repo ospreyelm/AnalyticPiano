@@ -1,9 +1,8 @@
-define(["jquery", "lodash", "app/components/component"], function (
-  $,
-  _,
-  Component
-) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import Component from "app/components/component";
+
+/**
    * Creates an instance of a main menu component.
    *
    * Intended to be used as a dropdown menu.
@@ -79,5 +78,4 @@ define(["jquery", "lodash", "app/components/component"], function (
     );
   };
 
-  return MainMenuComponent;
-});
+export default MainMenuComponent;

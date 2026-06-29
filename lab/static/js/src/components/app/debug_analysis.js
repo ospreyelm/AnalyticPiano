@@ -1,11 +1,10 @@
-define([
-  "jquery",
-  "lodash",
-  "app/utils/analyze",
-  "app/models/key_signature",
-  "app/components/music/score_timeline",
-], function ($, _, Analyze, KeySignature, ScoreTimeline) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import Analyze from "app/utils/analyze";
+import KeySignature from "app/models/key_signature";
+import ScoreTimeline from "app/components/music/score_timeline";
+
+/**
    * Dev-only script that loads a few corpus chorales and prints per-onset
    * roman numerals and figured bass (full/no8/abbrev) into #analysis-output.
    */
@@ -108,5 +107,6 @@ define([
     });
   }
 
-  return { ready: run };
-});
+export default {
+  ready: run
+};

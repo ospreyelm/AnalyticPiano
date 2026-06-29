@@ -1,17 +1,6 @@
-/* global define: false */
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./vexflow_adapter_logic"));
-  } else if (typeof define === "function" && define.amd) {
-    define(["app/components/music/rendering/vexflow_adapter_logic"], factory);
-  } else {
-    root.VexflowAnnotationRenderer = factory(root.VexflowAdapterLogic);
-  }
-})(typeof self !== "undefined" ? self : this, function (VexflowAdapterLogic) {
-  "use strict";
-
-  // Sebastian is a zero-width figured-bass font. Each character's vertical position
+// Sebastian is a zero-width figured-bass font. Each character's vertical position
   // is baked into its glyph metrics (main-row, lower-row, upper-row). Drawing a
   // token string like "z4" as a single fillText call renders a stacked 6/4 figure.
   // measureText returns ~0, so we use a fixed advance width based on the "6" reference.
@@ -398,8 +387,8 @@
     drawInlineRoman(ctx, label, x, targetStave, opts || { yShift: 28 });
   }
 
-  return {
-    drawInlineRoman: drawInlineRoman,
+export default {
+  drawInlineRoman: drawInlineRoman,
     drawInlineRomanExp: drawInlineRomanExp,
     drawInlineRomanExpRun: drawInlineRomanExpRun,
     _drawScaleDegreeList: _drawScaleDegreeList,
@@ -407,5 +396,4 @@
     drawBassScaleDegreeBelow: drawBassScaleDegreeBelow,
     attachInlineRomanAnnotation: attachInlineRomanAnnotation,
     attachNoteNameAnnotation: attachNoteNameAnnotation,
-  };
-});
+};

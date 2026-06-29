@@ -1,32 +1,8 @@
-/* global define: false */
+import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
+import VexflowAnnotationRenderer from "app/components/music/rendering/vexflow_annotation_renderer";
+import IdentificationLabelLayoutLogic from "app/components/music/identification_label_layout_logic";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("./vexflow_adapter_logic"),
-      require("./vexflow_annotation_renderer"),
-      require("../identification_label_layout_logic")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "app/components/music/rendering/vexflow_adapter_logic",
-        "app/components/music/rendering/vexflow_annotation_renderer",
-        "app/components/music/identification_label_layout_logic",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowAnnotationPass = factory(
-      root.VexflowAdapterLogic,
-      root.VexflowAnnotationRenderer,
-      root.IdentificationLabelLayoutLogic
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (VexflowAdapterLogic, VexflowAnnotationRenderer, IdentificationLabelLayoutLogic) {
-  "use strict";
-
-  // The "Roman numeral expanded" annotation renders as a run spanning several
+// The "Roman numeral expanded" annotation renders as a run spanning several
   // columns (so labels can share a baseline/connector), so it can't be drawn
   // column-by-column like the other analysis renderers — it has to be queued
   // and flushed as a run breaks or the measure loop ends. `loopState` is the
@@ -361,8 +337,7 @@
     }
   }
 
-  return {
-    createRomanExpRunHelpers: createRomanExpRunHelpers,
+export default {
+  createRomanExpRunHelpers: createRomanExpRunHelpers,
     drawMeasureAnnotations: drawMeasureAnnotations,
-  };
-});
+};

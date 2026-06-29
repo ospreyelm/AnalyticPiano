@@ -1,5 +1,6 @@
-define(["lodash"], function (_) {
-  /**
+import _ from "lodash";
+
+/**
    * KeyboardGenerator
    *
    * Models a keyboard generator that knows how to generate
@@ -113,5 +114,4 @@ define(["lodash"], function (_) {
     return this.keySpecs.length;
   };
 
-  return KeyboardGenerator;
-});
+export default KeyboardGenerator;

@@ -1,12 +1,4 @@
-/**
- * Broadcast Events Table for Components
- *
- * This is a complete list of events that may be broadcast by Components.
- * Used to refer to events symbolically instead of string literals to prevent
- * typo errors and also to document the set of events broadcasted in the
- * application.
- */
-define({
+export default {
   BROADCAST: {
     PEDAL: "pedal",
     NOTE: "note",
@@ -35,4 +27,4 @@ define({
     FEEDBACK: "feedback",
     PLAY_SAVED: "play:saved",
   },
-});
+};

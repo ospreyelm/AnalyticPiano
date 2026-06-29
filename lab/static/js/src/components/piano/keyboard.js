@@ -1,26 +1,13 @@
+import $ from "jquery";
+import _ from "lodash";
+import Raphael from "raphael";
+import KeyboardGenerator from "app/models/keyboard_generator";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import ComputerKeyboardUxLogic from "app/components/input/computer_keyboard_ux_logic";
+import KeyComponent from "./key";
+
 /**
- * Piano keyboard UI.
- */
-define([
-  "jquery",
-  "lodash",
-  "raphael",
-  "app/models/keyboard_generator",
-  "app/components/events",
-  "app/components/component",
-  "app/components/input/computer_keyboard_ux_logic",
-  "./key",
-], function (
-  $,
-  _,
-  Raphael,
-  KeyboardGenerator,
-  EVENTS,
-  Component,
-  ComputerKeyboardUxLogic,
-  KeyComponent
-) {
-  /**
    * Creates an instance of a KeyboardComponent.
    *
    * This object is reponsible for displaying the on-screen keyboard UI that
@@ -395,5 +382,4 @@ define([
     },
   });
 
-  return KeyboardComponent;
-});
+export default KeyboardComponent;

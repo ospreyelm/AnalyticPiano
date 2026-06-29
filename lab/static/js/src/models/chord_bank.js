@@ -1,16 +1,10 @@
-/**
- * @fileoverview Defines the chord bank class.
- */
-define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
-  _,
-  Config,
-  MicroEvent,
-  util,
-  Chord
-) {
-  "use strict";
+import _ from "lodash";
+import Config from "app/config";
+import MicroEvent from "microevent";
+import util from "app/util";
+import Chord from "./chord";
 
-  var NO_DOUBLE_VISION = Config.get("general.noDoubleVision");
+var NO_DOUBLE_VISION = Config.get("general.noDoubleVision");
 
   /**
    * Creates an instance of a chord bank.
@@ -342,5 +336,4 @@ define(["lodash", "app/config", "microevent", "app/util", "./chord"], function (
 
   MicroEvent.mixin(ChordBank); // make observable
 
-  return ChordBank;
-});
+export default ChordBank;

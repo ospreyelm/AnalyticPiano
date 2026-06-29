@@ -1,8 +1,6 @@
-/* global define: false */
-define(["lodash"], function (_) {
-  "use strict";
+import _ from "lodash";
 
-  var TICKS_PER_WHOLE = 4096;
+var TICKS_PER_WHOLE = 4096;
 
   var DURATION_MAP = {
     "whole": 1.0, "w": 1.0, "1": 1.0,
@@ -102,5 +100,4 @@ define(["lodash"], function (_) {
     }
   };
 
-  return MeasureEngine;
-});
+export default MeasureEngine;

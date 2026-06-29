@@ -1,8 +1,6 @@
-/* global define: false */
-define(["jquery"], function ($) {
-  "use strict";
+import $ from "jquery";
 
-  // Duration palette: [quarterLength, label]
+// Duration palette: [quarterLength, label]
   var DURATION_ENTRIES = [
     [4,    "w"],
     [3,    "h."],
@@ -241,5 +239,4 @@ define(["jquery"], function ($) {
     },
   };
 
-  return PlayAuthoringToolbar;
-});
+export default PlayAuthoringToolbar;

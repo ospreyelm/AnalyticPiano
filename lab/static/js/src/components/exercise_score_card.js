@@ -1,22 +1,8 @@
-/**
- * ExerciseScoreCard — slide-up overlay shown at exercise completion.
- *
- * Usage:
- *   var card = new ExerciseScoreCard();
- *   card.init(document.getElementById('staff-area'));
- *   card.show({ score_numerator, score_denominator, mastery_changes,
- *               skill_name, exercise_num, total_exercises, unit_name,
- *               unit_bar_segments, next_exercise_url, next_skill_name, unit_n });
- *   card.hide();
- */
-define([
-  "jquery",
-  "canvas-confetti",
-  "./exercise_score_card_theme_logic",
-], function ($, confetti, scoreCardTheme) {
-  "use strict";
+import $ from "jquery";
+import confetti from "canvas-confetti";
+import scoreCardTheme from "./exercise_score_card_theme_logic";
 
-  // ---- Pure logic helpers ----
+// ---- Pure logic helpers ----
 
   function _scorePct(numerator, denominator) {
     if (!denominator || denominator === 0) return null;
@@ -418,5 +404,4 @@ define([
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  return ExerciseScoreCard;
-});
+export default ExerciseScoreCard;

@@ -1,16 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.ChordalSpelling = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
   // spelledPitchFromName(name, midi) -> { step, alter, octave }
   // Converts a pitch name (e.g. "c#", "eb") and MIDI number to a spelled pitch.
@@ -97,11 +87,10 @@
     return nm.charAt(0).toUpperCase() + nm.slice(1) + parts[1];
   }
 
-  return {
-    spelledPitchFromName: spelledPitchFromName,
+export default {
+  spelledPitchFromName: spelledPitchFromName,
     pitchFromSpellingString: pitchFromSpellingString,
     keyAwarePitch: keyAwarePitch,
     resolveChordPitches: resolveChordPitches,
     vexKeyToSpellingString: vexKeyToSpellingString,
-  };
-});
+};

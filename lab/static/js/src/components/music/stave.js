@@ -1,8 +1,8 @@
-/* global define: false */
-define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
-  "use strict";
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Vex from "vexflow";
 
-  function _isOpenNotehead(staveNote) {
+function _isOpenNotehead(staveNote) {
     var dur = staveNote && staveNote.duration;
     // "w" = whole, "h" = half — both have open noteheads
     return dur === "w" || dur === "h";
@@ -1015,5 +1015,4 @@ define(["lodash", "microevent", "vexflow"], function (_, MicroEvent, Vex) {
 
   MicroEvent.mixin(Stave);
 
-  return Stave;
-});
+export default Stave;

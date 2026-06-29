@@ -1,9 +1,8 @@
-define(["lodash", "jquery", "app/components/component"], function (
-  _,
-  $,
-  Component
-) {
-  /**
+import _ from "lodash";
+import $ from "jquery";
+import Component from "app/components/component";
+
+/**
    * The KeyboardInputComponent is responsible for handling low-level
    * keyboard input and turning that into msgs understood by the
    * application.
@@ -58,6 +57,7 @@ define(["lodash", "jquery", "app/components/component"], function (
     validate: function (keyMap, keyCode) {
       var keyName,
         code,
+        keyObj,
         errors = [];
       var codeFor = _.invert(keyCode); // invert so {code => name} becomes {name => code}
 
@@ -183,7 +183,7 @@ define(["lodash", "jquery", "app/components/component"], function (
     cmdsFor: function (which) {
       var key_name = this.keyCode[which];
       var cmds = [];
-      var key, i, len, cmd;
+      var key, i, len, cmd, value;
 
       if (this.keyMap.hasOwnProperty(key_name)) {
         value = this.keyMap[key_name];
@@ -207,5 +207,4 @@ define(["lodash", "jquery", "app/components/component"], function (
     },
   });
 
-  return KeyboardInputComponent;
-});
+export default KeyboardInputComponent;

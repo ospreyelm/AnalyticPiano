@@ -1,11 +1,7 @@
-/* global define: false */
-define([
-  "lodash",
-  "app/components/music/score_timeline",
-], function (_, ScoreTimeline) {
-  "use strict";
+import _ from "lodash";
+import ScoreTimeline from "app/components/music/score_timeline";
 
-  var INCORRECT = "incorrect";
+var INCORRECT = "incorrect";
   var CORRECT = "correct";
   var PARTIAL = "partial";
 
@@ -549,5 +545,4 @@ define([
     },
   });
 
-  return ChoraleGrader;
-});
+export default ChoraleGrader;

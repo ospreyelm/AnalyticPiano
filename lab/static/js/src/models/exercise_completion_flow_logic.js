@@ -12,12 +12,4 @@ var exportsObj = {
   _shouldDeferCompletionAutomation: _shouldDeferCompletionAutomation,
 };
 
-if (typeof define === "function" && define.amd) {
-  define(function () {
-    return exportsObj;
-  });
-}
-
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = exportsObj;
-}
+export default exportsObj;

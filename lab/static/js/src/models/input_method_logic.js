@@ -1,30 +1,6 @@
-/* global define: false */
+
 
 /*
- * Single source of truth for "how does the student answer this exercise?"
- *
- * Returns one of:
- *   "note_entry" - notes via MIDI / computer keyboard / click-on-staff
- *                  (harmonization, chorale play). Shows the Live/Click source
- *                  toggle and the click-on-staff input component.
- *   "dropdown"   - mouse-driven ? slots (identification / harmonic analysis).
- *   "text"       - typed answers.
- *
- * Gate the source toggle / click-on-staff component on `resolveInputMethod(...) === "note_entry"`.
- * Do not re-derive this from scattered type/mode/analysisType checks elsewhere.
- */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.InputMethodLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
-
-  /*
    * fields:
    *   inputModeFixed     {string|null}  exercise.inputModeFixed (authoritative when set)
    *   inputMode          {string|null}  exercise.inputMode
@@ -72,8 +48,7 @@
     return resolveInputMethod(fields) === "note_entry";
   }
 
-  return {
-    resolveInputMethod: resolveInputMethod,
+export default {
+  resolveInputMethod: resolveInputMethod,
     usesNoteEntry: usesNoteEntry,
-  };
-});
+};

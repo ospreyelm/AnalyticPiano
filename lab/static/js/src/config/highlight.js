@@ -1,9 +1,4 @@
-// Highlight configuration.
-//
-// This defines the colors used to highlight notes to show off
-// certain phenomena.
-//
-define({
+export default {
   // Colors are expressed in HSL format, a triple: (hue, saturation, lightness).
   //
   // The reason this format was chosen is because it is easier to tweak the
@@ -22,4 +17,4 @@ define({
     lowered: [120, 100, 25], // green
     solobass: [100, 100, 100], // white /* this is the color for the upper parts */
   },
-});
+};

@@ -57,10 +57,9 @@ function scoreVoiceLeading(sonorities, options) {
   };
 }
 
-if (typeof define === "function" && define.amd) {
-  define([], function () {
-    return { bestMapping: bestMapping, checkDoubledLT: checkDoubledLT, scoreVoiceLeading: scoreVoiceLeading };
-  });
-} else if (typeof module !== "undefined") {
-  module.exports = { bestMapping: bestMapping, checkDoubledLT: checkDoubledLT, scoreVoiceLeading: scoreVoiceLeading };
-}
+export default {
+  bestMapping: bestMapping,
+  checkDoubledLT: checkDoubledLT,
+  scoreVoiceLeading: scoreVoiceLeading
+};
+

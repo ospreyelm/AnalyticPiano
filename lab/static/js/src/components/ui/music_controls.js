@@ -1,33 +1,19 @@
-define([
-  "jquery",
-  "lodash",
-  "app/config",
-  "app/components/events",
-  "app/components/component",
-  "app/components/ui/modal",
-  "app/utils/instruments",
-  "app/widgets/key_signature",
-  "app/widgets/analyze",
-  "app/widgets/highlight",
-  "app/widgets/staff_distribute",
-  "app/components/ui/target_selector",
-  "app/components/music/play_save_logic",
-], function (
-  $,
-  _,
-  Config,
-  EVENTS,
-  Component,
-  ModalComponent,
-  Instruments,
-  KeySignatureWidget,
-  AnalyzeWidget,
-  HighlightWidget,
-  StaffDistributionWidget,
-  TargetSelectorComponent,
-  PlaySaveLogic
-) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import saveAs from "file-saver";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import ModalComponent from "app/components/ui/modal";
+import Instruments from "app/utils/instruments";
+import KeySignatureWidget from "app/widgets/key_signature";
+import AnalyzeWidget from "app/widgets/analyze";
+import HighlightWidget from "app/widgets/highlight";
+import StaffDistributionWidget from "app/widgets/staff_distribute";
+import TargetSelectorComponent from "app/components/ui/target_selector";
+import PlaySaveLogic from "app/components/music/play_save_logic";
+
+/**
    * Defines whether the shortcuts are enabled by default or not.
    * @type {boolean}
    * @const
@@ -46,7 +32,7 @@ define([
 
   $.ajax({
     type: "GET",
-    url: this.location.origin + "/ajax/preferences/",
+    url: window.location.origin + "/ajax/preferences/",
     async: false,
     success: function (response) {
       if (!response["valid"]) {
@@ -865,7 +851,7 @@ define([
      * @return {boolean} true
      */
     onClickSaveJSON: function (destination = "download", quiet = false) {
-      advanced = true;
+      var advanced = true;
 
       var json_data =
         JSON.parse(sessionStorage.getItem("current_state")) || false;
@@ -990,7 +976,7 @@ define([
       //   }
       // }
 
-      // var intro_text = json_data.introText;
+      var intro_text = json_data.introText;
       json_data = JSON.stringify(json_data, null, 0);
 
       if (destination === "upload") {
@@ -1013,7 +999,7 @@ define([
       } else {
         console.log("Download", json_data);
         var file_name = "exercise_download";
-        if (advanced) {
+        if (advanced && intro_text) {
           let probe = intro_text
             .replace(/[^-\w ]+/g, "")
             .replace(/ +/g, "_")
@@ -1900,5 +1886,4 @@ define([
 
   });
 
-  return MusicControlsComponent;
-});
+export default MusicControlsComponent;

@@ -1,16 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("app/utils/measure_engine"));
-  } else if (typeof define === "function" && define.amd) {
-    define(["app/utils/measure_engine"], factory);
-  } else {
-    root.BarlineSpacingUtils = factory(root.MeasureEngine);
-  }
-})(typeof self !== "undefined" ? self : this, function (MeasureEngine) {
-  "use strict";
+import MeasureEngine from "app/utils/measure_engine";
 
-  function timeSignatureParsed(timeSignature) {
+function timeSignatureParsed(timeSignature) {
     if (!timeSignature) {
       return false;
     }
@@ -111,13 +101,12 @@
     return 0.25;
   }
 
-  return {
-    timeSignatureParsed: timeSignatureParsed,
+export default {
+  timeSignatureParsed: timeSignatureParsed,
     getsBarline: getsBarline,
     countElapsedBars: countElapsedBars,
     getBarRemainder: getBarRemainder,
     getWholeNoteRemainder: getWholeNoteRemainder,
     getVisualWidth: getVisualWidth,
     getWholeNoteCount: getWholeNoteCount,
-  };
-});
+};

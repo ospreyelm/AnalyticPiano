@@ -1,10 +1,12 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/events",
-  "app/components/component",
-], function ($, _, EVENTS, Component) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+
+var AUTO_SUSTAIN_DURATION = 0;
+
+
+/**
    * The PedalsComponent renders pedals for the on-screen piano.
    */
   var PedalsComponent = function () {};
@@ -93,7 +95,7 @@ define([
 
   $.ajax({
     type: "GET",
-    url: this.location.origin + "/ajax/preferences/",
+    url: window.location.origin + "/ajax/preferences/",
     async: false,
     success: function (response) {
       if (!response["valid"]) {
@@ -113,6 +115,7 @@ define([
     // ARGH: should only be called when pedal is pressed on UI
     // make it a user preference instead
     const retake_time = 100 // milliseconds
+    let wait_duration
     if (pedalName == "sustain") {
       wait_duration = AUTO_SUSTAIN_DURATION * slice_duration_factor * 100 - retake_time
       if (wait_duration < 0) {
@@ -131,5 +134,4 @@ define([
     }
   };
 
-  return PedalsComponent;
-});
+export default PedalsComponent;

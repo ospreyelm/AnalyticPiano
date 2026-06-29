@@ -1,26 +1,13 @@
-/* global define: false */
-define([
-  "lodash",
-  "vexflow",
-  "microevent",
-  "app/config" /* only for declaring MASK_TREBLE */,
-  "app/util",
-  "app/utils/analyze",
-  "app/utils/fontparser",
-  "app/config/analysis_slots",
-], function (
-  _,
-  Vex,
-  MicroEvent,
-  Config /* only for declaring MASK_TREBLE */,
-  util,
-  Analyze,
-  FontParser,
-  AnalysisSlots
-) {
-  "use strict";
+import _ from "lodash";
+import Vex from "vexflow";
+import MicroEvent from "microevent";
+import Config from "app/config";
+import util from "app/util";
+import Analyze from "app/utils/analyze";
+import FontParser from "app/utils/fontparser";
+import AnalysisSlots from "app/config/analysis_slots";
 
-  /* hack for bass staff only added 2020 */
+/* hack for bass staff only added 2020 */
   /* not ready: also masks thoroughbass figures */
   var MASK_TREBLE = Config.get("general.maskTrebleStaff");
 
@@ -1735,5 +1722,4 @@ define([
     }
   };
 
-  return StaveNotater;
-});
+export default StaveNotater;

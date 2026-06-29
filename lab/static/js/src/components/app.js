@@ -1,9 +1,8 @@
-define(["lodash", "jquery", "app/components/component"], function (
-  _,
-  $,
-  Component
-) {
-  /**
+import _ from "lodash";
+import $ from "jquery";
+import Component from "app/components/component";
+
+/**
    * AppComponent class.
    *
    * The app component creates and manages the user-interface and
@@ -116,5 +115,4 @@ define(["lodash", "jquery", "app/components/component"], function (
     this.fade(false);
   };
 
-  return AppComponent;
-});
+export default AppComponent;

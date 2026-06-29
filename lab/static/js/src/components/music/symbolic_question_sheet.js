@@ -1,12 +1,9 @@
-define([
-  "lodash",
-  "jquery",
-  "app/components/component",
-  "app/models/symbolic_meter_rendering_logic",
-], function (_, $, Component, SymbolicMeterRenderingLogic) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import Component from "app/components/component";
+import SymbolicMeterRenderingLogic from "app/models/symbolic_meter_rendering_logic";
 
-  var SymbolicQuestionSheet = function (settings) {
+var SymbolicQuestionSheet = function (settings) {
     Component.call(this, settings || {});
     this.settings = settings || {};
     this.exerciseContext = this.settings.exerciseContext;
@@ -231,5 +228,4 @@ define([
     },
   });
 
-  return SymbolicQuestionSheet;
-});
+export default SymbolicQuestionSheet;

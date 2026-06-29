@@ -1,23 +1,13 @@
-define([
-  "jquery",
-  "lodash",
-  "app/config",
-  "app/components/events",
-  "app/components/component",
-  "./piano/keyboard",
-  "./piano/pedals",
-  "./piano/toolbar",
-], function (
-  $,
-  _,
-  Config,
-  EVENTS,
-  Component,
-  KeyboardComponent,
-  PedalsComponent,
-  ToolbarComponent
-) {
-  var DESIRED_KEYBOARD_SIZE = Config.get("general.defaultKeyboardSize");
+import $ from "jquery";
+import _ from "lodash";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import KeyboardComponent from "./piano/keyboard";
+import PedalsComponent from "./piano/pedals";
+import ToolbarComponent from "./piano/toolbar";
+
+var DESIRED_KEYBOARD_SIZE = Config.get("general.defaultKeyboardSize");
   var DESIRED_KEYBOARD_OCTAVES_OFFSET = 0;
 
   /**
@@ -28,7 +18,7 @@ define([
 
   $.ajax({
     type: "GET",
-    url: this.location.origin + "/ajax/preferences/",
+    url: window.location.origin + "/ajax/preferences/",
     async: false,
     success: function (response) {
       if (!response["valid"]) {
@@ -214,5 +204,4 @@ define([
     // No-op: Let CSS flexbox/margins handle responsive centering and width.
   };
 
-  return PianoComponent;
-});
+export default PianoComponent;

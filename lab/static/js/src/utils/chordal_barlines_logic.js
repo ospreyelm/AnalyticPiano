@@ -1,12 +1,6 @@
-/* global define: false */
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) { module.exports = factory(); }
-  else if (typeof define === "function" && define.amd) { define([], factory); }
-  else { root.ChordalBarlinesLogic = factory(); }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  var EPS = 1e-6;
+
+var EPS = 1e-6;
   var PALETTE = [4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25];
   var PALETTE_SET = {}; PALETTE.forEach(function (v) { PALETTE_SET[v] = true; });
 
@@ -177,8 +171,8 @@
     return entry ? { duration: entry.duration, dots: entry.dots } : { duration: "q", dots: 0 };
   }
 
-  return {
-    PALETTE: PALETTE,
+export default {
+  PALETTE: PALETTE,
     isPaletteDuration: isPaletteDuration,
     meterQuarterLength: meterQuarterLength,
     offsetsFromDurations: offsetsFromDurations,
@@ -186,5 +180,4 @@
     measureItemCounts: measureItemCounts,
     checkRhythm: checkRhythm,
     qlToVexDuration: qlToVexDuration,
-  };
-});
+};

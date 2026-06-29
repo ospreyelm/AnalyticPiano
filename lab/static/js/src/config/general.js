@@ -1,9 +1,6 @@
-/* General configuration data */
-/* Read only */
+import keyMap from "app/config/key_map";
 
-/* global define: false */
-define(["app/config/key_map"], function (keyMap) {
-  return {
+export default  {
   defaultKeyboardSize: [25, 32, 37, 49, 61, 88][3] /* key count */,
   maskTrebleStaff: false /* if true, staffDistribution should == "LH" */,
   flexNoKeySpelling: true /* boolean */,
@@ -222,4 +219,3 @@ define(["app/config/key_map"], function (keyMap) {
     ],
   ][0] /* choose one! */,
   };
-});

@@ -1,71 +1,37 @@
-define([
-  "module",
-  "lodash",
-  "jquery",
-  "app/components/component",
-  "app/components/app",
-  "app/components/events",
-  "app/components/piano",
-  "app/components/music",
-  "app/components/music/exercise_sheet",
-  "app/components/music/symbolic_question_sheet",
-  "app/components/midi",
-  "app/components/notifications",
-  "app/components/feedback_service",
-  "app/config/feedback_catalog",
-  "app/components/input/shortcuts",
-  "app/components/input/note_name",
-  "app/components/input/click_note",
-  "app/components/input/click_note_logic",
-  "app/components/input/computer_keyboard_ux_logic",
-  "app/components/ui/main_menu",
-  "app/components/ui/music_controls",
-  "app/models/key_signature",
-  "app/models/midi_device",
-  "app/models/exercise_chord_bank",
-  "app/models/exercise_definition",
-  "app/models/exercise_grader",
-  "app/models/chorale_grader",
-  "app/models/identification_grader",
-  "app/models/exercise_context",
-  "app/components/exercise_score_card",
-  "app/models/keyboard_range_logic",
-  "app/config/keyboard_shortcuts",
-], function (
-  module,
-  _,
-  $,
-  Component,
-  AppComponent,
-  EVENTS,
-  PianoComponent,
-  MusicComponent,
-  ExerciseSheetComponent,
-  SymbolicQuestionSheet,
-  MidiComponent,
-  NotificationsComponent,
-  FeedbackService,
-  FeedbackCatalog,
-  KeyboardShortcutsComponent,
-  NoteNameInputComponent,
-  ClickNoteInputComponent,
-  ClickNoteLogic,
-  ComputerKeyboardUxLogic,
-  MainMenuComponent,
-  MusicControlsComponent,
-  KeySignature,
-  MidiDevice,
-  ExerciseChordBank,
-  ExerciseDefinition,
-  ExerciseGrader,
-  ChoraleGrader,
-  IdentificationGrader,
-  ExerciseContext,
-  ExerciseScoreCard,
-  KeyboardRangeLogic,
-  KeyboardShortcutsConfig
-) {
-  /**
+import _ from "lodash";
+import $ from "jquery";
+import { getModuleConfig } from "app/utils/module_config";
+import Component from "app/components/component";
+import AppComponent from "app/components/app";
+import EVENTS from "app/components/events";
+import PianoComponent from "app/components/piano";
+import MusicComponent from "app/components/music";
+import ExerciseSheetComponent from "app/components/music/exercise_sheet";
+import SymbolicQuestionSheet from "app/components/music/symbolic_question_sheet";
+import MidiComponent from "app/components/midi";
+import NotificationsComponent from "app/components/notifications";
+import FeedbackService from "app/components/feedback_service";
+import FeedbackCatalog from "app/config/feedback_catalog";
+import KeyboardShortcutsComponent from "app/components/input/shortcuts";
+import NoteNameInputComponent from "app/components/input/note_name";
+import ClickNoteInputComponent from "app/components/input/click_note";
+import ClickNoteLogic from "app/components/input/click_note_logic";
+import ComputerKeyboardUxLogic from "app/components/input/computer_keyboard_ux_logic";
+import MainMenuComponent from "app/components/ui/main_menu";
+import MusicControlsComponent from "app/components/ui/music_controls";
+import KeySignature from "app/models/key_signature";
+import MidiDevice from "app/models/midi_device";
+import ExerciseChordBank from "app/models/exercise_chord_bank";
+import ExerciseDefinition from "app/models/exercise_definition";
+import ExerciseGrader from "app/models/exercise_grader";
+import ChoraleGrader from "app/models/chorale_grader";
+import IdentificationGrader from "app/models/identification_grader";
+import ExerciseContext from "app/models/exercise_context";
+import ExerciseScoreCard from "app/components/exercise_score_card";
+import KeyboardRangeLogic from "app/models/keyboard_range_logic";
+import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
+
+/**
    * AppExerciseComponent class.
    *
    * Creates the sandbox environment for playing and experimenting
@@ -214,7 +180,7 @@ define([
    * Returns the exercise definition.
    */
   AppExerciseComponent.prototype.getExerciseDefinition = function () {
-    var exercise_config = module.config(); /* EXERCISE DATA ENTERS HERE */
+    var exercise_config = getModuleConfig("app/components/app/exercise"); /* EXERCISE DATA ENTERS HERE */
     if (!exercise_config) {
       throw new Error(
         "getExerciseDefinition(): missing exercise configuration data"
@@ -552,10 +518,9 @@ define([
    * @return undefined
    */
   AppExerciseComponent.ready = function () {
-    app = new AppExerciseComponent();
-    app.init();
-    app.log("App ready");
+    window.app = new AppExerciseComponent();
+    window.app.init();
+    window.app.log("App ready");
   };
 
-  return AppExerciseComponent;
-});
+export default AppExerciseComponent;

@@ -1,12 +1,11 @@
-define([
-  "jquery",
-  "lodash",
-  "app/config",
-  "app/components/events",
-  "app/components/component",
-  "app/models/key_signature",
-], function ($, _, Config, EVENTS, Component, KeySignature) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import KeySignature from "app/models/key_signature";
+
+/**
    * This is a map of analysis modes to booleans indicating whether the mode
    * is enabled or disabled by default.
    * @type {object}
@@ -558,5 +557,4 @@ define([
     },
   });
 
-  return MusicComponent;
-});
+export default MusicComponent;

@@ -10,7 +10,7 @@
     factory();
     global.FileSaver = mod.exports;
   }
-})(this, function () {
+})(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
   /*
@@ -232,3 +232,6 @@
     module.exports = saveAs;
   }
 });
+
+export default window.saveAs;
+

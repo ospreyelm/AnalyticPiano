@@ -19196,4 +19196,8 @@ PERFORMANCE OF THIS SOFTWARE.
     },
   ]);
 });
+
+export default window.Tone;
+
 //# sourceMappingURL=Tone.js.map
+

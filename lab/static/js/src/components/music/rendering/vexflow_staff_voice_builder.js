@@ -1,32 +1,8 @@
-/* global define: false */
+import Vex from "vexflow";
+import MeasureEngine from "app/utils/measure_engine";
+import VexflowTickableBuilder from "app/components/music/rendering/vexflow_tickable_builder";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("../../../utils/measure_engine"),
-      require("./vexflow_tickable_builder")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/utils/measure_engine",
-        "app/components/music/rendering/vexflow_tickable_builder",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowStaffVoiceBuilder = factory(
-      root.Vex,
-      root.MeasureEngine,
-      root.VexflowTickableBuilder
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, MeasureEngine, VexflowTickableBuilder) {
-  "use strict";
-
-  // SATB voice id map: [staffId][voiceIndex] -> voice label
+// SATB voice id map: [staffId][voiceIndex] -> voice label
   var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
 
   function durationToTicks(dur) {
@@ -133,8 +109,7 @@
     };
   }
 
-  return {
-    durationToTicks: durationToTicks,
+export default {
+  durationToTicks: durationToTicks,
     createStaffVoicesFn: createStaffVoicesFn,
-  };
-});
+};

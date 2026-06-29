@@ -1,68 +1,34 @@
-/* global define: false */
-define([
-  "jquery",
-  "jquery-ui",
-  "lodash",
-  "vexflow",
-  "app/config",
-  "app/utils/analyze",
-  "app/components/events",
-  "app/components/component",
-  "app/utils/fontparser",
-  "./stave",
-  "./stave_notater",
-  "./exercise_note_factory",
-  "./rendering/vexflow_adapter",
-  "./score_timeline",
-  "app/components/input/text_input",
-  "app/models/score_player",
-  "app/models/identification_submit_flow_logic",
-  "app/models/key_context_logic",
-  "app/components/music/playback_controls",
-  "app/utils/measure_engine",
-  "app/models/harmonization_realization_logic",
-  "app/components/music/identification_label_layout_logic",
-  "app/models/chordal_problems_logic",
-  "./chordal_umto_staff_distribution",
-  "app/models/key_signature",
-  "./chordal_spelling",
-  "app/utils/chordal_barlines_logic",
-  "app/utils/umto_score_converter",
-  "app/utils/barline_spacing_utils",
-], function (
-  $,
-  $UI,
-  _,
-  Vex,
-  Config,
-  Analyze,
-  EVENTS,
-  Component,
-  FontParser,
-  Stave,
-  StaveNotater,
-  ExerciseNoteFactory,
-  VexFlowAdapter,
-  ScoreTimeline,
-  TextInput,
-  ScorePlayer,
-  IdentificationSubmitFlow,
-  KeyContext,
-  renderPlaybackControls,
-  MeasureEngine,
-  HarmonizationRealizationLogic,
-  IdentificationLabelLayoutLogic,
-  ChordalProblemsLogic,
-  ChordalUMTOStaffDistribution,
-  KeySignature,
-  ChordalSpelling,
-  ChordalBarlinesLogic,
-  UMTOScoreConverter,
-  BarlineSpacingUtils
-) {
-  "use strict";
+import $ from "jquery";
+import $UI from "jquery-ui";
+import _ from "lodash";
+import Vex from "vexflow";
+import Config from "app/config";
+import Analyze from "app/utils/analyze";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import FontParser from "app/utils/fontparser";
+import Stave from "./stave";
+import StaveNotater from "./stave_notater";
+import ExerciseNoteFactory from "./exercise_note_factory";
+import VexFlowAdapter from "./rendering/vexflow_adapter";
+import ScoreTimeline from "./score_timeline";
+import TextInput from "app/components/input/text_input";
+import ScorePlayer from "app/models/score_player";
+import IdentificationSubmitFlow from "app/models/identification_submit_flow_logic";
+import KeyContext from "app/models/key_context_logic";
+import renderPlaybackControls from "app/components/music/playback_controls";
+import MeasureEngine from "app/utils/measure_engine";
+import HarmonizationRealizationLogic from "app/models/harmonization_realization_logic";
+import IdentificationLabelLayoutLogic from "app/components/music/identification_label_layout_logic";
+import ChordalProblemsLogic from "app/models/chordal_problems_logic";
+import ChordalUMTOStaffDistribution from "./chordal_umto_staff_distribution";
+import KeySignature from "app/models/key_signature";
+import ChordalSpelling from "./chordal_spelling";
+import ChordalBarlinesLogic from "app/utils/chordal_barlines_logic";
+import UMTOScoreConverter from "app/utils/umto_score_converter";
+import BarlineSpacingUtils from "app/utils/barline_spacing_utils";
 
-  return {
+export default  {
 
     /**
      * Shows a position:fixed popup list of choices at the cursor.
@@ -411,4 +377,3 @@ define([
       ctx.lineWidth = origLineWidth;
     },
   };
-});

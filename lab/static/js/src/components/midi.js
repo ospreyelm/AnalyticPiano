@@ -1,11 +1,10 @@
-define([
-  "lodash",
-  "app/config",
-  "app/components/events",
-  "app/components/component",
-  "app/models/exercise_context",
-], function (_, Config, EVENTS, Component, ExerciseContext) {
-  /**
+import _ from "lodash";
+import Config from "app/config";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import ExerciseContext from "app/models/exercise_context";
+
+/**
    * Defines the default instrument (Acoustic Grand Piano).
    * @type {number}
    * @const
@@ -255,7 +254,7 @@ define([
      */
     triggerPedalChange: function (controlNum, controlVal) {
       var pedal_name = MIDI_CONTROL_MAP.pedal[controlNum];
-      // var pedal_state = 'off';
+      var pedal_state = "null";
 
       // The Yamaha FC5 sustain pedal sends value 0 when
       // the pedal is depressed and 127 when it is released.
@@ -597,5 +596,4 @@ define([
     },
   });
 
-  return MidiComponent;
-});
+export default MidiComponent;

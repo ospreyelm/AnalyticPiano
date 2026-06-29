@@ -1,9 +1,8 @@
-define([
-  "lodash",
-  "app/components/component",
-  "app/widgets/theme_selector",
-], function (_, Component, ThemeSelectorWidget) {
-  /**
+import _ from "lodash";
+import Component from "app/components/component";
+import ThemeSelectorWidget from "app/widgets/theme_selector";
+
+/**
    * ThemeComponent adds the ability to apply a theme to a target element
    * and render a selection interface to change the theme.
    *
@@ -53,5 +52,4 @@ define([
     return this;
   };
 
-  return ThemeComponent;
-});
+export default ThemeComponent;

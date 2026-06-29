@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.ExerciseDefinitionLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function findAnalysisWindowByOffset(windows, sliceOffset, fallbackIndex) {
+function findAnalysisWindowByOffset(windows, sliceOffset, fallbackIndex) {
     if (!windows || !windows.length || typeof sliceOffset !== "number") {
       return null;
     }
@@ -42,7 +31,6 @@
     return null;
   }
 
-  return {
-    findAnalysisWindowByOffset: findAnalysisWindowByOffset,
-  };
-});
+export default {
+  findAnalysisWindowByOffset: findAnalysisWindowByOffset,
+};

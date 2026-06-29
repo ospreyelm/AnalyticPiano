@@ -1,5 +1,7 @@
-define(["lodash", "./chord"], function (_, Chord) {
-  var ExerciseChord = function (settings) {
+import _ from "lodash";
+import Chord from "./chord";
+
+var ExerciseChord = function (settings) {
     Chord.call(this, settings);
   };
 
@@ -28,5 +30,4 @@ define(["lodash", "./chord"], function (_, Chord) {
     });
   };
 
-  return ExerciseChord;
-});
+export default ExerciseChord;

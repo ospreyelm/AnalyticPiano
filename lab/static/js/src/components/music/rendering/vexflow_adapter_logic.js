@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.VexflowAdapterLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function isRestTickable(tickable) {
+function isRestTickable(tickable) {
     if (!tickable) return false;
     var methodValue = false;
     if (typeof tickable.isRest === "function") {
@@ -503,8 +492,8 @@
     return windows;
   }
 
-  return {
-    isRestTickable: isRestTickable,
+export default {
+  isRestTickable: isRestTickable,
     keyToMidi: keyToMidi,
     tickableToScaleDegreeMidi: tickableToScaleDegreeMidi,
     getBassLabelAtOffset: getBassLabelAtOffset,
@@ -530,5 +519,4 @@
     computeRomanExpLabel: computeRomanExpLabel,
     groupTimelineByOnset: groupTimelineByOnset,
     buildAnalysisWindows: buildAnalysisWindows,
-  };
-});
+};

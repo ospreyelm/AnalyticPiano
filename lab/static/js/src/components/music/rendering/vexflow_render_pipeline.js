@@ -1,38 +1,10 @@
-/* global define: false */
+import Vex from "vexflow";
+import VexflowStaveFactory from "app/components/music/rendering/vexflow_stave_factory";
+import VexflowStaffVoiceBuilder from "app/components/music/rendering/vexflow_staff_voice_builder";
+import VexflowTickableBuilder from "app/components/music/rendering/vexflow_tickable_builder";
+import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annotation_pass";
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory(
-      require("vexflow"),
-      require("./vexflow_stave_factory"),
-      require("./vexflow_staff_voice_builder"),
-      require("./vexflow_tickable_builder"),
-      require("./vexflow_annotation_pass")
-    );
-  } else if (typeof define === "function" && define.amd) {
-    define(
-      [
-        "vexflow",
-        "app/components/music/rendering/vexflow_stave_factory",
-        "app/components/music/rendering/vexflow_staff_voice_builder",
-        "app/components/music/rendering/vexflow_tickable_builder",
-        "app/components/music/rendering/vexflow_annotation_pass",
-      ],
-      factory
-    );
-  } else {
-    root.VexflowRenderPipeline = factory(
-      root.Vex,
-      root.VexflowStaveFactory,
-      root.VexflowStaffVoiceBuilder,
-      root.VexflowTickableBuilder,
-      root.VexflowAnnotationPass
-    );
-  }
-})(typeof self !== "undefined" ? self : this, function (Vex, VexflowStaveFactory, VexflowStaffVoiceBuilder, VexflowTickableBuilder, VexflowAnnotationPass) {
-  "use strict";
-
-  // Draw explicit key label beneath the bass clef (e.g., "a:", "C:")
+// Draw explicit key label beneath the bass clef (e.g., "a:", "C:")
   function formatKeyForDisplay(k) {
     if (!k || typeof k !== "string" || k.length < 2) return k;
     var mode = k.charAt(0);
@@ -411,7 +383,6 @@
     // Wrong note rendering removed - will be implemented via exercise grading system
   }
 
-  return {
-    renderMeasures: renderMeasures,
-  };
-});
+export default {
+  renderMeasures: renderMeasures,
+};

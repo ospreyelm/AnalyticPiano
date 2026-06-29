@@ -1,18 +1,17 @@
-define([
-  "lodash",
-  "app/config",
-  "app/components/music/score_timeline",
-  "app/utils/analyze",
-  "app/models/key_signature",
-  "app/models/key_context_logic",
-  "app/models/input_method_logic",
-  "app/config/unit_allowed_answers",
-  "app/models/exercise_definition_logic",
-  "app/models/chordal_problems_logic",
-  "tonal",
-  "app/models/exercise_definition_label_logic",
-], function (_, Config, ScoreTimeline, Analyze, KeySignature, KeyContext, InputMethodLogic, UNIT_ALLOWED_ANSWERS_RAW, ExerciseDefinitionLogic, ChordalProblemsLogic, Tonal, LabelLogic) {
-  var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
+import _ from "lodash";
+import Config from "app/config";
+import ScoreTimeline from "app/components/music/score_timeline";
+import Analyze from "app/utils/analyze";
+import KeySignature from "app/models/key_signature";
+import KeyContext from "app/models/key_context_logic";
+import InputMethodLogic from "app/models/input_method_logic";
+import UNIT_ALLOWED_ANSWERS_RAW from "app/config/unit_allowed_answers";
+import ExerciseDefinitionLogic from "app/models/exercise_definition_logic";
+import ChordalProblemsLogic from "app/models/chordal_problems_logic";
+import Tonal from "tonal";
+import LabelLogic from "app/models/exercise_definition_label_logic";
+
+var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
   var STAFF_DISTRIBUTION = Config.get("general.staffDistribution");
   var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
@@ -1443,5 +1442,4 @@ define([
     return copy;
   };
 
-  return ExerciseDefinition;
-});
+export default ExerciseDefinition;

@@ -18633,3 +18633,6 @@
         });
   });
 });
+
+export default window.jQuery;
+

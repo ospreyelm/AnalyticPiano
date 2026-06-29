@@ -1,11 +1,10 @@
-define([
-  "jquery",
-  "lodash",
-  "app/components/events",
-  "app/components/component",
-  "./metronome",
-], function ($, _, EVENTS, Component, MetronomeComponent) {
-  /**
+import $ from "jquery";
+import _ from "lodash";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
+import MetronomeComponent from "./metronome";
+
+/**
    * ToolbarComponent renders the toolbar element of the on-screen piano.
    *
    * @param {object} settings
@@ -58,5 +57,4 @@ define([
     return this;
   };
 
-  return ToolbarComponent;
-});
+export default ToolbarComponent;

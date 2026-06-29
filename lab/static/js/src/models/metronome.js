@@ -1,12 +1,9 @@
-define(["jquery", "lodash", "microevent", "app/config"], function (
-  $,
-  _,
-  MicroEvent,
-  Config
-) {
-  "use strict";
+import $ from "jquery";
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Config from "app/config";
 
-  /**
+/**
    * Number of milliseconds per minute.
    * @type {number}
    * @const
@@ -328,5 +325,4 @@ define(["jquery", "lodash", "microevent", "app/config"], function (
 
   MicroEvent.mixin(Metronome);
 
-  return Metronome;
-});
+export default Metronome;

@@ -1,13 +1,8 @@
-/* global define: false */
+import VexflowRenderConfig from "app/components/music/rendering/vexflow_render_config";
+import VexflowMeasureLayout from "app/components/music/rendering/vexflow_measure_layout";
+import VexflowRenderPipeline from "app/components/music/rendering/vexflow_render_pipeline";
 
-define([
-  "app/components/music/rendering/vexflow_render_config",
-  "app/components/music/rendering/vexflow_measure_layout",
-  "app/components/music/rendering/vexflow_render_pipeline",
-], function (VexflowRenderConfig, VexflowMeasureLayout, VexflowRenderPipeline) {
-  "use strict";
-
-  function render(score, renderer, opts) {
+function render(score, renderer, opts) {
     var ctx = renderer.getContext();
 
     // Get canvas element - it's stored in ctx.canvas or ctx.element depending on VexFlow version
@@ -34,5 +29,6 @@ define([
     }
   }
 
-  return { render: render };
-});
+export default {
+  render: render
+};

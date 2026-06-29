@@ -1,8 +1,8 @@
-/* global define: false */
-define(["lodash", "microevent", "Tone"], function (_, MicroEvent, Tone) {
-  "use strict";
+import _ from "lodash";
+import MicroEvent from "microevent";
+import Tone from "Tone";
 
-  var ScorePlayer = function (midiDevice) {
+var ScorePlayer = function (midiDevice) {
     this._midiDevice = midiDevice;
     this._bpm = 100;
     this._playing = false;
@@ -100,5 +100,4 @@ define(["lodash", "microevent", "Tone"], function (_, MicroEvent, Tone) {
     },
   });
 
-  return ScorePlayer;
-});
+export default ScorePlayer;

@@ -1,15 +1,6 @@
-(function (root, factory) {
-  if (typeof define === "function" && define.amd) {
-    define(["app/config"], factory);
-  } else if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else {
-    root.ChordalUMTOStaffDistribution = factory(root.Config);
-  }
-})(typeof globalThis !== "undefined" ? globalThis : this, function (Config) {
-  "use strict";
+import Config from "app/config";
 
-  var HIGH_THRESHOLD = 65;
+var HIGH_THRESHOLD = 65;
   var MID_THRESHOLD = 60;
   var LOW_THRESHOLD = 55;
   var KEYBOARD_STYLE_COUNTS = [2, 3, 4, 5];
@@ -82,7 +73,7 @@
     return splitByThreshold(notes, MID_THRESHOLD, false);
   }
 
-  return {
+  export default  {
     routeChordMidis: routeChordMidis,
     _getKeyboardStyleCounts: function () {
       return KEYBOARD_STYLE_COUNTS;
@@ -91,4 +82,3 @@
       KEYBOARD_STYLE_COUNTS = counts;
     }
   };
-});

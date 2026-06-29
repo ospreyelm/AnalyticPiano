@@ -1,5 +1,7 @@
-define(["lodash", "microevent"], function (_, MicroEvent) {
-  var EVENT_HUB = new MicroEvent();
+import _ from "lodash";
+import MicroEvent from "microevent";
+
+var EVENT_HUB = new MicroEvent();
 
   /**
    * Component class.
@@ -242,5 +244,4 @@ define(["lodash", "microevent"], function (_, MicroEvent) {
     }
   };
 
-  return Component;
-});
+export default Component;

@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    {% load static %}
+    {% load static django_vite %}
+    {% vite_hmr_client %}
     <link href="{% static 'css/ionicons-needed.css' %}" type="text/css" rel="stylesheet" />
     <link href="{% static 'css/harmony.css' %}" type="text/css" rel="stylesheet" />
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
@@ -16,18 +17,14 @@
 {% block content %}{% endblock %}
 
 {% block js_require %}
-
 {% autoescape off %}
-
-<script src="{% static 'js/lib/require.js' %}"></script>
-<script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
-<script>requirejs.config({{ requirejs.config_json }});</script>
-<script>window.appStaticUrl = '{% static '' %}';</script>
-
-{% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
-
+<script>
+  window.appConfig = {{ requirejs.config_json }};
+  window.appStaticUrl = '{% static '' %}';
+  window.require = function () {};
+</script>
 {% endautoescape %}
-
+{% vite_asset 'lab/static/js/src/main.js' %}
 {% endblock %}
 
 {% block js_extra %}{% endblock %}

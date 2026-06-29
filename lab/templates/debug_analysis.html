@@ -11,8 +11,6 @@
 
 {% block js_extra %}
 <script>
-  require(["app/components/app/debug_analysis"], function (App) {
-    if (App && typeof App.ready === 'function') App.ready();
-  });
-  </script>
+  window.app_module = "app/components/app/debug_analysis";
+</script>
 {% endblock %}

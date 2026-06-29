@@ -1,9 +1,6 @@
-/* global define: false */
 
-define([], function () {
-  "use strict";
 
-  // Simple helpers to construct a renderer-agnostic score model
+// Simple helpers to construct a renderer-agnostic score model
 
   function note(step, alter, octave, durationType, dots) {
     return {
@@ -42,13 +39,13 @@ define([], function () {
   }
 
   // Export API
-  return {
-    note: note,
+
+export default {
+  note: note,
     rest: rest,
     chord: chord,
     voice: voice,
     staff: staff,
     measure: measure,
     score: score,
-  };
-});
+};

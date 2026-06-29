@@ -1,12 +1,9 @@
-define([
-  "lodash",
-  "jquery",
-  "app/components/events",
-  "app/components/component",
-], function (_, $, EVENTS, Component) {
-  "use strict";
+import _ from "lodash";
+import $ from "jquery";
+import EVENTS from "app/components/events";
+import Component from "app/components/component";
 
-  var NotificationsComponent = function (settings) {
+var NotificationsComponent = function (settings) {
     this.settings = _.extend(
       {
         defaultHidden: true,
@@ -138,5 +135,4 @@ define([
     this.el.html("");
   };
 
-  return NotificationsComponent;
-});
+export default NotificationsComponent;

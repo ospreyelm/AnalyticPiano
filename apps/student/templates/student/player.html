@@ -1,7 +1,8 @@
 {% extends "student/player_base.html" %}
 
 {% block head_extra %}
-  {% load static %}
+  {% load static django_vite %}
+  {% vite_hmr_client %}
   <link href="{% static 'student/exercise-canvas.css' %}" rel="stylesheet">
   <link href="{% static 'student/player-canvas.css' %}" rel="stylesheet">
 {% endblock %}
@@ -163,12 +164,11 @@
 {% endblock %}
 
 {% block js_require %}
-  <script src="{% static 'js/lib/require.js' %}"></script>
-  <script>requirejs.config({ enforceDefine: true, waitSeconds: 0 });</script>
   {% autoescape off %}
-  <script>requirejs.config({{ requirejs.config_json }});</script>
-  <script>window.appStaticUrl = '{% static '' %}';</script>
-  {% if requirejs.debug %}<script>requirejs.config({'urlArgs': 't='+(new Date().getTime())});</script>{% endif %}
+  <script>
+    window.appConfig = {{ requirejs.config_json }};
+    window.appStaticUrl = '{% static '' %}';
+  </script>
   {% endautoescape %}
 {% endblock %}
 
@@ -183,7 +183,7 @@
     console.groupEnd();
   </script>
   {% endif %}
-  <script>require(['app/main']);</script>
+  {% vite_asset 'lab/static/js/src/main.js' %}
   <script>
     window.PLAYER_DEFINITION_URL = "{% url 'student:player-definition' unit_num=unit_num %}";
     window.refreshPlayerChrome = function (newData) {
@@ -333,43 +333,53 @@
       }
 
       // ── Move #ident-toggle-row to toolbar, #ident-progress-container to answer bar ──
+      // Handles a node whether it's added later (observer) or already present at
+      // setup time. Under Vite (ESM), the exercise inits on DOMContentLoaded and
+      // creates #ident-toggle-row before this 'load' handler runs, so a pure
+      // childList observer would miss it. We do an initial sweep too.
+      function relocateIdentAction(node) {
+        if (!node || !node.id) return;
+        if (node.id === 'ident-toggle-row') {
+          toolbarSlot.appendChild(node);
+          toolbarSep.style.display = '';
+          showAnswerBar();
+        }
+        if (node.id === 'ident-progress-container') {
+          // Insert at front of answer bar (before the submit button)
+          answerBar.insertBefore(node, answerBar.firstChild);
+          showAnswerBar();
+        }
+      }
       if (identActions && toolbarSlot) {
         var actionsObs = new MutationObserver(function(mutations) {
           mutations.forEach(function(m) {
-            m.addedNodes.forEach(function(node) {
-              if (!node.id) return;
-              if (node.id === 'ident-toggle-row') {
-                toolbarSlot.appendChild(node);
-                toolbarSep.style.display = '';
-                showAnswerBar();
-              }
-              if (node.id === 'ident-progress-container') {
-                // Insert at front of answer bar (before the submit button)
-                answerBar.insertBefore(node, answerBar.firstChild);
-                showAnswerBar();
-              }
-            });
+            m.addedNodes.forEach(relocateIdentAction);
           });
         });
         actionsObs.observe(identActions, { childList: true });
+        // Initial sweep: relocate anything already inserted before we observed.
+        Array.prototype.slice.call(identActions.children).forEach(relocateIdentAction);
       }
 
       // ── Watch for #ident-input-container inserted after #identification-actions ──
       // JS does: $('#identification-actions').after($container)
       // So it lands as a sibling inside .s-control-bar. We move it into #s-answer-bar.
+      function relocateIdentInput(node) {
+        if (node && node.id === 'ident-input-container') {
+          // Move into answer bar, before the submit button
+          answerBar.insertBefore(node, submitBtn);
+          showAnswerBar();
+        }
+      }
       if (controlBar && answerBar) {
         var controlObs = new MutationObserver(function(mutations) {
           mutations.forEach(function(m) {
-            m.addedNodes.forEach(function(node) {
-              if (node.id === 'ident-input-container') {
-                // Move into answer bar, before the submit button
-                answerBar.insertBefore(node, submitBtn);
-                showAnswerBar();
-              }
-            });
+            m.addedNodes.forEach(relocateIdentInput);
           });
         });
         controlObs.observe(controlBar, { childList: true });
+        // Initial sweep for a container already inserted before we observed.
+        Array.prototype.slice.call(controlBar.children).forEach(relocateIdentInput);
       }
 
       // ── Click/Type mode: disable .text-id-field in Click mode ──

@@ -1,23 +1,4 @@
-// The input is a list of mod-12 integers that indicate the pitch classes
-// present, taking pc 0 to be the keynote. "y" stands for pc 10 and "z" for
-// pc 11. The initial integer, to the left of the forward slash, specifies
-// the pitch class of the bass; the remaining pitch classes are listed in
-// increasing numerical order.
-
-// Characters entered inside {} braces will be rendered as follows by the
-// font Sebastian-FigBass-Harvard.woff:
-//    Z, U --> figured bass characters 6, 7 on upper row
-//    e, r, t, z, u, d, ' --> figured bass characters 3, 4, 5, 6, 7, +, #
-//                            on main row
-//    2, 3, 4, 5 --> figured bass characters 2, 3, 4, 5 on lower row
-//    C, K --> flat, sharp signs to precede Roman numerals
-
-// The priority field contains an interpretation of learning priorities.
-// (1 = learn first, 99 = learn last)
-
-/* global define: false */
-
-define({
+export default {
   // I
 
   "0/47": { root: "0", label: "I", priority: "1" },
@@ -243,4 +224,4 @@ define({
   "8/035": { root: "5", label: "iv{z5}" },
   "0/358": { root: "5", label: "iv{r3}" },
   "3/058": { root: "5", label: "iv{r2}" },
-});
+};

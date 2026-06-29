@@ -1,17 +1,6 @@
-/* global define: false */
 
-(function (root, factory) {
-  if (typeof module === "object" && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === "function" && define.amd) {
-    define([], factory);
-  } else {
-    root.ExerciseContextIdentPageLogic = factory();
-  }
-})(typeof self !== "undefined" ? self : this, function () {
-  "use strict";
 
-  function getChoralePageMeasureCount(display) {
+function getChoralePageMeasureCount(display) {
     var maxMeasures = parseInt(display && display.maxMeasures, 10);
     return maxMeasures > 0 ? maxMeasures : 4;
   }
@@ -51,10 +40,9 @@
     return allProblems.slice(offset, offset + pageSize);
   }
 
-  return {
-    getChoralePageMeasureCount: getChoralePageMeasureCount,
+export default {
+  getChoralePageMeasureCount: getChoralePageMeasureCount,
     computeTotalIdentPages: computeTotalIdentPages,
     computeIdentPageOffset: computeIdentPageOffset,
     filterVisibleProblems: filterVisibleProblems,
-  };
-});
+};
