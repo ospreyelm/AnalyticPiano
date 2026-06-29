@@ -194,8 +194,10 @@ def _submit_exercise_performance(request):
     # This shouldn't require a lookup but only a format conversion
     # between integers (0 thru 1,757,599) and strings (A00AA thru Z99ZZ)
     try:
-        course_id = Course.objects.get(id=data_course_id)._id if data_course_id else None
+        course_obj = Course.objects.get(id=data_course_id) if data_course_id else None
+        course_id = course_obj._id if course_obj else None
     except Course.DoesNotExist:
+        course_obj = None
         course_id = None
 
     playlist_obj = Playlist.objects.get(id=data_playlist_id)
@@ -204,7 +206,7 @@ def _submit_exercise_performance(request):
     # Convoluted procedure because the Playlist object is not imported to exercise_context.js
     # so the accuracy of this database write depends on the playlist not having changed since
     # the call of compileExerciseReport
-    exercise_id = get_served_exercise_id(request.user, playlist_obj, int(data_exercise_num))
+    exercise_id = get_served_exercise_id(request.user, playlist_obj, int(data_exercise_num), course=course_obj)
     if exercise_id is None:
         return JsonResponse({"error": "Invalid exercise number"}, status=400)
 
@@ -217,6 +219,7 @@ def _submit_exercise_performance(request):
         playlist_id=playlist_id,  # integer
         exercise_id=exercise_id,  # string
         data=performance_data,
+        exercise_num=int(data_exercise_num),
     )
 
     # Record mastery attempt (skip for figured bass — tags are RN-centric)
@@ -261,7 +264,7 @@ def identification_answers_view(request):
         try:
             course = Course.objects.get(id=data_course_id) if data_course_id else None
             playlist = Playlist.objects.get(id=data_playlist_id)
-            exercise_id = get_served_exercise_id(request.user, playlist, int(data_exercise_num))
+            exercise_id = get_served_exercise_id(request.user, playlist, int(data_exercise_num), course=course)
             exercise = Exercise.objects.get(id=exercise_id) if exercise_id else None
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
