@@ -29,7 +29,7 @@ def get_adaptive_exercise_for_view(request, playlist, exercise_num, course_id=No
         course_obj = Course.objects.filter(id=course_id).first()
     
     exercise_obj, target_key = get_next_exercise(
-        request.user.id, playlist=playlist, course=course_obj, seed=seed
+        request.user.id, playlist=playlist, course=course_obj, exercise_num=exercise_num, seed=seed
     )
 
     # get_next_exercise may return a raw ID string (from the pinning path)
