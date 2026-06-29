@@ -1485,6 +1485,29 @@ class PerformanceData(models.Model):
                 continue
         return False
 
+    def get_best_harmonization_pass(self, exercise_id):
+        """Return the harmonization_accepted_sonorities list from the most
+        complete stored pass for this exercise, or None.
+
+        Most complete = greatest number of accepted sonorities. Ties resolve to
+        the most recent pass (self.data is append-ordered). Matches transposed
+        variants via the 6-char base id, consistent with exercise_id[0:6] usage
+        elsewhere in this model.
+        """
+        base = (exercise_id or "")[:6]
+        best = None
+        best_len = 0
+        for entry in self.data:
+            if entry.get("id", "")[:6] != base:
+                continue
+            sonorities = entry.get("harmonization_accepted_sonorities")
+            if not sonorities:
+                continue
+            if len(sonorities) >= best_len:  # >= => later (more recent) wins ties
+                best_len = len(sonorities)
+                best = sonorities
+        return best
+
     def playlist_passed(self):
         from apps.dashboard.views.performance import playlist_pass_bool
 
