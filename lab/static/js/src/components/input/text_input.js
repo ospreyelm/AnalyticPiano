@@ -168,6 +168,20 @@ var VALID_NOTE_RE = /^([a-g])(#{1,2}|b{1,2})?$/;
     },
 
     /**
+     * Placeholder text for the enabled (Type) field, by analysisType.
+     * The disabled (Click) field uses a fixed hint — see setDisabled.
+     */
+    _placeholderText: function () {
+      if (this.analysisType === "interval_generic") {
+        return "e.g. 5 8 3 6";
+      }
+      if (this.analysisType === "interval_specific") {
+        return "e.g. P5 M3 m6 A4";
+      }
+      return "e.g. C D E F";
+    },
+
+    /**
      * Practice mode only submits answers whose normalized value changed since
      * the last parse event we committed.
      */
@@ -224,6 +238,42 @@ var VALID_NOTE_RE = /^([a-g])(#{1,2}|b{1,2})?$/;
     },
 
     /**
+     * Toggle the field's disabled state and its placeholder.
+     * Called by exercise_sheet at the point of Click/Type state change so the
+     * field stays mounted but read-only in Click mode, replacing the
+     * attribute observers that used to live in player.html.
+     */
+    setDisabled: function (disabled) {
+      if (!this._fieldEl || !this._fieldEl.length) {
+        return;
+      }
+      this._fieldEl.prop("disabled", !!disabled);
+      this._fieldEl.attr(
+        "placeholder",
+        disabled ? "Click the ? labels on the score" : this._placeholderText()
+      );
+    },
+
+    /**
+     * Flush the current field value to the grader then invoke onSubmit — but
+     * ONLY when the field is enabled (Type mode). Returns false when there is
+     * no enabled field so the caller can fall back to a direct submit.
+     *
+     * Replaces the capture-phase #identification-submit interceptor that used
+     * to live in player.html (which clicked the hidden .text-id-check).
+     * Never flushes a disabled/empty field: _emitAllAnswers would clear
+     * existing grader answers for tokens present in _prevAnswers but absent
+     * from the (empty) field.
+     */
+    flushAndSubmitIfActive: function () {
+      if (!this._fieldEl || !this._fieldEl.length || this._fieldEl[0].disabled) {
+        return false;
+      }
+      this._commitSubmitValue(this._fieldEl.val());
+      return true;
+    },
+
+    /**
      * Render the text input, optional check button, and small usage hint.
      */
     render: function () {
@@ -247,14 +297,7 @@ var VALID_NOTE_RE = /^([a-g])(#{1,2}|b{1,2})?$/;
           : "Space-separated note names. Bb and F# work.";
       var hint = $('<div class="text-id-hint"></div>').text(hintText);
 
-      field.attr(
-        "placeholder",
-        this.analysisType === "interval_generic"
-          ? "e.g. 5 8 3 6"
-          : this.analysisType === "interval_specific"
-            ? "e.g. P5 M3 m6 A4"
-            : "e.g. C D E F"
-      );
+      field.attr("placeholder", this._placeholderText());
 
       pill.append(field).append(button);
       wrap.append(pill).append(hint);
