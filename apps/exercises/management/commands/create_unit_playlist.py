@@ -105,8 +105,8 @@ def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: lis
     )
 
     # Quality exclusions:
-    # 1. No key changes permitted for units before secondary chords (unit 16)
-    if unit_num < 16:
+    # 1. No key changes permitted before modulation is formally taught (units 19-20)
+    if unit_num < 19:
         candidates = candidates.filter(skill_tags__contains=["no_key_change"])
     # 2. Avoid interior rests
     candidates = candidates.filter(skill_tags__contains=["no_interior_rests"])
