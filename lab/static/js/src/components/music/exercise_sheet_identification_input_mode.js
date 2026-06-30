@@ -126,6 +126,18 @@ export default  {
 
       var definition = this.exerciseContext.getDefinition();
       var problems = this._getVisibleIdentificationProblems(definition);
+      var $container = this._getIdentificationInputContainer();
+
+      // No text-input toggle for this exercise (or no problems): hide and
+      // tear down. _supportsTextInputMode returns false for chorale-ident,
+      // inputModeFixed=dropdown, etc. — these never render the Click/Type
+      // toggle, so no field should be shown.
+      if (!problems.length || !this._supportsTextInputMode(definition)) {
+        $container.hide().empty();
+        this._destroyIdentificationInputComponent();
+        return;
+      }
+
       var currentAnswers = this._getVisibleIdentificationAnswers(problems);
       var textInputState = this._getTextInputState(definition, problems, currentAnswers);
       var feedbackMode = this._getActiveIdentificationMode();
@@ -137,15 +149,11 @@ export default  {
         ? this.exerciseContext.getIdentPageOffset()
         : 0;
       var signature = [inputMode, analysisType, feedbackMode, pageOffset, problems.length].join(":");
-      var $container = this._getIdentificationInputContainer();
       var self = this;
 
-      if (inputMode !== "text" || !problems.length) {
-        $container.hide().empty();
-        this._destroyIdentificationInputComponent();
-        return;
-      }
-
+      // The field stays mounted in BOTH Click and Type mode (disabled in
+      // Click mode — see _syncIdentificationInputDisabled), so the container
+      // is always shown for supported exercises.
       $container
         .removeClass("ident-input-dropdown")
         .addClass("ident-input-text")
@@ -168,5 +176,18 @@ export default  {
 
       this._identInputMode = inputMode;
       this._hydrateTextInputComponent(this._inputComponent, textInputState.hydrationAnswers);
+      this._syncIdentificationInputDisabled(inputMode);
+    },
+
+    // Toggle the text field's disabled state at the point of state change
+    // (Click vs Type), replacing the attribute observers that lived in
+    // player.html. Type mode → enabled with the analysisType placeholder;
+    // Click mode → disabled with the "Click the ? labels" hint.
+    _syncIdentificationInputDisabled: function (inputMode) {
+      var component = this._inputComponent;
+      if (!component || !component.setDisabled) {
+        return;
+      }
+      component.setDisabled(inputMode !== "text");
     },
   };
