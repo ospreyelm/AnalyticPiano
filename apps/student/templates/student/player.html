@@ -286,75 +286,13 @@
         });
       }
 
-      // ── Identification submit commit ───────────────────────
+      // ── Identification UI ──────────────────────────────────
       //
-      // The identification components now render directly into this template's
-      // slots via app/components/music/identification_layout_targets.js:
-      //   • #ident-toggle-row        → #ident-toolbar-slot
-      //   • #ident-input-container   → #s-answer-bar (before #identification-submit)
-      //   • #ident-progress-container → #s-answer-bar (front row)
-      // No relocation observers are needed. What remains here is the submit
-      // commit + the Click/Type field-disabled sync, which are behavioral, not
-      // layout, and stay until a later phase moves them into the components.
-
-      var answerBar   = document.getElementById('s-answer-bar');
-      var submitBtn   = document.getElementById('identification-submit');
-      var toolbarSlot = document.getElementById('ident-toolbar-slot');
-
-      // In submit mode, TextInputComponent only fires onAnswer on Enter or the
-      // internal .text-id-check button click — not on keystroke alone.
-      // Our external #identification-submit button's onclick = onSubmitIdentification,
-      // which reads answers already committed to the grader. If the student never
-      // pressed Enter, the field value hasn't been committed yet.
-      //
-      // Fix: intercept the click in capture phase, click the hidden .text-id-check
-      // button (commits answers + calls onSubmit=onSubmitIdentification), then
-      // stop propagation so the outer onclick doesn't double-submit.
-      // If there's no .text-id-check (Click mode / no text component), fall through.
-      if (submitBtn) {
-        submitBtn.addEventListener('click', function (e) {
-          var checkBtn = document.querySelector('#ident-input-container .text-id-check');
-          if (checkBtn) {
-            e.stopImmediatePropagation(); // prevent outer onclick from also calling submit
-            checkBtn.click();             // commits answers + calls onSubmitIdentification
-          }
-          // No checkBtn = Click mode; outer onclick handles it normally.
-        }, true); // capture phase runs before onclick
-      }
-
-      // ── Click/Type mode: disable .text-id-field in Click mode ──
-      function getCurrentInputMode() {
-        var container = document.querySelector('#ident-toolbar-slot #ident-input-toggle-container');
-        if (!container) return 'dropdown';
-        var active = container.querySelector('.mode-option.active');
-        var text = active ? (active.textContent || '').trim().toLowerCase() : '';
-        return text === 'type' ? 'text' : 'dropdown';
-      }
-
-      function syncTextFieldDisabled() {
-        var field = document.querySelector('#ident-input-container .text-id-field');
-        if (!field) return;
-        var isClick = getCurrentInputMode() === 'dropdown';
-        field.disabled = isClick;
-        if (isClick) {
-          field.setAttribute('placeholder', 'Click the ? labels on the score');
-        } else {
-          field.setAttribute('placeholder', 'e.g. C D E F');
-        }
-      }
-
-      // Sync disabled state whenever Click/Type toggle changes active class
-      if (toolbarSlot) {
-        new MutationObserver(syncTextFieldDisabled)
-          .observe(toolbarSlot, { attributes: true, subtree: true, attributeFilter: ['class'] });
-      }
-      // Sync whenever answer bar children change (e.g. #ident-input-container moves in)
-      // or when .text-id-field is (re)built inside the container
-      if (answerBar) {
-        new MutationObserver(syncTextFieldDisabled)
-          .observe(answerBar, { childList: true, subtree: true });
-      }
-
+      // All identification behavior — Click/Type + Practice/Submit toggles,
+      // text input, submit commit, and field-disabled sync — lives in the JS
+      // components (exercise_sheet_identification_*) and renders directly
+      // into this template's #ident-toolbar-slot and #s-answer-bar via
+      // identification_layout_targets.js. No runtime DOM surgery remains here.
 
       // ── Hint: settings nudge ───────────────────────────────
       var hintShown = sessionStorage.getItem('hl_settings_hint_shown');
