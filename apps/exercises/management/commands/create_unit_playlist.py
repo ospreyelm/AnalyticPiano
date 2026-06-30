@@ -24,6 +24,17 @@ def _mode_display_label(mode: str) -> str:
     return mode
 
 
+def _build_playlist_name(unit_num, title: str, mode_label: str) -> str:
+    """Playlist.name is max_length=64; truncate the title to fit."""
+    name = f"Unit {unit_num} — {title} ({mode_label})"
+    if len(name) <= 64:
+        return name
+    prefix = f"Unit {unit_num} — "
+    suffix = f" ({mode_label})"
+    max_title_len = max(0, 64 - len(prefix) - len(suffix))
+    return f"{prefix}{title[:max_title_len].rstrip()}{suffix}"
+
+
 # parents[4] from this file = repo root
 TAXONOMY_PATH = Path(__file__).resolve().parents[4] / "music_theory_taxonomy_with_branches.json"
 
@@ -209,7 +220,7 @@ class Command(BaseCommand):
                                  extra_tags=[unit_tag, mode_tag], public=make_public,
                                  overwrite=options.get("overwrite", False))
 
-        playlist_name = f"Unit {unit_num} — {title} ({_mode_display_label(mode)})"
+        playlist_name = _build_playlist_name(unit_num, title, _mode_display_label(mode))
         if dry_run:
             self.stdout.write(f"[dry-run] Would create playlist: {playlist_name}")
             return
