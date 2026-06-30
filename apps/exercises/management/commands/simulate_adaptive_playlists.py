@@ -100,10 +100,32 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip deletion of simulation data after the run.",
         )
+        parser.add_argument(
+            "--playlist-id",
+            default=None,
+            help=(
+                "Debug tweak: run against an existing playlist (P-ID, e.g. PA03WK) "
+                "instead of creating a synthetic one. Skips exercise/playlist creation "
+                "and forces cleanup to skip deleting the borrowed playlist."
+            ),
+        )
+        parser.add_argument(
+            "--steps",
+            type=int,
+            default=N_STEPS,
+            help="Number of steps per student (default: %(default)s). Bump past the "
+                 "synthetic default to reproduce stuck-slot behaviour at higher exercise_num.",
+        )
 
     def handle(self, *args, **options):
         output_path = options["output"]
         skip_cleanup = options["no_cleanup"]
+        playlist_id = options["playlist_id"]
+        n_steps = options["steps"]
+
+        # Honour the module-level N_STEPS contract for the rest of the run.
+        global N_STEPS
+        N_STEPS = n_steps
 
         self.stdout.write(self.style.MIGRATE_HEADING(
             "\n=== Adaptive Playlist Simulation ===\n"
@@ -111,8 +133,21 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             teacher, students = self._setup_users()
-            exercises = self._create_exercises(teacher)
-            playlist = self._create_playlist(teacher, exercises)
+            if playlist_id:
+                # Temporary tweak to hunt the bug: borrow a real playlist instead of
+                # synthesizing one. get_next_exercise() pulls the pool from the
+                # playlist's own ordered exercises, so the sim runs against real
+                # content. exercises=[] because we own nothing to clean up.
+                playlist = Playlist.objects.get(id=playlist_id)
+                exercises = []
+                self.stdout.write(self.style.WARNING(
+                    f"Debug mode: borrowing existing playlist {playlist.id} "
+                    f"({playlist.name}); synthetic exercises skipped."
+                ))
+            else:
+                exercises = self._create_exercises(teacher)
+                playlist = self._create_playlist(teacher, exercises)
+
             self._clear_session_data(students, playlist)
 
             report = self._run_simulation(students, playlist)
@@ -125,7 +160,7 @@ class Command(BaseCommand):
 
         if not skip_cleanup:
             with transaction.atomic():
-                self._cleanup(students, exercises, playlist)
+                self._cleanup(students, exercises, playlist, borrowed=bool(playlist_id))
             self.stdout.write("Simulation data cleaned up.")
 
         if passed:
@@ -221,6 +256,10 @@ class Command(BaseCommand):
         for name, user in students.items():
             self.stdout.write(self.style.MIGRATE_HEADING(f"--- {name} ---"))
             pattern = PERFORMANCE_PATTERNS[name]
+            # Pad pattern (all-correct) if --steps exceeds the predefined length,
+            # so a debug run can reach higher exercise_num values.
+            if len(pattern) < N_STEPS:
+                pattern = pattern + [True] * (N_STEPS - len(pattern))
             steps = []
 
             for step_num in range(1, N_STEPS + 1):
@@ -391,11 +430,15 @@ class Command(BaseCommand):
     # Cleanup
     # ------------------------------------------------------------------
 
-    def _cleanup(self, students: dict, exercises: list, playlist: Playlist) -> None:
+    def _cleanup(self, students: dict, exercises: list, playlist: Playlist,
+                 borrowed: bool = False) -> None:
+        # Never delete a borrowed (real) playlist or its exercises; only scrub the
+        # sim students' session data so the run is repeatable.
         PerformanceData.objects.filter(playlist=playlist).delete()
-        playlist.delete()
-        for ex in exercises:
-            Exercise.objects.filter(id=ex.id).delete()
+        if not borrowed:
+            playlist.delete()
+            for ex in exercises:
+                Exercise.objects.filter(id=ex.id).delete()
         for user in students.values():
             StudentSkillMastery.objects.filter(user=user).delete()
             user.delete()
