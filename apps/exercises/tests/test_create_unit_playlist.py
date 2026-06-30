@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from apps.exercises.models import Exercise, Playlist
+from apps.exercises.models import Exercise, ExercisePlaylistOrdered, Playlist
 from apps.exercises.tests.umto_test_helpers import make_umto_exercise
 
 User = get_user_model()
@@ -188,6 +188,56 @@ class CreateUnitPlaylistCommandTest(TestCase):
         with self.assertRaises(CommandError):
             call_command("create_unit_playlist", unit=11, riemenschneider="21",
                          author="nobody@example.com")
+
+    def test_fails_on_unknown_exercise_author(self):
+        with self.assertRaises(CommandError):
+            call_command("create_unit_playlist", unit=11, riemenschneider="21",
+                         author="teacher@example.com", exercise_author="nobody@example.com")
+
+    def test_exercise_author_used_for_candidates_when_playlist_author_differs(self):
+        # Reproduces a real incident: a Playlist row is owned by one account
+        # (e.g. a "factory" service account) but its actual candidate
+        # Exercise rows are owned by a different account. --exercise-author
+        # must be used for exercise selection while --author still matches
+        # the existing Playlist, so a re-run updates the live playlist in
+        # place instead of creating an empty duplicate.
+        exercise_owner = User.objects.create_user(email="exercises@example.com", password="pw")
+        existing_playlist = Playlist.objects.create(
+            name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
+            authored_by=self.author,
+            is_dynamic=False,
+            is_adaptive=True,
+            skill_tags=["unit:11", "mode:roman"],
+            is_public=True,
+        )
+        ex = make_umto_exercise(
+            author=exercise_owner,
+            skill_tags=["unit:11", "mode:roman", "no_key_change", "no_interior_rests"],
+            complexity=1,
+            description="Bach R21 - Phrase 1 (mm.1-4) [roman]",
+        )
+
+        call_command(
+            "create_unit_playlist",
+            unit=11,
+            riemenschneider="21",
+            author="teacher@example.com",
+            exercise_author="exercises@example.com",
+            mode="roman",
+            playlist_only=True,
+            no_chord_filter=True,
+        )
+
+        self.assertEqual(
+            Playlist.objects.filter(
+                name="Unit 11 — Pre-dominants (Roman Numeral Analysis)",
+                authored_by=self.author,
+            ).count(),
+            1,
+        )
+        linked = ExercisePlaylistOrdered.objects.filter(playlist=existing_playlist)
+        self.assertEqual(linked.count(), 1)
+        self.assertEqual(linked.first().exercise, ex)
 
     @patch("apps.exercises.management.commands.create_unit_playlist.call_command")
     def test_roman_playlist_uses_display_label(self, mock_call):

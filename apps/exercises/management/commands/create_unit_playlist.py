@@ -104,12 +104,12 @@ def _exercise_order_key(ex, unit_num: int, family: str = "roman"):
     )
 
 
-def _select_bach_candidates(*, author, unit_num: int, mode: str, riem_range: list[int], no_chord_filter: bool):
+def _select_bach_candidates(*, author, exercise_author=None, unit_num: int, mode: str, riem_range: list[int], no_chord_filter: bool):
     unit_tag = f"unit:{unit_num}"
     mode_tag = f"mode:{mode}"
     riem_set = set(riem_range)
     candidates = Exercise.objects.filter(
-        authored_by=author,
+        authored_by=exercise_author or author,
         skill_tags__contains=[unit_tag],
     ).filter(
         skill_tags__contains=[mode_tag],
@@ -168,6 +168,9 @@ class Command(BaseCommand):
         parser.add_argument("--unit", type=int, required=True)
         parser.add_argument("--riemenschneider", type=str, required=True)
         parser.add_argument("--author", type=str, required=True)
+        parser.add_argument("--exercise-author", type=str, default=None,
+                            help="Author whose Exercise rows are used as playlist candidates, "
+                                 "if different from --author (the Playlist owner). Defaults to --author.")
         parser.add_argument("--mode", type=str,
                             choices=["roman", "play", "play_figures", "figures", "figures_unabbreviated", "matching"], default="roman")
         parser.add_argument("--min-measures", type=int, default=3)
@@ -184,6 +187,7 @@ class Command(BaseCommand):
         unit_num = options["unit"]
         riem_range = _parse_range(str(options["riemenschneider"]))
         author_email = options["author"]
+        exercise_author_email = options.get("exercise_author") or author_email
         mode = options["mode"]
         min_measures = options["min_measures"]
         make_public = options["public"]
@@ -200,6 +204,11 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             raise CommandError(f"No user with email '{author_email}'.")
 
+        try:
+            exercise_author = User.objects.get(email=exercise_author_email)
+        except User.DoesNotExist:
+            raise CommandError(f"No user with email '{exercise_author_email}'.")
+
         unit_tag = f"unit:{unit_num}"
         mode_tag = f"mode:{mode}"
         unit_skill_tags = list(unit_meta.get("tags", []))
@@ -215,7 +224,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"  R{riem_num}...")
                 if not dry_run:
                     call_command("import_bach_phrases",
-                                 riemenschneider=riem_num, author=author_email,
+                                 riemenschneider=riem_num, author=exercise_author_email,
                                  mode=mode, min_measures=min_measures,
                                  extra_tags=[unit_tag, mode_tag], public=make_public,
                                  overwrite=options.get("overwrite", False))
@@ -249,6 +258,7 @@ class Command(BaseCommand):
         if not dry_run:
             selected = _select_bach_candidates(
                 author=author,
+                exercise_author=exercise_author,
                 unit_num=unit_num,
                 mode=mode,
                 riem_range=riem_range,
