@@ -37,6 +37,9 @@ class Command(BaseCommand):
         parser.add_argument("--modes", default=DEFAULT_MODES)
         parser.add_argument("--riemenschneider", required=True)
         parser.add_argument("--author", required=True)
+        parser.add_argument("--exercise-author", default=None,
+                            help="Author whose Exercise rows are used as playlist candidates, "
+                                 "if different from --author (the Playlist owner). Defaults to --author.")
         parser.add_argument("--min-measures", type=int, default=3)
         parser.add_argument("--public", action="store_true")
         parser.add_argument("--overwrite", action="store_true", default=True)
@@ -48,12 +51,17 @@ class Command(BaseCommand):
         units = _parse_csv_ints(options["units"])
         modes = _parse_csv_strings(options["modes"])
         author_email = options["author"]
+        exercise_author_email = options.get("exercise_author") or author_email
 
         User = get_user_model()
         try:
             User.objects.get(email=author_email)
         except User.DoesNotExist:
             raise CommandError(f"No user with email '{author_email}'.")
+        try:
+            User.objects.get(email=exercise_author_email)
+        except User.DoesNotExist:
+            raise CommandError(f"No user with email '{exercise_author_email}'.")
 
         self.stdout.write(f"Units: {units}")
         self.stdout.write(f"Modes: {modes}")
@@ -66,7 +74,7 @@ class Command(BaseCommand):
                 call_command(
                     "import_bach_phrases",
                     riemenschneider=options["riemenschneider"],
-                    author=author_email,
+                    author=exercise_author_email,
                     mode=mode,
                     min_measures=options["min_measures"],
                     extra_tags=extra_tags,
@@ -82,6 +90,7 @@ class Command(BaseCommand):
                     unit=unit,
                     riemenschneider=options["riemenschneider"],
                     author=author_email,
+                    exercise_author=exercise_author_email,
                     mode=mode,
                     min_measures=options["min_measures"],
                     public=options["public"],
