@@ -84,6 +84,56 @@ def _next_pending_num(ordered_ids: list[str], completed_ids: set[str]) -> int | 
     return None
 
 
+def _adaptive_pending_slot_num(perf) -> int | None:
+    """First 1-based slot index that is missing or not yet submitted.
+
+    A slot counts as submitted when it carries a ``performed_at`` timestamp
+    (set by ``PerformanceData.submit`` for every real submission, across both
+    the old and new slot schemas). JIT placeholders lack ``performed_at``.
+    Returns None when every existing slot is submitted.
+    """
+    if not perf:
+        return None
+    for idx, slot in enumerate(perf.data or [], start=1):
+        if not slot or slot.get("is_placeholder") or not slot.get("performed_at"):
+            return idx
+    return None
+
+
+def resolve_adaptive_step(
+    user, playlist: Playlist, requested_num: int, course=None
+) -> PlayerProgressState:
+    """Decouple ``exercise_num`` from the URL for adaptive/dynamic playlists.
+
+    The backend decides the slot strictly from DB history — never from the
+    client-supplied ``requested_num``:
+
+      * If a pending (unsubmitted/placeholder/missing) slot exists, serve it
+        (mode ``progression``).
+      * If every reserved slot is submitted, advance to the next fresh slot
+        (``len(data) + 1``), still ``progression`` — adaptive playlists have no
+        fixed length and no review-via-URL.
+      * A brand-new user (no PerformanceData) starts at slot 1.
+
+    ``should_redirect`` is set when the derived slot differs from the URL
+    ``requested_num`` so the caller can redirect the URL to match reality.
+    """
+    perf = PerformanceData.objects.filter(
+        user=user, playlist=playlist, course=course
+    ).first()
+    pending = _adaptive_pending_slot_num(perf)
+    if pending is not None:
+        resolved_num = pending
+    elif perf:
+        resolved_num = len(perf.data) + 1
+    else:
+        resolved_num = 1
+    should_redirect = requested_num is not None and requested_num != resolved_num
+    return PlayerProgressState(
+        exercise_num=resolved_num, mode="progression", should_redirect=should_redirect
+    )
+
+
 def resolve_lane_launch(user, playlist: Playlist) -> PlayerProgressState:
     ordered_ids = get_ordered_exercise_ids_for_serving(user, playlist)
     completed_ids = get_completed_exercise_ids(user, playlist)

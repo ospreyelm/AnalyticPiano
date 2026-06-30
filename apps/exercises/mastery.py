@@ -287,8 +287,15 @@ def get_next_exercise(user, playlist=None, course=None, exercise_num=1, seed=Non
                 # If the user has a record for this slot (exercise_num), use it.
                 if len(perf.data) >= exercise_num:
                     exercise_data = perf.data[exercise_num - 1]
-                    # Skip placeholder slots — reserved but not yet submitted; fall through to fresh selection.
-                    if not exercise_data.get('is_placeholder', False):
+                    # Pin only genuinely SUBMITTED slots. A slot is submitted when
+                    # ``is_submitted`` is explicitly True (new JIT/submit schema).
+                    # Placeholder slots (reserved but not yet submitted) and
+                    # legacy/old-schema slots (which lack is_submitted) fall through
+                    # to fresh generation, where seen_exercise_ids deduplication
+                    # prevents re-serving already-seen exercises. This keeps an
+                    # unsubmitted slot index from short-circuiting the adaptive
+                    # engine — see resolve_adaptive_step for the matching view logic.
+                    if exercise_data.get('is_submitted') is True and not exercise_data.get('is_placeholder', False):
                         pinned_id = exercise_data.get('id')
                         if pinned_id:
                             # Validate pinned exercise still exists before returning.

@@ -42,6 +42,7 @@ from apps.student.player_progression import (
     get_ordered_exercise_ids_for_serving,
     get_served_exercise_id,
     is_completed_identification_attempt,
+    resolve_adaptive_step,
     resolve_requested_step,
 )
 from apps.student.home_context import (
@@ -952,7 +953,10 @@ class PlayerView(View):
             return redirect(reverse("student:unit", kwargs={"unit_num": unit_num}))
 
         if is_dynamic_or_adaptive:
-            state = PlayerProgressState(exercise_num=exercise_num, mode="progression")
+            # Decouple exercise_num from the URL: the backend derives the slot
+            # strictly from DB history (next pending slot) and redirects the
+            # URL to match. See resolve_adaptive_step.
+            state = resolve_adaptive_step(request.user, playlist, exercise_num, course)
         else:
             state = resolve_requested_step(request.user, playlist, exercise_num)
 
@@ -1171,21 +1175,34 @@ class PlayerDefinitionView(View):
 
         course = resolve_course_for_playlist(request.user, playlist)
 
+        is_dynamic_or_adaptive = bool(playlist.is_dynamic or playlist.is_adaptive)
         served_count = len(get_ordered_exercise_ids_for_serving(request.user, playlist))
-        if exercise_num > served_count:
+        if not is_dynamic_or_adaptive and exercise_num > served_count:
             return JsonResponse(
                 {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
             )
 
-        state = resolve_requested_step(request.user, playlist, exercise_num)
+        if is_dynamic_or_adaptive:
+            # Decouple exercise_num from the URL for adaptive/dynamic playlists;
+            # the backend derives the slot from DB history (resolve_adaptive_step)
+            # and generates/reserves via the adaptive engine, not the ordered-ids
+            # path used by static playlists.
+            state = resolve_adaptive_step(request.user, playlist, exercise_num, course)
+        else:
+            state = resolve_requested_step(request.user, playlist, exercise_num)
         if state.should_redirect:
             return JsonResponse(
                 {"redirect": reverse("student:player", kwargs={"unit_num": unit_num})
                  + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"}
             )
 
-        exercise_id = get_served_exercise_id(request.user, playlist, state.exercise_num)
-        exercise = Exercise.objects.filter(id=exercise_id).first() if exercise_id else None
+        if is_dynamic_or_adaptive:
+            exercise = get_adaptive_exercise_for_view(
+                request, playlist, state.exercise_num, course.id if course else None
+            )
+        else:
+            exercise_id = get_served_exercise_id(request.user, playlist, state.exercise_num)
+            exercise = Exercise.objects.filter(id=exercise_id).first() if exercise_id else None
         if not exercise:
             return JsonResponse(
                 {"redirect": reverse("student:unit", kwargs={"unit_num": unit_num})}
