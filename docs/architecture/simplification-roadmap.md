@@ -40,7 +40,7 @@ Companion docs:
 
 ### P2 — localized, high fragility-per-line or backbone extraction
 - **#6 service extraction** — Status: PARTIAL. `generate_exercise_context` extraction COMPLETE (PR #186 merged; `apps.exercises.services.exercise_context` is sole authority; `lab.views` shim deleted). Next extraction candidates: selection/progress logic out of `student/views.py` (1326 LOC) or `lab/views.py`; cohesive behavior out of `models.py` (1578) / `forms.py` (1327). JS-side `exercise_context_*_logic` module extractions are landing on master separately — coordinate.
-- **#5 player.html observer removal** — Status: NOT STARTED. Self-contained but real frontend surgery; needs browser verification (run via `/run-harmonylab`). Fix at source: make the AMD/ESM components (`exercise_sheet.js`, `TextInputComponent`) render into `#ident-toolbar-slot` / `#s-answer-bar` directly, then delete the observers + capture-phase interceptor.
+- **#5 player.html observer removal** — Status: PARTIAL (Phase A done, PR pending). Fix at source: the AMD/ESM components now render into `#ident-toolbar-slot` / `#s-answer-bar` directly via `lab/static/js/src/components/music/identification_layout_targets.js` (slot-aware, falls back to `#identification-actions` for the legacy `lab/templates/exercise.html`). Phase A deleted the 2 childList relocation observers from `apps/student/templates/student/player.html` (net −~50 LOC). Phase B (deferred): the capture-phase submit interceptor + the 2 `syncTextFieldDisabled` attribute observers remain — behavioral, move text-field commit into the submit flow + set `.text-id-field` disabled at mode-toggle time. Needs browser verification (run via `/run-harmonylab`).
 - **#3 command archiving** — Status: NOT STARTED. `list_exercise_generators.py` CATALOG registers ~43 sanctioned generators; 15 unregistered = one-shot/legacy candidates. "Archiving" a Django command = deletion (can't move out of `commands/` without breaking `manage.py`). Low safe value without the service-extraction half (commands should call services, not own the only impl — overlaps #6).
 
 ### P3 — biggest payoff, depends on #6
@@ -60,3 +60,4 @@ Companion docs:
 - PR #186 (MERGED): `generate_exercise_context` service extraction — `lab.views` compat shim removed.
 - P1 local cleanup (not a PR): 15 stale worktrees pruned, 25 merged branches deleted, real figured-bass code rescued to `stash@{0}`.
 - PR #185 (OPEN): root junkyard + `.gitignore` hardening + planning notes relocation.
+- #5 Phase A (pending PR): `identification_layout_targets.js` slot-aware mount helper; 2 childList relocation observers removed from `player.html`. Capture-phase submit interceptor + 2 `syncTextFieldDisabled` attribute observers deferred to Phase B.

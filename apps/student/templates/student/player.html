@@ -112,7 +112,8 @@
       <div id="staff-area">
 
         <div id="staff-toolbar">
-          <!-- Mode toggles (Click/Type · Practice/Submit) land here via MutationObserver -->
+          <!-- Mode toggles (Click/Type · Practice/Submit) render here directly
+               via identification_layout_targets.js (toolbarSlot). -->
           <div id="ident-toolbar-slot"></div>
           <span class="s-toolbar-sep" id="ident-toolbar-sep" style="display:none;"></span>
 
@@ -136,16 +137,17 @@
         </div>
 
         <!-- Persistent answer bar: always visible for identification exercises.
-             #ident-input-container (the real JS TextInputComponent) is moved
-             here by MutationObserver once JS creates it.
+             The identification components render #ident-input-container and
+             #ident-progress-container here directly via
+             identification_layout_targets.js (answerBar).
              #identification-submit lives here so JS finds it by id. -->
         <div id="s-answer-bar" style="display:none;">
-          <!-- JS moves #ident-input-container here -->
           <button id="identification-submit" type="button">Check</button>
         </div>
 
-        <!-- #identification-actions: JS appends #ident-toggle-row and
-             #ident-progress-container here. Zero-height; we relocate children. -->
+        <!-- #identification-actions: legacy fallback mount point used by
+             lab/templates/exercise.html; in this template it is a zero-height
+             placeholder (modern mounts go to the slots above). -->
         <div class="s-control-bar">
           <div id="identification-actions"></div>
           <div id="instruction-panel">
@@ -284,28 +286,20 @@
         });
       }
 
-      // ── Identification layout orchestration ────────────────
+      // ── Identification submit commit ───────────────────────
       //
-      // exercise_sheet.js renders:
-      //   • #ident-toggle-row  → appended into #identification-actions
-      //   • #ident-input-container → inserted as sibling AFTER #identification-actions
-      //       └─ TextInputComponent: .text-id-field + .text-id-check (the REAL inputs)
-      //   • #ident-progress-container → prepended into #identification-actions
-      //
-      // We move:
-      //   • #ident-toggle-row        → #ident-toolbar-slot (toolbar row)
-      //   • #ident-input-container   → into #s-answer-bar (before #identification-submit)
-      //   • #ident-progress-container → into #s-answer-bar (first, as own row)
-      //
-      // The .text-id-field IS the real input — we never proxy it.
-      // In Click mode we set .text-id-field[disabled] to block typing.
+      // The identification components now render directly into this template's
+      // slots via app/components/music/identification_layout_targets.js:
+      //   • #ident-toggle-row        → #ident-toolbar-slot
+      //   • #ident-input-container   → #s-answer-bar (before #identification-submit)
+      //   • #ident-progress-container → #s-answer-bar (front row)
+      // No relocation observers are needed. What remains here is the submit
+      // commit + the Click/Type field-disabled sync, which are behavioral, not
+      // layout, and stay until a later phase moves them into the components.
 
-      var answerBar    = document.getElementById('s-answer-bar');
-      var submitBtn    = document.getElementById('identification-submit');
-      var toolbarSlot  = document.getElementById('ident-toolbar-slot');
-      var toolbarSep   = document.getElementById('ident-toolbar-sep');
-      var identActions = document.getElementById('identification-actions');
-      var controlBar   = document.querySelector('.s-control-bar');
+      var answerBar   = document.getElementById('s-answer-bar');
+      var submitBtn   = document.getElementById('identification-submit');
+      var toolbarSlot = document.getElementById('ident-toolbar-slot');
 
       // In submit mode, TextInputComponent only fires onAnswer on Enter or the
       // internal .text-id-check button click — not on keystroke alone.
@@ -326,63 +320,6 @@
           }
           // No checkBtn = Click mode; outer onclick handles it normally.
         }, true); // capture phase runs before onclick
-      }
-
-      var answerBarShown = false;
-      function showAnswerBar() {
-        if (answerBarShown) return;
-        answerBarShown = true;
-        answerBar.style.display = 'flex';
-      }
-
-      // ── Move #ident-toggle-row to toolbar, #ident-progress-container to answer bar ──
-      // Handles a node whether it's added later (observer) or already present at
-      // setup time. Under Vite (ESM), the exercise inits on DOMContentLoaded and
-      // creates #ident-toggle-row before this 'load' handler runs, so a pure
-      // childList observer would miss it. We do an initial sweep too.
-      function relocateIdentAction(node) {
-        if (!node || !node.id) return;
-        if (node.id === 'ident-toggle-row') {
-          toolbarSlot.appendChild(node);
-          toolbarSep.style.display = '';
-          showAnswerBar();
-        }
-        if (node.id === 'ident-progress-container') {
-          // Insert at front of answer bar (before the submit button)
-          answerBar.insertBefore(node, answerBar.firstChild);
-          showAnswerBar();
-        }
-      }
-      if (identActions && toolbarSlot) {
-        var actionsObs = new MutationObserver(function(mutations) {
-          mutations.forEach(function(m) {
-            m.addedNodes.forEach(relocateIdentAction);
-          });
-        });
-        actionsObs.observe(identActions, { childList: true });
-        // Initial sweep: relocate anything already inserted before we observed.
-        Array.prototype.slice.call(identActions.children).forEach(relocateIdentAction);
-      }
-
-      // ── Watch for #ident-input-container inserted after #identification-actions ──
-      // JS does: $('#identification-actions').after($container)
-      // So it lands as a sibling inside .s-control-bar. We move it into #s-answer-bar.
-      function relocateIdentInput(node) {
-        if (node && node.id === 'ident-input-container') {
-          // Move into answer bar, before the submit button
-          answerBar.insertBefore(node, submitBtn);
-          showAnswerBar();
-        }
-      }
-      if (controlBar && answerBar) {
-        var controlObs = new MutationObserver(function(mutations) {
-          mutations.forEach(function(m) {
-            m.addedNodes.forEach(relocateIdentInput);
-          });
-        });
-        controlObs.observe(controlBar, { childList: true });
-        // Initial sweep for a container already inserted before we observed.
-        Array.prototype.slice.call(controlBar.children).forEach(relocateIdentInput);
       }
 
       // ── Click/Type mode: disable .text-id-field in Click mode ──
