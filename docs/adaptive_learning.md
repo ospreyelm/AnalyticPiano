@@ -87,6 +87,51 @@ Challenge eligibility should be stored in the curricular sequencing layer
 challenge-worthy depends on how the curriculum is using it, not on the
 canonical exercise representation alone.
 
+### Navigation & slot progress (decoupled from the URL)
+
+For **adaptive** and **dynamic** playlists, `exercise_num` is a server-derived
+slot index, **not** a value trusted from the URL. `resolve_adaptive_step`
+(`apps/student/player_progression.py`) picks the slot strictly from
+`PerformanceData` history: the first pending (unsubmitted / placeholder /
+missing) slot, else `len(data) + 1` (next fresh slot), else `1` for a new
+student. When the URL's `exercise_num` differs from the derived slot, the view
+redirects the URL to match. Both the page view (`PlayerView.get`) and the SPA
+`definition` endpoint (`PlayerDefinitionView`) route adaptive/dynamic requests
+through this derivation plus the adaptive engine, so the page view and the
+in-place "Next" re-render stay consistent.
+
+Navigation Pinning in `get_next_exercise` (`apps/exercises/mastery.py`) returns
+a previously-served exercise for a slot **only** when that slot is genuinely
+submitted (`is_submitted is True`). Placeholder and legacy slots fall through
+to fresh generation, where the full-history `seen_exercise_ids` dedup prevents
+re-serving an exercise the student has already seen this session. This is what
+breaks the former re-serve loop (PR #190).
+
+### Deferred: dedicated review mode and exercise redo for adaptive playlists
+
+Building a **dedicated review mode** and the **ability to redo a previously
+completed exercise** for adaptive/dynamic playlists is explicitly **deferred**.
+
+- **Current behavior:** adaptive/dynamic serving is always `mode="progression"`
+  — the student is advanced to the next pending slot and cannot navigate back
+  to a completed slot by editing the URL (the URL `exercise_num` is redirected
+  to the derived next slot). There is no review affordance for adaptive
+  playlists, and no in-flow "redo this exercise" action distinct from the
+  per-exercise "Try Again" reset.
+- **Why deferred:** the decoupling in PR #190 prioritized correctness of the
+  forward progression (eliminating the re-serve / stuck-slot loop) and a single
+  authoritative slot source. Reintroducing review/redo for adaptive requires a
+  deliberate design: a server-validated "review a completed slot" path that does
+  *not* re-trigger the adaptive engine's pinning/fresh-selection logic, plus a
+  redo semantics that distinguishes "re-attempt the same exercise" from
+  "advance to a new one" without re-opening the pinning-bypass failure mode.
+  That is product+design work, not a bug fix, and is out of scope for the
+  simplification effort until explicitly prioritized.
+- **Do not** "fix" this by re-trusting the URL `exercise_num` for adaptive or
+  by relaxing the `is_submitted` pinning condition — both reintroduce the
+  re-serve loop. See Claude memory `adaptive-re-serve-loop` for the traced
+  failure mode.
+
 ---
 
 ## 4. Visual Skill Map

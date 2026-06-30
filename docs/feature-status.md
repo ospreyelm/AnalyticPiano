@@ -58,6 +58,7 @@ Common AI mistakes and the correct facts:
 | `chorale_identification` uses a `chord` array | No — it uses a `score` key with CIR JSON, same structure as `chorale` |
 | Adding a new JS module only requires creating the file | Must also add a `paths` entry in `harmony/settings/requirejs.py` or the module 404s silently |
 | `exercise_types.md` is up to date on identification paging | As of 2026-04-14 it says "not yet" for `identification` paging — that note is stale |
+| Adaptive playlists support review / redo by editing the URL `exercise_num` | They do not — `exercise_num` is server-derived (PR #190); dedicated review mode and exercise redo for adaptive/dynamic playlists are **deferred** (see `docs/adaptive_learning.md` §3). Re-trusting the URL or relaxing `is_submitted` pinning reintroduces the re-serve loop |
 
 ---
 
