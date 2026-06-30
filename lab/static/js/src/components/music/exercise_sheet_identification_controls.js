@@ -74,7 +74,10 @@ export default  {
       var submitBtnEl = $submitBtn[0];
       if (submitBtnEl) {
         submitBtnEl.onclick = null; // clear any prior handler
-        submitBtnEl.onclick = _.bind(this.onSubmitIdentification, this);
+        // External Check click: flush the pending text-field value (Type mode)
+        // before submitting, else submit committed answers directly (Click mode).
+        // Replaces the capture-phase interceptor that lived in player.html.
+        submitBtnEl.onclick = _.bind(this._onExternalSubmitClick, this);
       }
 
       this._refreshIdentificationModeUI();
@@ -265,6 +268,21 @@ export default  {
       } else {
           $btn.removeClass('ready hint-pulse').text('Complete Analysis');
       }
+    },
+
+    /**
+     * External #identification-submit click handler.
+     * Type mode: flush the pending text field to the grader, then submit
+     *   (TextInputComponent.onSubmit → onSubmitIdentification).
+     * Click mode (field disabled or absent): submit committed answers
+     *   directly via onSubmitIdentification.
+     */
+    _onExternalSubmitClick: function () {
+      var input = this._inputComponent;
+      if (input && input.flushAndSubmitIfActive && input.flushAndSubmitIfActive()) {
+        return;
+      }
+      this.onSubmitIdentification();
     },
 
     /**
