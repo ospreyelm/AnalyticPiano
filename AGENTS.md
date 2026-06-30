@@ -183,6 +183,31 @@ pg_restore -h localhost -p 5433 -U postgres -d postgres --clean --if-exists \
 Use port `5433` to avoid a local PostgreSQL conflict. Ignore harmless
 `role adorman does not exist` warnings.
 
+### `generate_bach_unit_matrix` / `import_bach_phrases` safety
+
+- `import_bach_phrases` **fully replaces** `Exercise.skill_tags` on overwrite
+  (`umto_factory.py` `save_umto_exercise`, `ex.skill_tags = list(skill_tags)`
+  — not a merge). The full Bach corpus is tagged with every unit in a single
+  `--units` list at import time; units 1-14 tags get re-detected from chord
+  content on every reimport, but `unit:19`/`unit:20` (modulation) are **not**
+  content-derived — they only exist because they were in the `--units` list
+  passed at import time.
+- Always pass the **full** unit list,
+  `--units 9,10,11,12,14,16,17,18,19,20`, even when only regenerating one or
+  two units' playlists. A scoped subset silently strips the missing units'
+  tags from shared phrase rows (confirmed incident: scoped `--units 16,17,18`
+  wiped `unit:19`/`unit:20` from ~1270 shared rows on local dev). `--modes`
+  scoping is safe — each mode is a separate `Exercise` row.
+- If only playlist *membership/selection* logic changed (e.g. a filter in
+  `create_unit_playlist.py`) and exercise content/tags are unaffected, use
+  `--playlist-only --skip-refresh` to skip the music21 reimport entirely. This
+  is DB-only (no corpus parsing, no chordify, no cadence detection) and runs
+  in seconds instead of the ~6 hours a full reimport takes. `--skip-refresh`
+  also avoids `backfill_skill_tags`/`backfill_raw_roman_numeral`, which
+  iterate every exercise platform-wide, not just the touched scope.
+- See [Efficient Bach generation plan](docs/superpowers/plans/2026-06-02-efficient-bach-generation.md)
+  for the full command design.
+
 ## Repository hygiene
 
 - Preserve unrelated user changes in dirty worktrees.
