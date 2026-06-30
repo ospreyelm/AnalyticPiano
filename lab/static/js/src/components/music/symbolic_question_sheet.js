@@ -2,6 +2,11 @@ import _ from "lodash";
 import $ from "jquery";
 import Component from "app/components/component";
 import SymbolicMeterRenderingLogic from "app/models/symbolic_meter_rendering_logic";
+import {
+  toolbarSlot,
+  mountProgressContainer,
+  showToolbarSepIfNeeded,
+} from "app/components/music/identification_layout_targets";
 
 var SymbolicQuestionSheet = function (settings) {
     Component.call(this, settings || {});
@@ -55,11 +60,11 @@ var SymbolicQuestionSheet = function (settings) {
 
     _renderModeToggle: function () {
       var self = this;
-      var $actions = $("#identification-actions");
       var $container = $("#ident-mode-container");
       if ($container.length === 0) {
         $container = $('<div id="ident-mode-container" class="ident-mode-toggle symbolic-mode-toggle"></div>');
-        $actions.append($container);
+        $container.appendTo(toolbarSlot());
+        showToolbarSepIfNeeded();
       }
       $container.empty();
       if (this.exerciseContext.sealed || this._currentMode === "test") {
@@ -109,7 +114,7 @@ var SymbolicQuestionSheet = function (settings) {
       var $progContainer = $("#ident-progress-container");
       if ($progContainer.length === 0) {
         $progContainer = $('<div id="ident-progress-container" style="width: 250px; margin: 0 auto 15px; background: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; display: none;"><div id="ident-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); transition: width 0.3s ease;"></div></div>');
-        $actions.prepend($progContainer);
+        mountProgressContainer($progContainer);
       }
 
       var globalProblems = this.exerciseContext.getDefinition().getProblems() || [];

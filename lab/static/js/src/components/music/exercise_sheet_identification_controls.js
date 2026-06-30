@@ -27,6 +27,12 @@ import ChordalSpelling from "./chordal_spelling";
 import ChordalBarlinesLogic from "app/utils/chordal_barlines_logic";
 import UMTOScoreConverter from "app/utils/umto_score_converter";
 import BarlineSpacingUtils from "app/utils/barline_spacing_utils";
+import {
+  toolbarSlot,
+  mountInputContainer,
+  mountProgressContainer,
+  showToolbarSepIfNeeded,
+} from "app/components/music/identification_layout_targets";
 
 export default  {
 
@@ -34,7 +40,7 @@ export default  {
       var $container = $("#ident-input-container");
       if ($container.length === 0) {
         $container = $('<div id="ident-input-container" class="ident-input-container"></div>');
-        $("#identification-actions").after($container);
+        mountInputContainer($container);
       }
       return $container;
     },
@@ -185,7 +191,7 @@ export default  {
           $progContainer = $('<div id="ident-progress-container" style="width: 250px; margin: 0 auto 15px; background: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; display: none;">' +
                            '<div id="ident-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); transition: width 0.3s ease;"></div>' +
                            '</div>');
-          $('#identification-actions').prepend($progContainer);
+          mountProgressContainer($progContainer);
           
           if ($('#ident-premium-css').length === 0) {
               $('<style id="ident-premium-css">' +
@@ -327,7 +333,8 @@ export default  {
       var $row = $("#ident-toggle-row");
       if ($row.length === 0) {
         $row = $('<div id="ident-toggle-row" class="ident-toggle-row"></div>');
-        $("#identification-actions").append($row);
+        $row.appendTo(toolbarSlot());
+        showToolbarSepIfNeeded();
       }
       return $row;
     },
