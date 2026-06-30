@@ -232,15 +232,15 @@ class CreateUnitPlaylistCommandTest(TestCase):
         self.assertIn(ex_no_mod, selected_early)
         self.assertNotIn(ex_with_mod, selected_early)
 
-        # Update unit tag to unit:16 and test for unit 16 (>= 16)
-        ex_with_mod.skill_tags.append("unit:16")
+        # Update unit tag to unit:19 and test for unit 19 (>= 19, modulation taught)
+        ex_with_mod.skill_tags.append("unit:19")
         ex_with_mod.save()
-        ex_no_mod.skill_tags.append("unit:16")
+        ex_no_mod.skill_tags.append("unit:19")
         ex_no_mod.save()
 
         selected_late = _select_bach_candidates(
             author=self.author,
-            unit_num=16,
+            unit_num=19,
             mode="roman",
             riem_range=[21, 22],
             no_chord_filter=True,
