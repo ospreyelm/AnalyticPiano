@@ -988,10 +988,17 @@ import ScoreTimeline from "app/components/music/score_timeline";
               this.feedback.emit("play.save.empty", { inlineEl: "#save-feedback" });
             } else {
               var m = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(validity.error || "");
-              this.feedback.emit("play.save.invalid_meter", {
-                inlineEl: "#save-feedback",
-                params: m ? { bar: m[1], beats: m[2], expected: m[3] } : { bar: "?", beats: "?", expected: "?" },
-              });
+              if (m) {
+                this.feedback.emit("play.save.invalid_meter", {
+                  inlineEl: "#save-feedback",
+                  params: { bar: m[1], beats: m[2], expected: m[3] },
+                });
+              } else {
+                this.feedback.emit("play.save.invalid_state", {
+                  inlineEl: "#save-feedback",
+                  params: { message: validity.error || "Please review your barlines and durations." },
+                });
+              }
             }
           }
           return false;
@@ -1243,11 +1250,14 @@ import ScoreTimeline from "app/components/music/score_timeline";
 
           if (that.feedback) {
             var meterMatch = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(errMsg || "");
+            if (feedbackId === "play.save.invalid_meter" && !meterMatch) {
+              feedbackId = "play.save.invalid_state";
+            }
             that.feedback.emit(feedbackId, {
               inlineEl: "#play-save-dialog-feedback",
               params: meterMatch
                 ? { bar: meterMatch[1], beats: meterMatch[2], expected: meterMatch[3] }
-                : { bar: "?", beats: "?", expected: "?" },
+                : { message: errMsg || "Could not save exercise. Please review your barlines and durations." },
             });
           } else {
             that._setSavePanelFeedback(errMsg || "Could not save exercise.");
@@ -1872,11 +1882,14 @@ import ScoreTimeline from "app/components/music/score_timeline";
           
           if (that.feedback) {
             var meterMatch = /Bar (\d+) (?:has|spans) (\S+) beats, expected ([^.]+)/.exec(errMsg || "");
+            if (feedbackId === "play.save.invalid_meter" && !meterMatch) {
+              feedbackId = "play.save.invalid_state";
+            }
             that.feedback.emit(feedbackId, {
               inlineEl: "#play-save-dialog-feedback",
               params: meterMatch
                 ? { bar: meterMatch[1], beats: meterMatch[2], expected: meterMatch[3] }
-                : { bar: "?", beats: "?", expected: "?" }
+                : { message: errMsg || "Could not save exercise. Please review your barlines and durations." }
             });
           } else {
             that._setSavePanelFeedback(errMsg || "Could not save exercise.");
