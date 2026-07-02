@@ -561,10 +561,10 @@ class AddExerciseView(View):
         return mode
 
     def _single_unit(self, skill_tags):
-        """Return the integer unit number from the validated skill_tags list."""
+        """Return the unit token (e.g. "11" or "B17") from the validated skill_tags list."""
         for tag in skill_tags:
             if tag.startswith("unit:"):
-                return int(tag.split(":", 1)[1])
+                return tag.split(":", 1)[1]
         raise ValueError("Exactly one unit tag is required.")
 
     def _factory_user(self):

@@ -46,6 +46,21 @@ class AddExerciseViewMetadataTests(TestCase):
         self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
+    def test_branch_unit_token_creates_canonical_playlist(self):
+        response = self._post({
+            "chord": self._chords(),
+            "skillTags": ["unit:B17"],
+            "mode": "figures",
+            "description": "Branch unit smoke test",
+        })
+        self.assertEqual(response.status_code, 201, response.content)
+        body = response.json()
+        exercise = Exercise.objects.get(id=body["id"])
+        self.assertIn("unit:B17", exercise.skill_tags)
+        playlist = Playlist.objects.get(id=body["playlistId"])
+        self.assertEqual(playlist.canonical_unit, "B17")
+        self.assertEqual(playlist.name, "Unit B17 — Exercises (Figures)")
+
     def test_different_descriptions_reuse_one_playlist(self):
         first = self._post({"chord": self._chords(), "description": "First"})
         second = self._post({"chord": self._chords(), "description": "Second"})
