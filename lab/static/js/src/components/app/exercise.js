@@ -30,6 +30,7 @@ import ExerciseContext from "app/models/exercise_context";
 import ExerciseScoreCard from "app/components/exercise_score_card";
 import KeyboardRangeLogic from "app/models/keyboard_range_logic";
 import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
+import KeySigMod from "app/models/key_sig_exercise";
 
 /**
    * AppExerciseComponent class.
@@ -357,7 +358,7 @@ import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
               '<div class="key-sig-choices" style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;"></div>' +
               '<span class="key-sig-feedback" style="display:block;margin-top:10px;font-size:1em;min-height:1.4em;text-align:center"></span>';
           }
-          require(["app/models/key_sig_exercise"], function (KeySigMod) {
+          (function () {
             var exc = self.models.exerciseContext;
             var feedbackEl = document.querySelector(".key-sig-feedback");
             var choicesEl = document.querySelector(".key-sig-choices");
@@ -400,7 +401,7 @@ import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
               },
             });
             keySigEx.start();
-          });
+          })();
           return;
         }
 
