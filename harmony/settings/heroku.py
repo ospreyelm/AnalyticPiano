@@ -3,6 +3,7 @@ import json
 from harmony.settings.common import *
 
 DEBUG = False
+DJANGO_VITE["default"]["dev_mode"] = DEBUG
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
