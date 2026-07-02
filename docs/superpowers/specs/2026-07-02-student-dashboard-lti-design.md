@@ -1,8 +1,72 @@
 # Student Progress Dashboard, Built Toward LTI — Design Spec
 
-**Date:** 2026-07-02
+**Date:** 2026-07-02 (revised same day — FERPA/multi-tenant framing added)
 **Status:** Draft — awaiting product owner review, not authorized for implementation
 **Feature scope:** Student-facing aggregate progress view + the LTI groundwork it depends on.
+
+---
+
+## Why LTI, specifically (revision note)
+
+The product owner's college requires LTI for any tool used in graded
+coursework, per their Moodle administrator — this is the FERPA "school
+official" exception in practice: the institution can share education-record
+PII with HarmonyLab without per-student consent only under a written
+agreement, and the *technical* precondition their Moodle admin is imposing
+is that provisioning and grade exchange go through LTI rather than
+students self-registering with a HarmonyLab account. **The LTI integration
+does not itself constitute FERPA compliance** — the signed agreement
+between the college and whoever operates HarmonyLab is what does that.
+LTI is the technical mechanism the college's admin wants because it keeps
+provisioning under the institution's direct control (one of the school-
+official exception's requirements) and lets HarmonyLab minimize the PII it
+ever has to store. This revision changes two things from the original
+draft below: identity resolution no longer assumes email/name will be
+available (Part A), and the design is explicitly multi-tenant so a second
+college or a high school can be onboarded later without code changes
+(new section below).
+
+This has a direct consequence for the existing direct-signup flow: for any
+course whose data is subject to an institution's FERPA agreement, student
+identity must come from that institution's LTI launch, not from a
+self-registered HarmonyLab account. Direct signup can remain for
+non-institutional use (independent learners, a teacher's own ungraded
+practice course) — it just can't be the enrollment path for a course
+covered by a college's data agreement. **Open question for product
+owner:** should this be enforced in code (e.g. a `Course.requires_lti`
+flag that blocks non-LTI login from accessing it) or left as an
+operational/policy rule for now? This spec assumes policy-only for v1 and
+flags the flag-based enforcement as a natural v2.
+
+## Multi-tenancy: built for more than one institution from day one
+
+The product owner asked whether this could help other colleges and high
+schools later — yes, and the model below is already shaped for it, not as
+an afterthought:
+
+- `LtiPlatform` is **one row per institution's LMS instance** (its own
+  issuer, client ID, deployment ID(s), JWKS URL). Two colleges, or a
+  college and a high school, are just two rows — no schema change, no
+  per-institution code branching.
+- `LtiUserLink` is scoped `(platform, sub)`, not just `sub` — the same
+  numeric `sub` value can (and will) collide across institutions, since
+  each platform assigns its own opaque IDs independently. Keying on the
+  pair is what makes multiple institutions safe to hold in one database
+  without cross-contamination.
+- The FERPA agreement is a **per-institution legal artifact**, not a
+  per-feature one — each new college or high school needs its own signed
+  data-sharing agreement with whoever operates HarmonyLab before their
+  `LtiPlatform` row goes live. Recommend `LtiPlatform.agreement_signed_at`
+  (nullable) as a field, and gate the launch flow so a platform with no
+  signed-agreement date can be configured/tested but not used for a real
+  course — a code-level safety net matching the legal requirement, not
+  just a policy note in a doc somewhere.
+- High schools bring one extra wrinkle worth flagging now rather than at
+  onboarding time: many students are minors, which brings **COPPA** and/or
+  state student-privacy laws (e.g. SOPIPA in California) into play
+  alongside FERPA. Nothing in this spec's data model changes for that, but
+  the DPA process for a K-12 institution is typically stricter and
+  the "minimize what you store" posture below matters even more there.
 
 ---
 
@@ -67,10 +131,11 @@ one most existing Django LTI integrations use.
 ```
 apps/lti/
   models.py       # LtiPlatform (issuer, client_id, deployment_ids, JWKS URL,
-                   #   auth/token endpoints — one row per LMS instance a
-                   #   teacher connects), LtiUserLink (user FK, platform FK,
-                   #   sub, unique_together) , LtiLineItem (maps a
-                   #   PlaylistCourseOrdered -> platform line item id)
+                   #   auth/token endpoints, agreement_signed_at — one row
+                   #   per institution's LMS instance), LtiUserLink (user FK,
+                   #   platform FK, sub, unique_together=(platform, sub)),
+                   #   LtiLineItem (maps a PlaylistCourseOrdered -> platform
+                   #   line item id)
   views.py        # OIDC login init, launch (POST from platform), JWKS endpoint
   urls.py         # /lti/login/, /lti/launch/, /lti/jwks/
   services.py     # grade passback: given a PCO + user + score, POST an AGS
@@ -83,19 +148,49 @@ does not require the Assignment Slot Foundation work that is currently
 not authorized — `LtiLineItem` maps onto the *existing* `PlaylistCourseOrdered`
 row, nothing new on the assignment side.
 
-### Identity resolution
+### Identity resolution — `sub` is the only identity claim we require
+
+The Moodle admin's requirement means this has to work correctly under the
+*strictest* privacy configuration the institution might choose (an
+"anonymous" launch: `sub` and role only, no `name`, no `email`) — not just
+the common case where names are released. Designing for the strict case
+first and treating name/email as optional enrichment, rather than the
+reverse, is what keeps this compliant regardless of how each institution's
+LMS admin configures the tool.
 
 On launch: look up `LtiUserLink` by `(platform, sub)`.
 - If found → log in as the linked Django `User`.
-- If not found → the platform's launch claims typically include
-  `email`/`name`. Match-or-create a `User` (mirroring however the app
-  already handles first-login provisioning, if any — needs a lookup at
-  implementation time; not yet confirmed in this pass) and create the
-  `LtiUserLink`.
+- If not found → **create a `User` keyed only on `(platform, sub)`.** Do
+  not require `email`/`name` claims to exist. If the launch happens to
+  include `name` and/or `email` (the institution released them), store
+  them on the `User` as-is; if not, leave those fields blank and use a
+  non-identifying display label (e.g. `f"Student {sub_hash[:6]}"`, derived
+  from a one-way hash of `sub`, not from `sub` itself, so it's not
+  reversible to the platform's own ID) for anywhere the UI needs to show
+  *something* for the row (teacher dashboard, roster).
+- Registration/direct-login by email must not be able to "claim" or merge
+  into an LTI-provisioned account — an LTI-only `User` has no usable
+  password and no email to log in with directly, by design; this prevents
+  an account-takeover path where someone signs up directly with a guessed
+  or scraped email and inherits an LTI-linked student's data.
 - Role claim (`https://purl.imsglobal.org/spec/lti/claim/roles`) maps
   Instructor → teacher-side landing, Learner → student-side landing. This
   determines whether the launch redirects into `/s/...` or `/teacher/...`
   (Part C of the teacher dashboard spec) — **not** a new third UI.
+
+### Scope request at platform registration — ask for the minimum
+
+When registering HarmonyLab with a college's Moodle (or a future
+institution's Canvas), request only:
+- Core launch (`sub`, role, deployment/context claims) — always required.
+- AGS score-publish scope (to push grades back) — required for grade
+  passback.
+
+Do **not** request the NRPS (roster) scope or any profile/email scope by
+default. Requesting only what's used means an institution reviewing the
+registration request sees a minimal ask, which is both the compliant
+posture and, practically, an easier approval to get from a cautious
+Moodle/Canvas admin.
 
 ### Grading passback scope for v1
 
@@ -156,9 +251,11 @@ all-courses aggregate, since that's what the instructor's LMS
   passback or dashboard viewing.
 - Names and Role Provisioning Services (NRPS) roster sync — would let
   HarmonyLab pull a class roster from the LMS instead of using existing
-  `Group`/`visible_to` invite flow. Worth revisiting once the teacher
-  dashboard (separate spec) is built, since NRPS would change how
-  `course.visible_to` groups get populated.
+  `Group`/`visible_to` invite flow. Deliberately excluded here, not just
+  deferred: NRPS is a PII-pull scope (names/emails for a whole class in one
+  call), which cuts against the minimal-scope posture this revision adopts.
+  Worth revisiting only if a specific institution's DPA explicitly permits
+  it and the teacher dashboard has a concrete need for it.
 - Any change to `Course`, `Playlist`, `PlaylistCourseOrdered`,
   `ExercisePlaylistOrdered` beyond the additive `LtiLineItem` mapping
   table — no assignment-architecture changes, consistent with the current
@@ -173,7 +270,7 @@ all-courses aggregate, since that's what the instructor's LMS
 | `apps/lti/` | New app: models, views, urls, services (grade passback) |
 | `requirements.txt` / `pyproject.toml` | Add `pylti1p3` |
 | Django settings | `SameSite=None; Secure` cookie config scoped to LTI launch paths only; `frame-ancestors` CSP allowlist per connected `LtiPlatform` |
-| `apps/lti/migrations/` | `LtiPlatform`, `LtiUserLink`, `LtiLineItem` |
+| `apps/lti/migrations/` | `LtiPlatform` (incl. `agreement_signed_at`, nullable — launch flow refuses to serve real course data for a platform with no signed-agreement date), `LtiUserLink` (unique on `(platform, sub)`), `LtiLineItem` |
 
 ## Files to change (implementation-time, Part B)
 

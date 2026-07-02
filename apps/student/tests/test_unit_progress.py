@@ -777,3 +777,70 @@ class PlaylistStatsPurityTests(TestCase):
         raw = _batch_playlist_data(self.student, [pl])
         with self.assertNumQueries(0):
             _playlist_stats(pl, raw[pl.pk])
+
+
+class AdaptivePlaylistMasteryLevelTest(TestCase):
+    """Adaptive playlist rows surface the student's skill mastery level
+    instead of a done/total ratio (2026-07-02 skill-level-display spec)."""
+
+    def setUp(self):
+        self.author = _make_author(64001)
+        self.student = _make_student(64002)
+        self.playlist = _make_playlist(
+            pk=64010,
+            author=self.author,
+            skill_tags=["Note_Names"],
+            name="Note Names Adaptive",
+        )
+        self.playlist.is_adaptive = True
+        self.playlist.save(update_fields=["is_adaptive"])
+
+    def _note_names_playlist(self, result):
+        card = next(c for c in result["skill_cards"] if c["tag"] == "Note_Names")
+        return next(p for p in card["playlists"] if p["id"] == self.playlist.id)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_adaptive_playlist_row_carries_mastery_level(self, mock_label, mock_tier, mock_unit):
+        StudentSkillMastery.objects.create(
+            user=self.student,
+            skill_tag="Note_Names",
+            level=StudentSkillMastery.LEVEL_PROFICIENT,
+        )
+        result = get_unit_progress_data(self.student, "2")
+        row = self._note_names_playlist(result)
+        self.assertEqual(row["mastery_level"], StudentSkillMastery.LEVEL_PROFICIENT)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_adaptive_playlist_row_defaults_to_not_started(self, mock_label, mock_tier, mock_unit):
+        result = get_unit_progress_data(self.student, "2")
+        row = self._note_names_playlist(result)
+        self.assertEqual(row["mastery_level"], StudentSkillMastery.LEVEL_NOT_STARTED)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit", return_value=STUB_GENERIC_UNIT)
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_static_playlist_row_has_no_mastery_level(self, mock_label, mock_tier, mock_unit):
+        static_playlist = _make_playlist(
+            pk=64020,
+            author=self.author,
+            skill_tags=["Intervals"],
+            name="Intervals Static",
+        )
+        self.assertFalse(static_playlist.is_adaptive)
+        result = get_unit_progress_data(self.student, "2")
+        card = next(c for c in result["skill_cards"] if c["tag"] == "Intervals")
+        row = next(p for p in card["playlists"] if p["id"] == static_playlist.id)
+        self.assertNotIn("mastery_level", row)
