@@ -32,8 +32,8 @@ def canonical_mode_label(mode: str) -> str:
         raise ValueError(f"Unsupported interaction mode: {mode}") from exc
 
 
-def build_canonical_playlist_name(unit: int, mode: str) -> str:
-    return f"Unit {int(unit)} — Exercises ({canonical_mode_label(mode)})"
+def build_canonical_playlist_name(unit: str, mode: str) -> str:
+    return f"Unit {unit} — Exercises ({canonical_mode_label(mode)})"
 
 
 def _unit_prefix(skill_tags: list) -> str:

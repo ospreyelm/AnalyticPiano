@@ -68,6 +68,21 @@ class CanonicalPlaylistServiceTests(TestCase):
 
         self.assertEqual(second.pk, first.pk)
 
+    def test_branch_unit_token_creates_canonical_playlist(self):
+        playlist = self.resolve(unit="B17", mode="figures", is_public=True)
+
+        self.assertEqual(playlist.name, "Unit B17 — Exercises (Figures)")
+        self.assertEqual(playlist.skill_tags, ["unit:B17"])
+        self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
+        self.assertEqual(playlist.canonical_unit, "B17")
+        self.assertEqual(playlist.canonical_mode, "figures")
+
+    def test_branch_unit_token_dedups_on_repeat_resolution(self):
+        first = self.resolve(unit="B17", mode="figures")
+        second = self.resolve(unit="B17", mode="figures")
+
+        self.assertEqual(second.pk, first.pk)
+
     def test_public_resolution_promotes_but_private_resolution_does_not_demote(self):
         playlist = self.resolve(is_public=False)
         self.assertFalse(playlist.is_public)
