@@ -158,6 +158,14 @@ INSTALLED_APPS = (
 
 DATABASES = {"default": dj_database_url.config(conn_max_age=600)}
 
+# HarmonyLab's own LTI 1.3 signing identity -- one keypair shared across
+# every connected institution's registration (see apps/lti/services.py
+# get_tool_keypair). Must be set to stable secrets before any real
+# LtiPlatform goes live: see docs/superpowers/plans/2026-07-02-lti-integration.md
+# Phase 0/7. Falls back to a per-process generated dev/test key when unset.
+LTI_TOOL_PRIVATE_KEY = os.environ.get("LTI_TOOL_PRIVATE_KEY", "")
+LTI_TOOL_PUBLIC_KEY = os.environ.get("LTI_TOOL_PUBLIC_KEY", "")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

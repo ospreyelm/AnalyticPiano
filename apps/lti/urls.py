@@ -1,8 +1,12 @@
-"""URL configuration for the LTI app.
+"""URL configuration for the LTI app."""
+from django.urls import path
 
-Empty until Phase 3 of docs/superpowers/plans/2026-07-02-lti-integration.md
-adds the OIDC login/launch/JWKS routes.
-"""
+from apps.lti.views import jwks_view, launch_view, oidc_login_view
+
 app_name = "lti"
 
-urlpatterns = []
+urlpatterns = [
+    path("login/", oidc_login_view, name="login"),
+    path("launch/", launch_view, name="launch"),
+    path("jwks/", jwks_view, name="jwks"),
+]
