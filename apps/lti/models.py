@@ -73,6 +73,15 @@ class LtiUserLink(models.Model):
     platform = models.ForeignKey(LtiPlatform, on_delete=models.CASCADE, related_name="user_links")
     sub = models.CharField(max_length=255)
 
+    ags_endpoint = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="The AGS (grades) endpoint claim captured from this "
+        "user's most recent launch that granted grade-passback scope. "
+        "Lets publish_score() push a grade outside the request/response "
+        "cycle of a live launch.",
+    )
+
     class Meta:
         verbose_name = "LTI User Link"
         verbose_name_plural = "LTI User Links"
