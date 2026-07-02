@@ -92,3 +92,14 @@ class CanonicalPlaylistIdentityTests(TestCase):
 
         self.assertIsNotNone(first.pk)
         self.assertIsNotNone(second.pk)
+
+    def test_canonical_unit_accepts_branch_unit_token(self):
+        playlist = Playlist.objects.create(
+            name="Teacher Play Branch B17",
+            authored_by=self.teacher,
+            playlist_family=Playlist.FAMILY_TEACHER_PLAY,
+            canonical_unit="B17",
+            canonical_mode="figures",
+        )
+        playlist.refresh_from_db()
+        self.assertEqual(playlist.canonical_unit, "B17")
