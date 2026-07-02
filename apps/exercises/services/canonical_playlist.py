@@ -16,6 +16,8 @@ def resolve_canonical_playlist(
     is_public: bool,
     is_official: bool,
 ) -> Playlist:
+    if unit is None:
+        raise ValueError("unit is required")
     unit = str(unit)
     if not unit:
         raise ValueError("unit is required")
