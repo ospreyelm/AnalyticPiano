@@ -59,7 +59,7 @@ class CanonicalPlaylistServiceTests(TestCase):
         self.assertTrue(playlist.is_public)
         self.assertFalse(playlist.is_official)
         self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
     def test_repeat_resolution_reuses_same_playlist(self):
@@ -124,7 +124,7 @@ class CanonicalPlaylistServiceTests(TestCase):
 
         self.assertEqual(resolved.pk, legacy.pk)
         self.assertEqual(resolved.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(resolved.canonical_unit, 11)
+        self.assertEqual(resolved.canonical_unit, "11")
         self.assertEqual(resolved.canonical_mode, "roman")
 
     def test_ambiguous_legacy_rows_raise(self):

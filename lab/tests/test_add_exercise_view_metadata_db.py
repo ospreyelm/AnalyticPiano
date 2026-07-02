@@ -43,7 +43,7 @@ class AddExerciseViewMetadataTests(TestCase):
         playlist = Playlist.objects.get(id=body["playlistId"])
         self.assertEqual(playlist.name, "Unit 11 — Exercises (Roman)")
         self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
     def test_different_descriptions_reuse_one_playlist(self):
@@ -56,7 +56,7 @@ class AddExerciseViewMetadataTests(TestCase):
             Playlist.objects.filter(
                 authored_by=self.user,
                 playlist_family=Playlist.FAMILY_TEACHER_PLAY,
-                canonical_unit=11,
+                canonical_unit="11",
                 canonical_mode="roman",
             ).count(),
             1,

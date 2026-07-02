@@ -231,7 +231,7 @@ class MusicXMLImportViewsTest(TestCase):
         playlist = Playlist.objects.get(id=data["playlistId"])
         self.assertEqual(playlist.name, "Unit 11 — Exercises (Roman)")
         self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
     def test_repeated_musicxml_saves_reuse_destination(self):
