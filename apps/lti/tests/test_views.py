@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urlparse
 import jwt as pyjwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -104,7 +105,7 @@ class LtiLaunchFlowTestCase(TestCase):
             headers={"kid": self.kid},
         )
 
-    def _do_launch(self, state: str, id_token: str):
+    def _do_launch(self, state: str, id_token: str, secure: bool = False):
         # The real flow fetches the platform's JWKS over HTTP; stub that
         # one network call with the fake platform's own public key.
         with patch(
@@ -114,6 +115,7 @@ class LtiLaunchFlowTestCase(TestCase):
             return self.client.post(
                 reverse("lti:launch"),
                 {"id_token": id_token, "state": state},
+                secure=secure,
             )
 
 
@@ -253,6 +255,54 @@ class IdentityResolutionTest(LtiLaunchFlowTestCase):
         self.assertFalse(user.check_password("anything"))
         self.assertIsNone(authenticate(username=user.email, password="anything"))
         self.assertIsNone(authenticate(username=user.email, password=""))
+
+
+class LtiFramingMiddlewareTest(LtiLaunchFlowTestCase):
+    """Phase 5: the SameSite=None;Secure cookie posture and frame-ancestors
+    CSP apply only to LTI-launched sessions -- direct-login requests must
+    see the site's normal default posture, completely unchanged."""
+
+    def setUp(self):
+        super().setUp()
+        self.platform.is_active = True
+        self.platform.agreement_signed_at = timezone.now()
+        self.platform.save()
+
+    def test_direct_request_has_no_lti_framing_headers(self):
+        response = self.client.get(reverse("student:home"))
+        self.assertNotIn("Content-Security-Policy", response)
+
+    def test_lti_launch_response_sets_frame_ancestors_for_its_issuer(self):
+        state, nonce = self._do_login()
+        response = self._do_launch(state, self._build_id_token(nonce), secure=True)
+        self.assertIn("Content-Security-Policy", response)
+        self.assertIn(self.platform.issuer, response["Content-Security-Policy"])
+
+    def test_lti_launch_over_https_forces_samesite_none_secure_cookie(self):
+        state, nonce = self._do_login()
+        response = self._do_launch(state, self._build_id_token(nonce), secure=True)
+        session_cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+        self.assertEqual(session_cookie["samesite"], "None")
+        self.assertTrue(session_cookie["secure"])
+
+    def test_lti_launch_over_plain_http_does_not_force_secure_attribute(self):
+        """Secure cookies are silently dropped by browsers over plain HTTP
+        -- local/non-HTTPS testing must not end up with a cookie the
+        browser will refuse to store."""
+        state, nonce = self._do_login()
+        response = self._do_launch(state, self._build_id_token(nonce), secure=False)
+        session_cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+        self.assertNotEqual(session_cookie["samesite"], "None")
+
+    def test_subsequent_requests_in_the_same_session_keep_getting_framed(self):
+        """The CSP applies for the life of the LTI-originated session, not
+        just the single launch response -- a student navigating from the
+        redirected home page onward is still inside the LMS iframe."""
+        state, nonce = self._do_login()
+        self._do_launch(state, self._build_id_token(nonce), secure=True)
+        response = self.client.get(reverse("student:home"), secure=True)
+        self.assertIn("Content-Security-Policy", response)
+        self.assertIn(self.platform.issuer, response["Content-Security-Policy"])
 
 
 class JwksViewTest(TestCase):

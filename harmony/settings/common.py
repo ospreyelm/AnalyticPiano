@@ -91,6 +91,10 @@ TEMPLATES = [
 MIDDLEWARE = (
     "django.middleware.common.CommonMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # Before SessionMiddleware: process_response runs in reverse
+    # declaration order, so this needs to see the session cookie after
+    # SessionMiddleware has set it, for LTI-launched sessions only.
+    "apps.lti.middleware.LtiFramingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

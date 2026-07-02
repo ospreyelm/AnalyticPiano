@@ -58,6 +58,12 @@ def launch_view(request):
     user.backend = "django.contrib.auth.backends.ModelBackend"
     login(request, user)
 
+    # Flags this session as LTI-originated for apps.lti.middleware
+    # .LtiFramingMiddleware, which scopes the SameSite=None;Secure cookie
+    # posture and frame-ancestors CSP to exactly this session -- direct-
+    # login sessions are never touched.
+    request.session["lti_issuer"] = platform.issuer
+
     if user.role == ROLE_TEACHER:
         return redirect("teacher:course-list")
     return redirect("student:home")
