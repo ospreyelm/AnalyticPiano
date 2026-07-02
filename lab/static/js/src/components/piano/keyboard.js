@@ -6,6 +6,7 @@ import EVENTS from "app/components/events";
 import Component from "app/components/component";
 import ComputerKeyboardUxLogic from "app/components/input/computer_keyboard_ux_logic";
 import KeyComponent from "./key";
+import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
 
 /**
    * Creates an instance of a KeyboardComponent.
@@ -291,7 +292,7 @@ import KeyComponent from "./key";
 
       this.keyboardEl.find('.qwerty-labels').remove();
 
-      var shortcuts = require('app/config/keyboard_shortcuts');
+      var shortcuts = KeyboardShortcutsConfig;
       var keyMap = (shortcuts && shortcuts.keyMap) ? shortcuts.keyMap : {};
       var NOTE_ANCHOR = this.qwertyNoteAnchor != null
         ? this.qwertyNoteAnchor

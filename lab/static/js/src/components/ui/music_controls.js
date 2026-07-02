@@ -12,6 +12,7 @@ import HighlightWidget from "app/widgets/highlight";
 import StaffDistributionWidget from "app/widgets/staff_distribute";
 import TargetSelectorComponent from "app/components/ui/target_selector";
 import PlaySaveLogic from "app/components/music/play_save_logic";
+import ScoreTimeline from "app/components/music/score_timeline";
 
 /**
    * Defines whether the shortcuts are enabled by default or not.
@@ -1678,7 +1679,7 @@ import PlaySaveLogic from "app/components/music/play_save_logic";
               sheet._tokenOverrides = {};
               sheet._clearSelection();
 
-              require(["app/models/chord", "app/components/music/score_timeline"], function (Chord, ScoreTimeline) {
+              (function () {
                 var timeline = ScoreTimeline.buildTimeline(data.payload.score);
                 timeline.sort(function (a, b) { return a.onset - b.onset; });
 
@@ -1752,7 +1753,7 @@ import PlaySaveLogic from "app/components/music/play_save_logic";
 
                 chordBank.trigger("clear");
                 chordBank.trigger("change");
-              });
+              })();
             } else if (sheet) {
               sheet.render();
             }

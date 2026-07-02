@@ -4,10 +4,10 @@ import ExerciseApp from "app/components/app/exercise";
 import ManageApp from "app/components/app/manage";
 import DebugAnalysisApp from "app/components/app/debug_analysis";
 
-// Read requirejs config block from template payload if present, otherwise default to exercise
+// Read app_module from the template-injected config payload, otherwise default to exercise
 let appModule = null;
 try {
-  appModule = window.requirejs.s.contexts._.config.config['app/main'].app_module;
+  appModule = window.appConfig.config['app/main'].app_module;
 } catch (e) {
   appModule = window.app_module || "app/components/app/exercise";
 }
