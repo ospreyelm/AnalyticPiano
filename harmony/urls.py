@@ -22,6 +22,7 @@ urlpatterns = [
     path("dashboard/", include("apps.dashboard.urls")),
     path("s/", include("apps.student.urls")),
     path("teacher/", include("apps.teacher.urls")),
+    path("lti/", include("apps.lti.urls")),
     path("", include(lab.urls)),
 
     path("library/", library_view, name="library"),
