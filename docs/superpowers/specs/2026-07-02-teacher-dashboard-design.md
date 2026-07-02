@@ -98,6 +98,18 @@ Sam Lee                — (upcoming)   —              —            —     
 Priya Nair            100%           100%           45%           82%   Yesterday
 ```
 
+**Name column depends on what the LTI-connected institution actually
+releases** (see `2026-07-02-student-dashboard-lti-design.md`'s revised
+identity section). For a student provisioned via an "anonymous"-mode LTI
+launch, `User.get_full_name()` will be blank — fall back to the same
+non-identifying label used elsewhere (`Student <hash>`), not to email or
+any other field that might inadvertently carry PII the institution chose
+not to release. A teacher in that configuration cross-references against
+their own Moodle/Canvas gradebook to know who's who; that's a real
+usability cost of the strict-privacy mode and the institution's tradeoff
+to make, not something this view should try to work around by pulling
+identity from somewhere else.
+
 - Reuse the existing `status` concept from
   `2026-06-14-student-course-experience-design.md` (`open` / `upcoming` /
   `completed`) per assignment cell.
