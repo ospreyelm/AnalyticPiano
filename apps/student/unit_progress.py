@@ -608,6 +608,10 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
             if primary_tag is None:
                 continue
             stats = _playlist_stats(playlist, raw_by_pk[playlist.pk])
+            if stats["is_adaptive"]:
+                stats["mastery_level"] = skill_levels.get(
+                    primary_tag, StudentSkillMastery.LEVEL_NOT_STARTED
+                )
             tag_to_playlists[primary_tag].append(stats)
 
         # Sort playlists within each skill card by name for stable ordering

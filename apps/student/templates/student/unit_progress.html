@@ -108,10 +108,14 @@
               <a href="{{ playlist.url }}" class="playlist-row">
                 <span class="playlist-name">{{ playlist.name }}</span>
                 <div class="playlist-progress-info">
-                  <div class="mini-progress-bar">
-                    <div class="mini-progress-fill" style="width: {% if playlist.is_adaptive %}0{% elif playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
-                  </div>
-                  <span class="playlist-count">{% if playlist.is_adaptive %}{{ playlist.done }}{% else %}{{ playlist.done }}/{{ playlist.total }}{% endif %}</span>
+                  {% if playlist.is_adaptive %}
+                    <span class="mastery-badge tier-{{ playlist.mastery_level }} tier-{{ playlist.mastery_level|slugify }}">{{ playlist.mastery_level|title }}</span>
+                  {% else %}
+                    <div class="mini-progress-bar">
+                      <div class="mini-progress-fill" style="width: {% if playlist.total > 0 %}{% widthratio playlist.done playlist.total 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                    <span class="playlist-count">{{ playlist.done }}/{{ playlist.total }}</span>
+                  {% endif %}
                   {% if playlist.last_score_pct is not None %}
                     <span class="playlist-score">· Last: {{ playlist.last_score_pct }}%</span>
                   {% endif %}
