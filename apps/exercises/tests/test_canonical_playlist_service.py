@@ -166,6 +166,10 @@ class CanonicalPlaylistServiceTests(TestCase):
         ):
             self.resolve(mode="counterpoint")
 
+    def test_missing_unit_is_rejected(self):
+        with self.assertRaisesMessage(ValueError, "unit is required"):
+            self.resolve(unit="")
+
     def test_performed_playlist_allows_append(self):
         """A playlist that has been performed should still accept new exercises.
 

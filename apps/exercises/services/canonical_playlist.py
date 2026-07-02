@@ -17,6 +17,8 @@ def resolve_canonical_playlist(
     is_official: bool,
 ) -> Playlist:
     unit = str(unit)
+    if not unit:
+        raise ValueError("unit is required")
     canonical_mode_label(mode)  # validates mode; raises ValueError for unsupported values
     name = build_canonical_playlist_name(unit, mode)
     unit_tag = f"unit:{unit}"
