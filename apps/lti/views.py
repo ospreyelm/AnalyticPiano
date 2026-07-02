@@ -1,9 +1,5 @@
 """
 OIDC login, launch, and JWKS views.
-
-Grade passback (Phase 6) of
-docs/superpowers/plans/2026-07-02-lti-integration.md is not implemented
-yet.
 """
 from django.contrib.auth import login
 from django.http import JsonResponse
@@ -20,6 +16,7 @@ from apps.lti.services import (
     check_launch_allowed,
     get_platform_for_launch,
     get_tool_keypair,
+    record_ags_endpoint,
     resolve_user,
 )
 
@@ -55,6 +52,7 @@ def launch_view(request):
         return render(request, "lti/launch_not_ready.html", {"platform": platform})
 
     user = resolve_user(message_launch, platform)
+    record_ags_endpoint(user, platform, message_launch)
     user.backend = "django.contrib.auth.backends.ModelBackend"
     login(request, user)
 
