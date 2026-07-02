@@ -7,8 +7,7 @@ or Canvas needed (see docs/superpowers/plans/2026-07-02-lti-integration.md
 Phase 3's testability note). Exercises the readiness gate from
 docs/superpowers/specs/2026-07-02-student-dashboard-lti-design.md: an
 unsigned/inactive platform gets the friendly "waiting on institutional
-sign-off" page; a ready platform reaches the (currently placeholder)
-post-launch response.
+sign-off" page; a ready platform reaches Phase 4's identity resolution.
 """
 from __future__ import annotations
 
@@ -19,12 +18,14 @@ from urllib.parse import parse_qs, urlparse
 import jwt as pyjwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from django.contrib.auth import authenticate
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from pylti1p3.registration import Registration
 
-from apps.lti.models import LtiPlatform
+from apps.accounts.models import ROLE_STUDENT, ROLE_TEACHER
+from apps.lti.models import LtiPlatform, LtiUserLink
 
 
 def _generate_keypair() -> tuple[str, str]:
@@ -131,9 +132,8 @@ class LaunchReadinessGateTest(LtiLaunchFlowTestCase):
 
         state, nonce = self._do_login()
         response = self._do_launch(state, self._build_id_token(nonce))
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Waiting on institutional approval")
-        self.assertIn(b"Launch verified", response.content)
+        self.assertRedirects(response, reverse("student:home"), fetch_redirect_response=False)
+        self.assertTrue(self.client.session.get("_auth_user_id"))
 
     def test_unknown_deployment_id_is_rejected(self):
         state, nonce = self._do_login()
@@ -172,6 +172,87 @@ class LaunchReadinessGateTest(LtiLaunchFlowTestCase):
         )
         response = self._do_launch(state, id_token)
         self.assertEqual(response.status_code, 400)
+
+
+class IdentityResolutionTest(LtiLaunchFlowTestCase):
+    """Phase 4: sub-only identity resolution -- must work with no name/email
+    claims present (an institution's anonymous LTI configuration), never
+    require them."""
+
+    def setUp(self):
+        super().setUp()
+        self.platform.is_active = True
+        self.platform.agreement_signed_at = timezone.now()
+        self.platform.save()
+
+    def test_anonymous_launch_creates_unusable_password_user(self):
+        state, nonce = self._do_login()
+        self._do_launch(state, self._build_id_token(nonce))
+
+        link = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub")
+        user = link.user
+        self.assertTrue(user.email.endswith("@lti.harmonylab.invalid"))
+        self.assertEqual(user.first_name, "")
+        self.assertEqual(user.last_name, "")
+        self.assertEqual(user.role, ROLE_STUDENT)
+        self.assertFalse(user.has_usable_password())
+
+    def test_launch_with_released_name_and_email_stores_them(self):
+        state, nonce = self._do_login()
+        id_token = self._build_id_token(
+            nonce,
+            email="student@example.edu",
+            given_name="Ana",
+            family_name="Garcia",
+        )
+        self._do_launch(state, id_token)
+
+        link = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub")
+        user = link.user
+        self.assertEqual(user.email, "student@example.edu")
+        self.assertEqual(user.first_name, "Ana")
+        self.assertEqual(user.last_name, "Garcia")
+        self.assertFalse(user.has_usable_password())
+
+    def test_repeat_launch_reuses_same_user(self):
+        state, nonce = self._do_login()
+        self._do_launch(state, self._build_id_token(nonce))
+        first_user_id = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub").user_id
+
+        state, nonce = self._do_login()
+        self._do_launch(state, self._build_id_token(nonce))
+
+        self.assertEqual(LtiUserLink.objects.filter(platform=self.platform, sub="test-student-sub").count(), 1)
+        second_user_id = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub").user_id
+        self.assertEqual(first_user_id, second_user_id)
+
+    def test_teacher_role_redirects_to_teacher_landing(self):
+        state, nonce = self._do_login()
+        id_token = self._build_id_token(
+            nonce,
+            **{
+                "https://purl.imsglobal.org/spec/lti/claim/roles": [
+                    "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+                ],
+            },
+        )
+        response = self._do_launch(state, id_token)
+        self.assertRedirects(response, reverse("teacher:course-list"), fetch_redirect_response=False)
+
+        link = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub")
+        self.assertEqual(link.user.role, ROLE_TEACHER)
+
+    def test_lti_provisioned_account_cannot_be_authenticated_directly(self):
+        """An LTI-provisioned account must never be reachable through the
+        normal email/password login path -- only through a fresh, valid
+        launch tied to its (platform, sub)."""
+        state, nonce = self._do_login()
+        self._do_launch(state, self._build_id_token(nonce))
+        user = LtiUserLink.objects.get(platform=self.platform, sub="test-student-sub").user
+
+        self.assertFalse(user.check_password("anything"))
+        self.assertIsNone(authenticate(username=user.email, password="anything"))
+        self.assertIsNone(authenticate(username=user.email, password=""))
 
 
 class JwksViewTest(TestCase):

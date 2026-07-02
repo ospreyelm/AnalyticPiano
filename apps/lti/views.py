@@ -1,25 +1,26 @@
 """
 OIDC login, launch, and JWKS views.
 
-Identity resolution (Phase 4) and grade passback (Phase 6) of
-docs/superpowers/plans/2026-07-02-lti-integration.md are not implemented
-yet: a launch that passes validation and the readiness gate currently gets
-a placeholder response instead of being logged in and redirected into
-/s/... or /teacher/....
+Grade passback (Phase 6) of
+docs/superpowers/plans/2026-07-02-lti-integration.md is not implemented
+yet.
 """
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.contrib.auth import login
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pylti1p3.contrib.django import DjangoMessageLaunch, DjangoOIDCLogin
 from pylti1p3.exception import LtiException, OIDCException
 from pylti1p3.registration import Registration
 
+from apps.accounts.models import ROLE_TEACHER
 from apps.lti.services import (
     ToolConfig,
     check_launch_allowed,
     get_platform_for_launch,
     get_tool_keypair,
+    resolve_user,
 )
 
 
@@ -53,13 +54,13 @@ def launch_view(request):
     if not check_launch_allowed(platform):
         return render(request, "lti/launch_not_ready.html", {"platform": platform})
 
-    # TODO(Phase 4): resolve identity via LtiUserLink and redirect into
-    # /s/... or /teacher/... by role, per the spec's sub-only identity
-    # design. Until then, a validated + ready launch stops here.
-    return HttpResponse(
-        f"Launch verified for {platform.name}. Identity resolution is not "
-        "implemented yet (Phase 4 of the LTI integration plan)."
-    )
+    user = resolve_user(message_launch, platform)
+    user.backend = "django.contrib.auth.backends.ModelBackend"
+    login(request, user)
+
+    if user.role == ROLE_TEACHER:
+        return redirect("teacher:course-list")
+    return redirect("student:home")
 
 
 def jwks_view(request):

@@ -1,24 +1,30 @@
 """
 Tool-side LTI configuration: adapts LtiPlatform DB rows into pylti1p3's
-registration/deployment interface, plus the readiness gate that decides
-whether a launch may proceed past the "waiting on institutional sign-off"
-page.
+registration/deployment interface, the readiness gate that decides whether
+a launch may proceed past the "waiting on institutional sign-off" page,
+and identity resolution (Phase 4) mapping a validated launch onto a Django
+User.
 
-Identity resolution (Phase 4) and grade passback (Phase 6) of
-docs/superpowers/plans/2026-07-02-lti-integration.md are not implemented
+Grade passback (Phase 6) of
+docs/superpowers/plans/2026-07-02-lti-integration.md is not implemented
 here yet.
 """
 from __future__ import annotations
 
 import functools
+import hashlib
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from pylti1p3.deployment import Deployment
 from pylti1p3.exception import LtiException
 from pylti1p3.registration import Registration
 from pylti1p3.tool_config import ToolConfAbstract
 
-from apps.lti.models import LtiPlatform
+from apps.accounts.models import ROLE_STUDENT, ROLE_TEACHER
+from apps.lti.models import LtiPlatform, LtiUserLink
+
+User = get_user_model()
 
 
 @functools.lru_cache(maxsize=1)
@@ -118,3 +124,69 @@ def check_launch_allowed(platform: LtiPlatform) -> bool:
     to change this one function, not every call site.
     """
     return platform.is_ready_for_real_courses
+
+
+def resolve_role(message_launch) -> str:
+    """Instructor/TA -> teacher-side landing, everything else -> student."""
+    if message_launch.check_teacher_access() or message_launch.check_teaching_assistant_access():
+        return ROLE_TEACHER
+    return ROLE_STUDENT
+
+
+def _synthetic_email(platform: LtiPlatform, sub: str) -> str:
+    """
+    A unique, non-deliverable placeholder email for launches where the
+    institution didn't release a real email claim (e.g. an anonymous-mode
+    launch). ``.invalid`` is reserved by RFC 2606 for exactly this: no mail
+    server exists for it, so even a guessed address can't receive a
+    password-reset email -- direct signup/login can't claim this account
+    that way, on top of it having no usable password to begin with.
+    """
+    digest = hashlib.sha256(f"{platform.pk}:{sub}".encode("utf-8")).hexdigest()[:24]
+    return f"lti-{digest}@lti.harmonylab.invalid"
+
+
+def resolve_user(message_launch, platform: LtiPlatform) -> User:
+    """
+    Resolve (creating if necessary) the Django User for a validated launch.
+
+    ``sub`` is the only identity claim this requires -- it must work
+    correctly under an institution's strictest ("anonymous") LTI
+    configuration, where name/email claims are absent. See the identity
+    resolution section of
+    docs/superpowers/specs/2026-07-02-student-dashboard-lti-design.md.
+
+    A newly created LTI-provisioned User always gets an unusable password:
+    it can never be logged into directly, only reached via a fresh, valid
+    LTI launch tied to the same (platform, sub) pair.
+    """
+    jwt_body = message_launch.get_launch_data()
+    sub = jwt_body.get("sub")
+    if not sub:
+        raise LtiException("Launch is missing sub")
+
+    link = (
+        LtiUserLink.objects.filter(platform=platform, sub=sub)
+        .select_related("user")
+        .first()
+    )
+    if link is not None:
+        return link.user
+
+    email = jwt_body.get("email")
+    email = User.objects.normalize_email(email).lower() if email else _synthetic_email(platform, sub)
+
+    user, created = User.objects.get_or_create(
+        email=email,
+        defaults={
+            "first_name": jwt_body.get("given_name") or "",
+            "last_name": jwt_body.get("family_name") or "",
+            "role": resolve_role(message_launch),
+        },
+    )
+    if created:
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+
+    LtiUserLink.objects.create(user=user, platform=platform, sub=sub)
+    return user
