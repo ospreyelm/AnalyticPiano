@@ -59,12 +59,27 @@ class CanonicalPlaylistServiceTests(TestCase):
         self.assertTrue(playlist.is_public)
         self.assertFalse(playlist.is_official)
         self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
     def test_repeat_resolution_reuses_same_playlist(self):
         first = self.resolve(unit=11, mode="roman")
         second = self.resolve(unit=11, mode="roman")
+
+        self.assertEqual(second.pk, first.pk)
+
+    def test_branch_unit_token_creates_canonical_playlist(self):
+        playlist = self.resolve(unit="B17", mode="figures", is_public=True)
+
+        self.assertEqual(playlist.name, "Unit B17 — Exercises (Figures)")
+        self.assertEqual(playlist.skill_tags, ["unit:B17"])
+        self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
+        self.assertEqual(playlist.canonical_unit, "B17")
+        self.assertEqual(playlist.canonical_mode, "figures")
+
+    def test_branch_unit_token_dedups_on_repeat_resolution(self):
+        first = self.resolve(unit="B17", mode="figures")
+        second = self.resolve(unit="B17", mode="figures")
 
         self.assertEqual(second.pk, first.pk)
 
@@ -109,7 +124,7 @@ class CanonicalPlaylistServiceTests(TestCase):
 
         self.assertEqual(resolved.pk, legacy.pk)
         self.assertEqual(resolved.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(resolved.canonical_unit, 11)
+        self.assertEqual(resolved.canonical_unit, "11")
         self.assertEqual(resolved.canonical_mode, "roman")
 
     def test_ambiguous_legacy_rows_raise(self):
@@ -150,6 +165,14 @@ class CanonicalPlaylistServiceTests(TestCase):
             "Unsupported interaction mode: counterpoint",
         ):
             self.resolve(mode="counterpoint")
+
+    def test_missing_unit_is_rejected(self):
+        with self.assertRaisesMessage(ValueError, "unit is required"):
+            self.resolve(unit="")
+
+    def test_none_unit_is_rejected(self):
+        with self.assertRaisesMessage(ValueError, "unit is required"):
+            self.resolve(unit=None)
 
     def test_performed_playlist_allows_append(self):
         """A playlist that has been performed should still accept new exercises.

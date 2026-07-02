@@ -231,7 +231,7 @@ class MusicXMLImportViewsTest(TestCase):
         playlist = Playlist.objects.get(id=data["playlistId"])
         self.assertEqual(playlist.name, "Unit 11 — Exercises (Roman)")
         self.assertEqual(playlist.playlist_family, Playlist.FAMILY_TEACHER_PLAY)
-        self.assertEqual(playlist.canonical_unit, 11)
+        self.assertEqual(playlist.canonical_unit, "11")
         self.assertEqual(playlist.canonical_mode, "roman")
 
     def test_repeated_musicxml_saves_reuse_destination(self):
@@ -268,6 +268,24 @@ class MusicXMLImportViewsTest(TestCase):
         self.assertEqual(imported_resp.status_code, 201, imported_resp.content)
 
         self.assertEqual(composed_resp.json()["playlistId"], imported_resp.json()["playlistId"])
+
+    def test_save_accepts_branch_unit_token(self):
+        """Branch units (e.g. B17) should save just like numeric units."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({"unit": "B17", "mode": "figures"})
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        playlist = Playlist.objects.get(id=data["playlistId"])
+        self.assertEqual(playlist.canonical_unit, "B17")
+        self.assertEqual(playlist.name, "Unit B17 — Exercises (Figures)")
+
+    def test_save_rejects_unknown_unit_token(self):
+        """A unit token that isn't in the taxonomy should 400 with a clear message,
+        not silently succeed or leak a raw ValueError."""
+        self.client.login(email="teacher@example.com", password="testpass123")
+        response = self._post_save({"unit": "ZZZ99"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("does not reference a known unit", response.json()["error"])
 
     def test_musicxml_rejects_multiple_modes(self):
         """Sending multiple modes must return 400 with 'exactly one' message."""

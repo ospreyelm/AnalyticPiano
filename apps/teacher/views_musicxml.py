@@ -18,6 +18,7 @@ except ImportError:
     m21_to_cir = None
 
 from apps.exercises.umto import InteractionMode
+from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.exercises.models import Playlist
 from apps.exercises.umto_factory import build_umto_payload, save_chordal_umto_exercise, save_umto_exercise
 from apps.exercises.utils.umto_import_router import classify_musicxml_score
@@ -199,10 +200,9 @@ def import_musicxml_save_view(request):
     if len(unit_tags) != 1:
         return JsonResponse({"error": "Exactly one unit must be selected."}, status=400)
 
-    try:
-        unit = int(unit_tags[0])
-    except ValueError:
-        return JsonResponse({"error": "Unit must be an integer."}, status=400)
+    unit = unit_tags[0]
+    if TaxonomyReader.get_unit(unit) is None:
+        return JsonResponse({"error": f"unit tag unit:{unit} does not reference a known unit."}, status=400)
 
     skill_tags = [f"unit:{unit}"]
     free_tags = request.POST.get("tags") or ""

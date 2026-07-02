@@ -11,12 +11,16 @@ from apps.exercises.utils.playlist_naming import (
 def resolve_canonical_playlist(
     *,
     author,
-    unit: int,
+    unit: str,
     mode: str,
     is_public: bool,
     is_official: bool,
 ) -> Playlist:
-    unit = int(unit)
+    if unit is None:
+        raise ValueError("unit is required")
+    unit = str(unit)
+    if not unit:
+        raise ValueError("unit is required")
     canonical_mode_label(mode)  # validates mode; raises ValueError for unsupported values
     name = build_canonical_playlist_name(unit, mode)
     unit_tag = f"unit:{unit}"

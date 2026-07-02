@@ -567,7 +567,8 @@ class Playlist(ClonableModelMixin, BaseContentModel):
         default="",
         db_index=True,
     )
-    canonical_unit = models.PositiveSmallIntegerField(
+    canonical_unit = models.CharField(
+        max_length=8,
         null=True,
         blank=True,
         db_index=True,
