@@ -92,7 +92,7 @@ def _reject(obj):
 @require_POST
 @teacher_required
 def playlist_submit_review_view(request, playlist_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    playlist = _get_editable_playlist(request, playlist_id)
     return _submit_for_review(playlist)
 
 
@@ -157,6 +157,15 @@ def _visible_exercises(user):
     return Exercise.objects.filter(
         Q(authored_by=user) | Q(is_public=True) | Q(is_official=True)
     )
+
+
+def _get_editable_playlist(request, playlist_id):
+    """Look up a playlist for a mutating action, matching the same
+    author-or-superuser rule the playlist editor template uses to decide
+    whether to show edit controls (see can_edit in playlist_detail_view)."""
+    if request.user.is_superuser:
+        return get_object_or_404(Playlist, id=playlist_id)
+    return get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
 
 
 @teacher_required
@@ -291,7 +300,7 @@ def playlist_detail_view(request, playlist_id):
 @teacher_required
 @require_POST
 def playlist_save_view(request, playlist_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    playlist = _get_editable_playlist(request, playlist_id)
     try:
         body = json.loads(request.body or "{}")
     except json.JSONDecodeError:
@@ -310,7 +319,7 @@ def playlist_save_view(request, playlist_id):
 @teacher_required
 @require_POST
 def playlist_reorder_view(request, playlist_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    playlist = _get_editable_playlist(request, playlist_id)
     try:
         body = json.loads(request.body or "{}")
         order = body["order"]
@@ -330,7 +339,7 @@ def playlist_reorder_view(request, playlist_id):
 @teacher_required
 @require_POST
 def playlist_add_exercise_view(request, playlist_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    playlist = _get_editable_playlist(request, playlist_id)
     try:
         body = json.loads(request.body or "{}")
         exercise_id = body["exerciseId"]
@@ -354,7 +363,7 @@ def playlist_add_exercise_view(request, playlist_id):
 @teacher_required
 @require_POST
 def playlist_remove_exercise_view(request, playlist_id, ordered_id):
-    playlist = get_object_or_404(Playlist, id=playlist_id, authored_by=request.user)
+    playlist = _get_editable_playlist(request, playlist_id)
     ordered = get_object_or_404(
         ExercisePlaylistOrdered,
         pk=ordered_id,
