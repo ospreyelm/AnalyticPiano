@@ -311,7 +311,7 @@ def _build_playlist(
 
 def _student_facing_playlist_name(unit: int) -> str:
     if unit == 10:
-        return f"Unit {unit} - First Inversions (Harmonization)"
+        return f"Unit {unit} - Third in the Bass (Harmonization)"
     return f"Unit {unit} - Authentic Cadences (Harmonization)"
 
 
@@ -352,7 +352,7 @@ def _fixed_unit_slots(unit: int, n_voices: int) -> list[dict[str, tuple]]:
 
 def _exercise_description(unit: int, key: str, combo_idx: int, combo_count: int) -> str:
     if unit == 10:
-        return f"First-Inversion Cadence in {key}"
+        return f"Third-in-the-Bass Cadence in {key}"
 
     prefix = f"Harmonization Cadence in {key}"
     return prefix if combo_count == 1 else f"{prefix} var{combo_idx}"
@@ -388,7 +388,7 @@ def _playlist_skill_tags_for_unit(unit: int) -> list[str]:
 
 
 def _heading_label_for_unit(unit: int) -> str:
-    return "first-inversion cadences" if unit == 10 else "authentic cadences"
+    return "third-in-the-bass cadences" if unit == 10 else "authentic cadences"
 
 
 def _make_exercises(

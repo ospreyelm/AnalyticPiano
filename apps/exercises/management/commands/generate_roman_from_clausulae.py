@@ -485,7 +485,7 @@ def _exercise_description(
     label: str,
 ) -> str:
     if unit == 10:
-        return f"First-Inversion Cadence in {key}"
+        return f"Third-in-the-Bass Cadence in {key}"
 
     prefix = f"{n_voices}-part Authentic Cadence in {key}"
     candidate = f"{prefix} [{label}]"
@@ -510,7 +510,7 @@ def _skill_tags_for_unit(unit: int, n_voices: int) -> list[str]:
 
 def _playlist_name(unit: int, voices_arg: str) -> str:
     if unit == 10:
-        return f"Unit {unit} — First Inversions (Roman Numerals)"
+        return f"Unit {unit} — Third in the Bass (Roman Numerals)"
 
     suffix = "" if voices_arg == "all" else f" {voices_arg}-voice"
     return f"Unit {unit} — Authentic Cadences (Roman Numerals){suffix}"
@@ -526,7 +526,7 @@ def _playlist_skill_tags_for_unit(unit: int) -> list[str]:
 
 
 def _heading_label_for_unit(unit: int) -> str:
-    return "first-inversion cadences" if unit == 10 else "authentic cadences"
+    return "third-in-the-bass cadences" if unit == 10 else "authentic cadences"
 
 
 # ── Per-voice-count generator ─────────────────────────────────────────────────
