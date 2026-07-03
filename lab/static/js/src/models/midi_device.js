@@ -1,4 +1,5 @@
 import _ from "lodash";
+import $ from "jquery";
 import MicroEvent from "microevent";
 import Tone from "Tone";
 

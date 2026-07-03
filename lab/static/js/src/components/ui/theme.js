@@ -1,4 +1,5 @@
 import _ from "lodash";
+import $ from "jquery";
 import Component from "app/components/component";
 import ThemeSelectorWidget from "app/widgets/theme_selector";
 
