@@ -128,14 +128,12 @@ not a per-chord server field" below):
   `{figure_string: {policy_key: [required interval numbers]}}`, precomputed by
   a Python management command calling `figure_realization.required_numbers()`
   directly for every figure string this app's `_SHORTHANDS`/generation code can
-  produce, across every `{min,max}` voice-count-policy shape in the 2-4 voice
-  range the app supports (a small enumerable space — six `{min,max}` pairs).
-  `figure` alone (never key/bass/pitch data) determines which interval numbers
-  are required; see the rationale below. Confirmed empirically: this app's
-  corpus (local + prod) uses exactly one policy shape today
-  (`{min:3,max:4}`), but the table isn't limited to what's currently observed
-  — future exercises using other supported voice counts are covered without
-  regeneration.
+  produce, at the `{min:3,max:4}` policy shape this app's corpus (local + prod)
+  actually uses today — confirmed empirically, not assumed. `figure` alone
+  (never key/bass/pitch data) determines which interval numbers are required;
+  see the rationale below. If a future exercise needs a different voice-count
+  policy, regenerating after adding that shape to the command's input covers
+  it — the table isn't hand-maintained, so this isn't a migration.
 
 Functions:
 
@@ -182,13 +180,22 @@ Never use 'inversion' in hint prose. See `docs/music-theory-canon.md` and
 `apps/exercises/tests/test_js_figured_bass_hints_sync.py` asserts both
 generated data files (`_SHORTHANDS` and `_REQUIRED_NUMBERS_BY_FIGURE`) equal
 what Python produces when regenerated. Python remains the source of truth;
-JS drift fails CI. Follow the `unit_allowed_answers.js` precedent already in
-this codebase (`build_unit_allowed_answers` management command generates the
-JS file from Python, and
-`test_unit_allowed_answers.py:test_generated_js_matches_loader` regenerates
-and diffs) rather than hand-authoring literal tables asserted equal to
-Python — no existing test in this suite hand-mirrors a Python structure this
-way, so codegen-and-diff is the safer, already-proven mechanism here.
+JS drift fails CI. Follow the `unit_allowed_answers.js` precedent's
+codegen-and-diff *structure* (`build_unit_allowed_answers` management command
+generates the JS file from Python, sync test regenerates and diffs) rather
+than hand-authoring literal tables — no existing test in this suite
+hand-mirrors a Python structure this way, so codegen-and-diff is the safer,
+already-proven mechanism here.
+
+The generated file is ESM (`export default {...}`), not the AMD shape the
+`unit_allowed_answers.js` precedent's generator currently still emits — that
+precedent predates the Vite migration and was never updated, and copying its
+output format verbatim would produce a file Vite can't import. The sync
+test's parser targets the `export default` shape directly. Node test runners
+that need to `require()` this file read the default export via
+`moduleRef.default || moduleRef` — confirmed directly against this app's
+Node version that `require()` of an ESM-exported file returns the default
+under `.default` rather than crashing or spreading it onto the object.
 
 ### Render-layer wiring: `exercise_sheet_status.js:_renderHintControls`
 
