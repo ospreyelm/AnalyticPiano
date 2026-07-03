@@ -145,7 +145,13 @@ def _transpose_chords(
             src_pitch = m21_pitch.Pitch(name.replace("b", "-"))
             src_pitch.octave = (midi // 12) - 1
             tgt_pitch = src_pitch.transpose(iv)
-            spelling_out.append(tgt_pitch.name.replace("-", "b"))
+            # nameWithOctave, not name: dropping the octave here collapses every
+            # note in the chord onto the same default octave when this spelling is
+            # re-parsed downstream (_pitches_for_chord_event), destroying the real
+            # voicing. music21's chord.bass() then picks the wrong note as bass,
+            # corrupting every interval-above-bass figure/roman-numeral for the
+            # transposed copy even though the pitches themselves are correct.
+            spelling_out.append(tgt_pitch.nameWithOctave.replace("-", "b"))
 
         new_chord["spelling"] = spelling_out
         result.append(new_chord)
