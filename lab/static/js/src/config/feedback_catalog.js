@@ -25,7 +25,7 @@
     "harmonization.grade.correct":    { category: "success",             surface: "anchored", title: null, body: "Yes — that's it.", detail: null, defaultTimeoutMs: 1500 },
 
     // grade — per-skill (most specific)
-    "harmonization.grade.incorrect.wrong_inversion": { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right chord — but the bass doesn't match the figure's inversion.", detail: null, defaultTimeoutMs: 4500 },
+    "harmonization.grade.incorrect.wrong_inversion": { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right chord — but the bass doesn't match the figure. The figure names intervals above the bass; check which chord tone is in the bass.", detail: null, defaultTimeoutMs: 4500 },
     "harmonization.grade.incorrect.wrong_quality":   { category: "recoverable_mistake", surface: "anchored", title: null, body: "Close — check the chord quality (major, minor, diminished?).", detail: null, defaultTimeoutMs: 4500 },
     "identification.grade.incorrect.wrong_octave":   { category: "recoverable_mistake", surface: "anchored", title: null, body: "Right letter — wrong octave.", detail: null, defaultTimeoutMs: 4000 },
 

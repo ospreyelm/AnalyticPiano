@@ -41,7 +41,7 @@ Feedback id convention: `<domain>.<context>.<event>`. IDs are STABLE (analytics 
 | identification.grade.correct | success | anchored | "Exactly." | 1500ms | identification_grader.js |
 | harmonization.grade.incorrect | recoverable_mistake | anchored | "Not quite — check the chord against the figure and try again." | 4000ms | harmonization_grader.js |
 | harmonization.grade.correct | success | anchored | "Yes — that's it." | 1500ms | harmonization_grader.js |
-| harmonization.grade.incorrect.wrong_inversion | recoverable_mistake | anchored | "Right chord — but the bass doesn't match the figure's inversion." | 4500ms | harmonization_grader.js |
+| harmonization.grade.incorrect.wrong_inversion | recoverable_mistake | anchored | "Right chord — but the bass doesn't match the figure. The figure names intervals above the bass; check which chord tone is in the bass." | 4500ms | harmonization_grader.js |
 | harmonization.grade.incorrect.wrong_quality | recoverable_mistake | anchored | "Close — check the chord quality (major, minor, diminished?)." | 4500ms | harmonization_grader.js |
 | identification.grade.incorrect.wrong_octave | recoverable_mistake | anchored | "Right letter — wrong octave." | 4000ms | identification_grader.js |
 | play.save.success | success | inline | "Saved. Your exercise is saved and reviewed." | 2500ms | play workbench save handler |

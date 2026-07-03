@@ -26,6 +26,13 @@ assertEqual("resolve universal", mod.resolveGradeFeedbackId("unknownType", "inco
 assertEqual("resolve per-type", mod.resolveGradeFeedbackId("chorale", "incorrect", null), "chorale.grade.incorrect");
 assertEqual("resolve per-skill", mod.resolveGradeFeedbackId("harmonization", "incorrect", "wrong_inversion"), "harmonization.grade.incorrect.wrong_inversion");
 assertEqual("resolve per-skill missing -> per-type", mod.resolveGradeFeedbackId("harmonization", "incorrect", "no_such"), "harmonization.grade.incorrect");
+
+// R3: figured-bass feedback body names intervals above the bass, never "inversion".
+var wi = mod.render("harmonization.grade.incorrect.wrong_inversion", null);
+assertEqual("wrong_inversion body has no 'inversion'",
+  wi && wi.body.toLowerCase().indexOf("inversion") === -1, true);
+assertEqual("wrong_inversion body names intervals above the bass",
+  wi && wi.body.indexOf("intervals above the bass") !== -1, true);
 assertEqual("resolve per-type missing -> universal", mod.resolveGradeFeedbackId("identification", "partial", null), "exercise.grade.partial");
 assertEqual("resolve unknown state null", mod.resolveGradeFeedbackId("chorale", "bogus", null), null);
 
