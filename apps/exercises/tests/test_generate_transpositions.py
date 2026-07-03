@@ -200,7 +200,9 @@ class GenerateTranspositionsCommandTest(TestCase):
             "--author", self.user.email,
             verbosity=0,
         )
-        self.assertIsNotNone(self._get_copy("C"))
+        # Source is already in C — requesting "C" again is an identity
+        # transposition and is skipped rather than creating a duplicate.
+        self.assertIsNone(self._get_copy("C"))
         self.assertIsNotNone(self._get_copy("G"))
         self.assertIsNotNone(self._get_copy("Bb"))
 
@@ -294,7 +296,9 @@ class GenerateTranspositionsCommandTest(TestCase):
             .order_by("order")
             .values_list("exercise_id", flat=True)
         )
-        self.assertEqual(len(member_ids), 3)
+        # Source is already in C, so "C" is skipped as an identity
+        # transposition — only G and Bb are created and added.
+        self.assertEqual(len(member_ids), 2)
 
     def test_playlist_idempotent_members(self):
         """Running again with the same playlist must not add duplicate members."""

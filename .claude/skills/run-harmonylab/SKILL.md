@@ -53,9 +53,22 @@ PORT=8123
 DJANGO_SETTINGS_MODULE=harmony.settings.local nohup "$VENV/bin/python" manage.py runserver 127.0.0.1:$PORT > /tmp/harmonylab-runserver.log 2>&1 &
 echo $! > /tmp/harmonylab-runserver.pid
 timeout 20 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8123/s/login/; do sleep 0.5; done'
+
+nohup npx vite > /tmp/harmonylab-vite.log 2>&1 &
+echo $! > /tmp/harmonylab-vite.pid
+sleep 3 && tail -5 /tmp/harmonylab-vite.log   # confirm "ready in" line before driving the browser
 ```
 
-Stop with `kill $(cat /tmp/harmonylab-runserver.pid)`.
+Stop with `kill $(cat /tmp/harmonylab-runserver.pid) $(cat /tmp/harmonylab-vite.pid)`.
+
+**Always start the Vite dev server alongside `runserver`.** Pages load
+JS via django-vite pointed at `http://localhost:5173/static/dist/...`,
+not from the prebuilt `lab/static/dist/` bundle — with only `runserver`
+running, every page using app JS (e.g. `/teacher/play/`) throws
+`net::ERR_CONNECTION_REFUSED` console errors and the page is inert. If
+source under `lab/static/js/src/` changed since the last `npm run
+build`, also rebuild the static bundle used by the manifest fallback:
+`npm run build`.
 
 Drive it with gstack `browse` (requires `bun` on PATH):
 
@@ -143,3 +156,9 @@ writing. JS-side tests are plain Node, no runner needed — see
   hardcodes this. `pg_isready` alone doesn't tell you the role exists;
   if `manage.py check` fails on auth, the DB role is the first thing to
   check.
+- **`runserver` alone is not enough for pages with app JS** — the templates
+  reference `http://localhost:5173/...` (django-vite dev mode), so without
+  `npx vite` also running, `/teacher/play/` and similar pages 404 their
+  JS silently in the DOM and error in the console with
+  `net::ERR_CONNECTION_REFUSED`. No visible Django error — only shows up
+  in browser console/network logs.

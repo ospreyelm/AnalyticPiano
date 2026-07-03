@@ -454,8 +454,10 @@ class GenerationManifestExecuteViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        self.assertEqual(data["created_count"], 2)
-        self.assertEqual(len(data["exercise_ids"]), 2)
+        # Source is already in C, so "C" is skipped as an identity
+        # transposition — only G is created.
+        self.assertEqual(data["created_count"], 1)
+        self.assertEqual(len(data["exercise_ids"]), 1)
 
         # Verify created exercises are marked as official
         from apps.exercises.models import Exercise
@@ -548,8 +550,10 @@ class GenerationManifestExecuteViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
 
-        self.assertEqual(data["created_count"], 3)
-        self.assertEqual(len(data["exercise_ids"]), 3)
+        # Source is already in C, so "C" is skipped as an identity
+        # transposition — only G and D are created.
+        self.assertEqual(data["created_count"], 2)
+        self.assertEqual(len(data["exercise_ids"]), 2)
         self.assertIsInstance(data["exercise_ids"], list)
         self.assertTrue(all(isinstance(ex_id, str) for ex_id in data["exercise_ids"]))
 
