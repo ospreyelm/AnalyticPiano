@@ -42,7 +42,6 @@
     "finalhandler": "^2.1.1",
     "forwarded": "^0.2.0",
     "fresh": "^2.0.0",
-    "fsevents": "^2.3.3",
     "function-bind": "^1.1.2",
     "get-intrinsic": "^1.3.0",
     "get-proto": "^1.0.1",
