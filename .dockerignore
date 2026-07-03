@@ -6,6 +6,9 @@ __pycache__
 *.pyo
 .superpowers
 scratch
+node_modules
+static
+lab/static/dist
 # data/corpus is committed to git and must be in the image
 .worktrees
 *.dump
