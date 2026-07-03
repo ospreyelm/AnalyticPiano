@@ -955,6 +955,20 @@ def save_with_transpositions_view(request):
     if is_official and not request.user.is_superuser:
         return JsonResponse({"error": "Only superusers can create official exercises."}, status=403)
 
+    if is_official:
+        # Match the author used by the original official save (e.g. MusicXML
+        # import, AddExerciseView) so generate_transposed_copies' dedup check
+        # (description + authored_by) recognizes an already-created batch
+        # instead of authoring a second, duplicate one under request.user.
+        author = _get_factory_user()
+        if not author:
+            return JsonResponse(
+                {"error": f"Factory user {getattr(settings, 'FACTORY_USER_EMAIL', None)} does not exist."},
+                status=400,
+            )
+    else:
+        author = request.user
+
     from apps.exercises.models import Exercise
     from apps.exercises.services.transposition_service import generate_transposed_copies
 
@@ -975,7 +989,7 @@ def save_with_transpositions_view(request):
             source_exercise=source,
             key_set=key_set,
             playlist=playlist,
-            author=request.user,
+            author=author,
             is_official=is_official,
             overwrite=False,
         )

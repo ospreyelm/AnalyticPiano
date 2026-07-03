@@ -221,7 +221,9 @@ class GenerationManifestTest(TestCase):
 
         # Should return list of created exercises
         self.assertIsInstance(created, list)
-        self.assertEqual(len(created), 2)  # One for each key
+        # Source is already in C, so "C" is skipped as an identity
+        # transposition — only G is created.
+        self.assertEqual(len(created), 1)
 
         # Check that exercises were created with correct properties
         for ex in created:
@@ -272,7 +274,9 @@ class GenerationManifestTest(TestCase):
         created = manifest.execute()
 
         # Check that created exercises are in the playlist
-        self.assertEqual(len(created), 2)
+        # Source is already in C, so "C" is skipped as an identity
+        # transposition — only G is created.
+        self.assertEqual(len(created), 1)
         playlist_exercise_ids = set(playlist.untransposed_exercises_ids)
         for ex in created:
             self.assertIn(ex.id, playlist_exercise_ids)
@@ -304,7 +308,9 @@ class GenerationManifestTest(TestCase):
             unit=9,
             skill_tags=[],
             exercise_types=["play"],
-            key_set=["C"],
+            # Source is already in C — use G so the transposition isn't
+            # skipped as an identity match, keeping this test meaningful.
+            key_set=["G"],
             playlist_target=None,
             is_official=True,
             author_email="author@example.com",

@@ -232,6 +232,36 @@ class TranspositionServiceTest(TestCase):
             expected_tgt = [p - 5 for p in src_visible]
             self.assertEqual(tgt_visible, expected_tgt)
 
+    def test_preserves_analysis_type_and_display(self):
+        """Test that transposed copies inherit the source's analysisType and display,
+        instead of silently defaulting to 'roman' (regression: prod created
+        figured-bass-unabbreviated transpositions typed as Roman numerals)."""
+        source_fb = save_chordal_umto_exercise(
+            description="Figured Bass Source",
+            author=self.author,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67], "hidden": []},
+            ],
+            key="jC_",
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+            analysis_type="figured_bass_unabbreviated",
+            display={"showFigures": True, "showRomans": False},
+        )
+
+        created = generate_transposed_copies(
+            source_exercise=source_fb,
+            key_set=["G"],
+            author=self.author,
+        )
+
+        self.assertEqual(len(created), 1)
+        ex = created[0]
+        self.assertEqual(ex.data.get("analysisType"), "figured_bass_unabbreviated")
+        self.assertEqual(ex.data.get("display"), {"showFigures": True, "showRomans": False})
+
     def test_skips_invalid_keys(self):
         """Test that invalid keys are skipped gracefully."""
         created = generate_transposed_copies(
@@ -245,6 +275,22 @@ class TranspositionServiceTest(TestCase):
         descriptions = {ex.description for ex in created}
         self.assertIn("Test Chords in C (G)", descriptions)
         self.assertIn("Test Chords in C (Bb)", descriptions)
+
+    def test_skips_identity_key_transposition(self):
+        """Test that a key matching the source's own key is skipped, not cloned.
+
+        Regression: a preset key-set that always includes the source's key
+        (e.g. 'common' = C, G, D, F, Bb, Eb for a source already in C) created
+        an exact duplicate of the original exercise."""
+        created = generate_transposed_copies(
+            source_exercise=self.source,  # key="jC_" (C major)
+            key_set=["C", "G"],
+            author=self.author,
+        )
+
+        # Only G should be created; C (identity) is skipped.
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].description, "Test Chords in C (G)")
 
     def test_preserves_analysis_slices(self):
         """Test that analysis slices are preserved in transposed exercises."""

@@ -182,6 +182,8 @@ def generate_transposed_copies(
     author: Optional[User] = None,
     is_official: bool = False,
     overwrite: bool = False,
+    analysis_type: Optional[str] = None,
+    display: Optional[dict] = None,
 ) -> list[Exercise]:
     """Generate transposed copies of a UMTO chordal exercise in different keys.
 
@@ -192,6 +194,12 @@ def generate_transposed_copies(
         author: Optional User instance; defaults to source_exercise.authored_by.
         is_official: If True, set is_official=True on created exercises.
         overwrite: If True, update existing exercises instead of skipping.
+        analysis_type: Analysis type for the created copies (e.g. 'roman',
+            'figured_bass_unabbreviated'). Defaults to the source exercise's
+            own analysisType so transposed copies keep the teacher's chosen
+            exercise type instead of silently defaulting to 'roman'.
+        display: Analysis display flags (showRomans/showFigures/...). Defaults
+            to the source exercise's own display flags.
 
     Returns:
         List of Exercise instances (created or updated; errors are skipped but logged).
@@ -216,6 +224,12 @@ def generate_transposed_copies(
     # ---- Resolve author ----
     if author is None:
         author = source_exercise.authored_by
+
+    # ---- Resolve analysis type / display (default to source's own) ----
+    if analysis_type is None:
+        analysis_type = source_exercise.data.get("analysisType")
+    if display is None:
+        display = source_exercise.data.get("display")
 
     # ---- Extract source metadata ----
     meta = source_umto.get("metadata", {})
@@ -250,10 +264,25 @@ def generate_transposed_copies(
         stripped = source_key_hl.lstrip("ij").rstrip("_")
         sig_orig = pseudo_key_to_sig.get(stripped, "")
 
+    # Source's own key, in the same "clean key" notation as key_set entries
+    # (e.g. 'C', 'Bb', 'F#m'), used to detect a requested key that is
+    # literally the source's own key (not merely sig-coincidental, as
+    # relative major/minor keys sharing a signature are — e.g. 'Am' vs 'C').
+    source_mode_suffix = "m" if source_key_hl.startswith("i") else ""
+    source_clean_key = _hl_tonic_name(source_key_hl) + source_mode_suffix
+
     # ---- Process each requested key ----
     created_exercises = []
 
     for clean_key in key_set:
+        if clean_key == source_clean_key:
+            # Requested key matches the source's own key (e.g. a preset
+            # key-set that always includes a fixed key regardless of the
+            # source). Skip it instead of creating an exact duplicate of
+            # the original exercise.
+            logger.info(f"Key {clean_key} matches source key, skipping identity transposition")
+            continue
+
         sig_target = _sig_for_clean_key(clean_key)
         if sig_target is None:
             logger.warning(f"Unknown key: {clean_key}, skipping")
@@ -336,6 +365,8 @@ def generate_transposed_copies(
                 barline_offsets=barline_offsets,
                 analysis=analysis,
                 mode=source_mode,
+                analysis_type=analysis_type,
+                display=display,
             )
             # Set is_official after creation if requested
             if is_official:
