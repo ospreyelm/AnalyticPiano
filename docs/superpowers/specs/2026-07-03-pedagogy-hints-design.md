@@ -71,13 +71,17 @@ project:
   `wrong_bass` (internal, not student-facing).
 - Re-titling already-generated exercises stored in the DB. Only newly
   generated exercises adopt the new titles. **Owner: avner. Trigger:**
-  schedule a one-time re-titling + regeneration pass (and remove the
-  `music21_builder.py` grader-side synonym map once it lands) within one
-  grading period of this spec merging, tracked as a follow-up issue — not an
-  open-ended "someday."
-- The deferred `recompute_harmonization_targets` run for pre-existing
-  exercises. New exercises get the `requiredIntervalNumbers` field (see
-  Architecture) going forward without it.
+  schedule a one-time re-titling + regeneration pass within one grading
+  period of this spec merging, tracked as a follow-up issue — not an
+  open-ended "someday." (No grader-side synonym map exists to remove as part
+  of this follow-up — see "music21_builder.py" below: identification exercises
+  bake `choices`/`answer` together at generation time with no code path that
+  compares an old-labeled exercise's answer against new-labeled choices, so no
+  compatibility map was added in the first place.)
+- A `recompute_harmonization_targets` run is not needed for this feature at
+  all — the required-tones lookup (see Architecture) works against every
+  existing exercise's stored `displayFigure`/`figures`/`voiceCountPolicy`
+  immediately, with no new field to backfill.
 
 ## Decisions (locked during brainstorming)
 
@@ -87,7 +91,7 @@ project:
 | Chord-tone language | Context-dependent: scale-degree numbers for figured-bass hints; solfège (movable do) for RN identification hints |
 | Hint content source | Per-exercise dynamic (computed from the exercise's actual figures) |
 | Architecture | Approach A — client-side compute at render time, new JS module |
-| Required-tones source | Server-provided — `targets.py` already computes `required_numbers()`; extend its payload with the required interval numbers and have the hint module read that field directly. (Supersedes the originally-locked B1 client-side-port decision — see "Why not a client-side JS port of the required-tones algorithm" below.) |
+| Required-tones source | Client-side lookup, codegen'd — a generated table of `(figure string, voice-count-policy) → required interval numbers`, computed by Python at build time and shipped as a generated JS data file, sync-tested by regenerating and diffing (same discipline as the `_SHORTHANDS` mirror). No per-chord server field, no recompute. (Supersedes an earlier revision of this decision that introduced a `targets.py` field — see "Why a generated lookup, not a per-chord server field" below.) |
 | Reference link | Existing Gettysburg page |
 | Notation | Essential intervals plain; omittable named tones in parens; optional octave doubling marked `[+8]` (distinct from parens — doubling adds a tone, it doesn't permit omitting one). Data-driven from the exercise's voice count. |
 
@@ -98,46 +102,63 @@ terminology removal (feedback text, answer choices, taxonomy/forms labels,
 generated titles) — independently justified by the user's existing hard
 standard, low technical risk, no dependency on the hint architecture below —
 and (2) the analysisType-branched per-exercise dynamic hint rework, which
-depends on the `targets.py` payload extension. Ship as two increments rather
+depends on the generated required-tones lookup. Ship as two increments rather
 than one PR:
 
 - **Increment 1 — terminology removal.** `feedback_catalog.js`,
-  `music21_builder.py` triad answer choices + synonym map, taxonomy/forms
-  labels, generator titles. No dependency on Increment 2; can land and ship
-  first.
-- **Increment 2 — dynamic hint architecture.** `figured_bass_hints.js`,
-  `targets.py` payload extension, render-layer wiring, Roman-numeral reframe.
+  `music21_builder.py` triad answer choices, taxonomy/forms labels, generator
+  titles. No dependency on Increment 2; can land and ship first.
+- **Increment 2 — dynamic hint architecture.** `figured_bass_hints.js`, the
+  generated `_SHORTHANDS`/`_REQUIRED_NUMBERS_BY_FIGURE` lookup, render-layer
+  wiring, Roman-numeral reframe.
 
 ## Architecture
 
 ### New module: `lab/static/js/src/config/figured_bass_hints.js`
 
-Pure functions, no DOM access. Mirrors one Python source of truth (scope
-narrowed from the original three — see "Why not a client-side JS port of the
-required-tones algorithm" below):
+Pure functions, no DOM access. Consumes two generated data files (no
+hand-authored mirror of any Python algorithm — see "Why a generated lookup,
+not a per-chord server field" below):
 
-- `_SHORTHANDS` — mirror of `apps/exercises/harmonization/figures.py:_SHORTHANDS`
-  (abbreviated figure → interval token list). Still needed client-side because
-  identification hints (surfaces C/D) show students the abbreviation-to-stack
-  expansion for labeling purposes, independent of required-tones realization.
+- `_SHORTHANDS` — generated mirror of
+  `apps/exercises/harmonization/figures.py:_SHORTHANDS` (abbreviated figure →
+  interval token list). Needed for identification hints (surfaces C/D), which
+  show students the abbreviation-to-stack expansion for labeling purposes.
+- `_REQUIRED_NUMBERS_BY_FIGURE` — generated lookup table,
+  `{figure_string: {policy_key: [required interval numbers]}}`, precomputed by
+  a Python management command calling `figure_realization.required_numbers()`
+  directly for every figure string this app's `_SHORTHANDS`/generation code can
+  produce, across every `{min,max}` voice-count-policy shape in the 2-4 voice
+  range the app supports (a small enumerable space — six `{min,max}` pairs).
+  `figure` alone (never key/bass/pitch data) determines which interval numbers
+  are required; see the rationale below. Confirmed empirically: this app's
+  corpus (local + prod) uses exactly one policy shape today
+  (`{min:3,max:4}`), but the table isn't limited to what's currently observed
+  — future exercises using other supported voice counts are covered without
+  regeneration.
 
 Functions:
 
 - `expandFigure(abbrev: string): string[]` — abbreviated figure → interval
   token list, via `_SHORTHANDS`. Mirrors `figures.py:expand_figure_string`.
+- `requiredNumbersFor(figureString, voiceCountPolicy): number[]` — looks up
+  `_REQUIRED_NUMBERS_BY_FIGURE[figureString][policyKey(voiceCountPolicy)]`.
+  Pure lookup; no algorithm runs client-side.
 - `buildHarmonizationHints(definition, analysisType): string[]` — reads
   `definition.harmonizationTargets` (each has `figures`, `displayFigure`,
-  `requiredIntervalNumbers` (see server-payload note below), `voiceCountPolicy`,
-  `bassSpelling`). Branches on `analysisType`:
+  `voiceCountPolicy`, `bassSpelling` — all already present on every target,
+  old or new). Branches on `analysisType`:
   - `figured_bass` (abbreviated) — returns the per-figure essential/omittable/
-    doubling notation, reading essential/omittable status directly from each
-    target's `requiredIntervalNumbers` (no client-side recomputation).
+    doubling notation, reading essential/omittable status via
+    `requiredNumbersFor(target.displayFigure, target.voiceCountPolicy)`.
   - `figured_bass_unabbreviated` (unabbreviated) — returns the per-target raw
     stack using `target.figures` (already the fully expanded interval list —
     `expand_figure_string` is idempotent on already-unabbreviated figures, so
-    this field is correct for both abbreviated and unabbreviated exercises
-    with no separate raw-figure field needed).
-  Returns `[]` if no targets.
+    this field is correct for both abbreviated and unabbreviated exercises).
+  Returns `[]` if no targets, or if a target's figure string isn't found in
+  the generated lookup (should not occur for any figure this app's generation
+  code actually produces; falls back to the static hint set the same as the
+  no-targets case).
 - `buildIdentificationHints(definition, analysisType): string[]` — reads the
   slices' `figured_bass` (abbreviated) or `raw_figured_bass` (unabbreviated)
   and returns progressive hint array with plain expansions (no
@@ -156,33 +177,18 @@ JSDoc header states the rule: "Figured bass names intervals above the bass.
 Never use 'inversion' in hint prose. See `docs/music-theory-canon.md` and
 `AGENTS.md` (theory-sensitive changes require a distinguishing example)."
 
-### Server payload: `targets.py` required-interval-numbers field
-
-`apps/exercises/harmonization/targets.py` already computes
-`derive_required_notes()` → `requiredUpperPcs`/`requiredNoteNames` for every
-harmonization target, and `harmonization_grader_logic.js` already treats
-`target.requiredUpperPcs` as ground truth for grading. Extend the same
-`targets.py` payload with `requiredIntervalNumbers` — the generic interval
-numbers (not pitch classes) that `required_numbers()` marks essential for this
-target's `voiceCountPolicy` — and have `buildHarmonizationHints` read that
-field directly instead of re-deriving essential/omittable status from a
-client-side port of `TABLE`/`required_numbers`. This removes the risk of the
-hint telling a student a tone is "essential" while the grader, reading
-`requiredUpperPcs` for the same target, enforces a different set.
-
 ### Sync test
 
-`apps/exercises/tests/test_js_figured_bass_hints_sync.py` asserts the JS
-`_SHORTHANDS` equals its Python counterpart
-(`apps/exercises/harmonization/figures.py:_SHORTHANDS`). Python remains the
-source of truth; JS drift fails CI. Follow the `unit_allowed_answers.js`
-precedent already in this codebase (`build_unit_allowed_answers` management
-command generates the JS file from Python, and
+`apps/exercises/tests/test_js_figured_bass_hints_sync.py` asserts both
+generated data files (`_SHORTHANDS` and `_REQUIRED_NUMBERS_BY_FIGURE`) equal
+what Python produces when regenerated. Python remains the source of truth;
+JS drift fails CI. Follow the `unit_allowed_answers.js` precedent already in
+this codebase (`build_unit_allowed_answers` management command generates the
+JS file from Python, and
 `test_unit_allowed_answers.py:test_generated_js_matches_loader` regenerates
-and diffs) rather than hand-authoring two independent literal tables — no
-existing test in this suite hand-mirrors a Python structure and asserts
-equality against a separately-authored JS literal, so codegen-and-diff is the
-safer, already-proven mechanism here.
+and diffs) rather than hand-authoring literal tables asserted equal to
+Python — no existing test in this suite hand-mirrors a Python structure this
+way, so codegen-and-diff is the safer, already-proven mechanism here.
 
 ### Render-layer wiring: `exercise_sheet_status.js:_renderHintControls`
 
@@ -194,42 +200,54 @@ on `definition.analysisType`:
   in identification / chorale_identification modes. Fall back to the existing
   static `ExerciseInstructions[mode].hints` if the helper returns `[]` — when
   this fallback fires, emit a dev-only `console.warn` (matching the existing
-  `exercise_context.js:404,408` pattern) naming the exercise id and analysisType,
-  so a large silent shift to the legacy generic-table hint experience is
-  visible in the console during QA rather than only discoverable by chance.
-  Expected population hitting this fallback: exercises whose
-  `harmonizationTargets` are empty or absent (pre-UMTO/legacy exercises) —
-  should shrink over time and not apply to newly generated exercises.
+  generic-mismatch warning already at `exercise_context.js:415`, not the
+  internal "Inversion Error" debug warning at line 408, which stays untouched)
+  naming the exercise id and analysisType. Expected population hitting this
+  fallback: exercises whose `harmonizationTargets` are empty or absent
+  (pre-UMTO exercises). There is no "legacy exercise missing a field" case to
+  guard against — every harmonization target, regardless of when it was
+  generated, already carries `displayFigure`/`figures` and `voiceCountPolicy`,
+  which is all the lookup needs.
 - `figured_bass_unabbreviated` → `allSteps = buildHarmonizationHints(definition, "figured_bass_unabbreviated")`
   in harmonization mode, or `buildIdentificationHints(definition, "figured_bass_unabbreviated")`
   in identification / chorale_identification modes. Same fallback/logging rule.
 - All other modes → unchanged static path.
 
 No change to mode detection in `exercise_definition.js`. No UMTO/data-model
-change beyond the additive `requiredIntervalNumbers` field above. No
-`recompute_harmonization_targets` run for existing exercises — new exercises
-get the field going forward; existing exercises without it fall back to the
-static hints per the rule above until reprocessed.
+change of any kind — no new field, no `recompute_harmonization_targets` run,
+no exercise regeneration required for this feature to work on every existing
+exercise immediately.
 
-### Why not a client-side JS port of the required-tones algorithm
+### Why a generated lookup, not a per-chord server field
 
-The brainstorm originally locked a client-side port (JS mirrors of `TABLE` +
-`required_numbers`, sync-tested vs Python) on the reasoning that server-side
-compute would require a data-model change, a recompute run, and would
-hardcode one hint language. On review, this compares unfavorably against a
-narrower option that wasn't weighed: **extending the existing `targets.py`
-payload** (which already computes the identical Python algorithm, and already
-ships `requiredUpperPcs`/`requiredNoteNames` to the client for every target)
-with one more derived field. That option gets the "no data migration, no
-recompute run" properties of the client-side approach — it's an additive,
-backward-compatible field on the same target-building path — while avoiding a
-second independent implementation of `required_numbers()`'s TABLE lookup,
-collision-resolution (`normalize`/`_build_index`), and no-realizable-voice-count
-fallback logic in JS, all of which the grader-trusted Python already handles
-correctly. Client-side compute is kept for `_SHORTHANDS`/`expandFigure` (a
-simple, low-risk lookup with no voice-count branching) and for hint-template
-assembly generally; only the required-tones essential/omittable determination
-moves to reading a server-provided field.
+An earlier revision of this decision proposed extending `targets.py` with a
+`requiredIntervalNumbers` field per harmonization target, reasoning that a
+client-side port of `TABLE`/`required_numbers` risked drifting from the
+Python the grader already trusts. That's a real risk, but the fix it chose
+was wrong: it assumed the required-numbers value was chord-specific and
+needed per-target storage (and therefore a recompute run for exercises
+generated before the field existed).
+
+It isn't chord-specific. Reading `derive_required_notes`
+(`apps/exercises/harmonization/figures.py:196-262`) directly: `present`,
+`altered`, and the resolved `prototype` key (lines 239-241) are derived
+entirely from the figure string via `expand_figure_string`/`_fr.normalize` —
+never from `key_name` or `bass_name`. Those only get used afterward, to
+translate required interval *numbers* into concrete note names and pitch
+classes. Which numbers are required is a pure function of
+`(figure string, voice_count_policy)` — the same two values already sitting
+on every stored target, old or new. There is nothing to persist per chord,
+and nothing to backfill.
+
+The right fix keeps the client-side approach the brainstorm originally chose
+— a lookup keyed by figure type and voice-count policy — but generates it
+from Python at build time (same discipline as `_SHORTHANDS`) instead of
+porting `TABLE`, `normalize`, `_build_index`, and `required_numbers` into a
+hand-authored JS reimplementation. This gets both properties at once: no
+data migration or recompute (the lookup works on every existing target
+immediately, since nothing new needs to be stored), and no drift risk (the
+values are computed by the real Python algorithm at generation time, and the
+sync test catches any divergence).
 
 ## Hint content per surface
 
@@ -241,9 +259,10 @@ the bass an octave up) that was never a named requirement of the figure in the
 first place. Collapsing both under one parenthesis convention would leave a
 student unable to tell, from the notation alone, whether a given digit means
 "you may omit this" or "you may additionally double this." Essential/omittable
-status is read directly from the target's server-provided
-`requiredIntervalNumbers` (see Architecture, above) — not recomputed
-client-side. The rule taught to the student: "the plain numbers are the ones
+status comes from the generated `_REQUIRED_NUMBERS_BY_FIGURE` lookup keyed by
+figure string and voice-count policy (see Architecture, above) — a pure
+lookup, not a client-side reimplementation of the realization algorithm. The
+rule taught to the student: "the plain numbers are the ones
 you must keep; the parenthesized ones you may drop in sparse texture; `[+8]`
 means you may double the bass an octave up in four parts."
 
@@ -272,7 +291,7 @@ Worked examples (data-driven; values verified directly against
    up in four parts."
 2. **Hint 1 (per-figure, data-driven):** for each distinct figure in the
    exercise, the essential/omittable/doubling line from the table above
-   (essential/omittable read from the target's `requiredIntervalNumbers`),
+   (essential/omittable via `requiredNumbersFor(figure, voiceCountPolicy)`),
    prefixed by the abbreviated figure and `→`.
 3. **Hint 2:** "Count from the bass: 3 = two staff steps up, 5 = four steps,
    6 = five steps, 7 = six steps. The plain numbers are the ones you must
@@ -354,20 +373,17 @@ from `["root position", "first inversion", "second inversion"]` to
 
 The seventh-chord entry (lines 89-91) already reads
 `["root position", "6/5", "4/3", "4/2"]` — it never said "inversion" and needs
-no change here, and the grader-side synonym map below applies only to the
-triad labels since the seventh labels never had an "inversion" form to be
-synonymous with.
+no change here.
 
 **Data impact:** existing triad-identification exercises store the old labels
-as answer keys. Two options:
-
-- (a) A one-time migration script rewriting stored answer keys to the new
-  labels.
-- (b) A grader-side synonym map accepting both old and new labels.
-
-**Recommendation: (b).** Backward-compatible, no recompute, old exercises keep
-working. The synonym map lives alongside the identification grader and is
-removed once all legacy exercises are regenerated (tracked follow-up).
+as answer keys. No compatibility shim is needed: `choices` and `answer` are
+baked together per exercise at generation time
+(`music21_builder.py:_chord_dict`), and grading is a direct
+`chosen === answer` comparison (`identification_grader.js`) against that same
+exercise's own stored `answer` — there is no code path where an old-labeled
+exercise's stored answer is ever compared against new-labeled choices from a
+different exercise. Old exercises keep their old labels and keep grading
+correctly; only newly generated exercises get the new labels.
 
 ### Unit titles / labels
 
@@ -409,40 +425,31 @@ stored in the DB are not auto-rewritten (follow-up).
 - Pitch-class inversional symmetry (unit 31, "Symmetry & inversional axes").
 - music21 `rn.inversion()` API calls.
 - Internal Python comments (e.g. `figures.py` `# First-inversion triad`).
-- Dev-only `console.warn` strings in `exercise_context.js:404,408`.
+- Dev-only `console.warn` string in `exercise_context.js:408` (internal
+  "Inversion Error" debug warning).
 - Internal skill-tag ids.
 
 ## Testing
 
-- **Sync test** (`test_js_figured_bass_hints_sync.py`): JS `_SHORTHANDS` equals
-  its Python counterpart. Run in CI (see Architecture / Sync test above for the
-  codegen-and-diff mechanism).
-- **Unit** (`targets.py`): a new test asserting a built target's
-  `requiredIntervalNumbers` matches `required_numbers()` called directly for
-  that target's prototype key and `voiceCountPolicy` — this is what actually
-  guards the hint against diverging from the grader, since both now read the
-  same server-computed field.
+- **Sync test** (`test_js_figured_bass_hints_sync.py`): both generated JS
+  files (`_SHORTHANDS` and `_REQUIRED_NUMBERS_BY_FIGURE`) equal what Python
+  produces on regeneration. Run in CI (see Architecture / Sync test above for
+  the codegen-and-diff mechanism).
 - **Golden** (`theory_golden/figured_bass_hints.json`): sample exercises, one
   per `analysisType` × mode, → expected hint arrays. Locks the hint prose.
-- **Grader synonym test:** identification grader accepts both old and new
-  inversion labels (triad only — see "music21_builder.py — triad
-  identification answer choices" above).
 - **Feedback-catalog test:** the rephrased body contains no "inversion".
 - **Distinguishing example (per AGENTS.md canon rule):** `6/4` at 2 voices =
-  not realizable → both 6 and 4 essential in `requiredIntervalNumbers`, vs `6`
-  at 2 voices = 6 essential, 3 omittable. This separates the correct rule (the
-  TABLE's per-voice-count cells) from the plausible shortcut "all named
-  intervals are required," and is now exercised against the `targets.py`
-  payload rather than a client-side port.
+  not realizable → both 6 and 4 are in `_REQUIRED_NUMBERS_BY_FIGURE["6/4"]`
+  for that policy, vs. `6` at 2 voices = only `6` is required, `3` omittable.
+  This separates the correct rule (the TABLE's per-voice-count cells) from
+  the plausible shortcut "all named intervals are required," exercised
+  directly against the generated lookup's build-time computation.
 
 ## Risks
 
-- **JS/Python table drift.** Mitigated by the sync test; Python remains source
-  of truth and the AGENTS.md expert-review rule still applies to TABLE changes.
-- **Answer-choice synonym map** accepting old + new inversion labels could
-  mask a future regression that re-introduces the old labels. Mitigated by a
-  test asserting new labels are the canonical form and old labels are accepted
-  only as synonyms.
+- **JS/Python drift for both generated files.** Mitigated by the sync test;
+  Python remains source of truth and the AGENTS.md expert-review rule still
+  applies to `figure_realization.py:TABLE` changes.
 - **Existing generated exercise titles** in the DB still say "First Inversion."
   Acceptable for v1 (titles are not hint prose); re-titling has an owner and a
   trigger date — see Non-goals.
