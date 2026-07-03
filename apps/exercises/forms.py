@@ -44,9 +44,9 @@ CONTENT_TAGS = [
         ("unit:7", "Unit 7: Cadences"),
         ("unit:8", "Unit 8: Non-harmonic tones"),
         ("unit:9", "Unit 9: Tonic & dominant"),
-        ("unit:10", "Unit 10: First inversions"),
+        ("unit:10", "Unit 10: Chords with the Third in the Bass"),
         ("unit:11", "Unit 11: Pre-dominants"),
-        ("unit:12", "Unit 12: Second inversions"),
+        ("unit:12", "Unit 12: Chords with the Fifth in the Bass"),
         ("unit:13", "Unit 13: Rule of the octave"),
         ("unit:14", "Unit 14: Diatonic seventh chords"),
         ("unit:15", "Unit 15: Sequences"),
@@ -90,8 +90,8 @@ CONTENT_TAGS = [
     
     ("Branch A: Figured Bass", [
         ("unit:A1", "Unit A1: Intro to thoroughbass"),
-        ("unit:A2", "Unit A2: 6/3 chords (first inversion)"),
-        ("unit:A3", "Unit A3: 6/4 chords (second inversion)"),
+        ("unit:A2", "Unit A2: 6/3 chords (third in the bass)"),
+        ("unit:A3", "Unit A3: 6/4 chords (fifth in the bass)"),
         ("unit:A4", "Unit A4: 7–6 suspensions"),
         ("unit:A5", "Unit A5: 4–3 suspensions"),
         ("unit:A6", "Unit A6: 2–3 bass suspensions"),
