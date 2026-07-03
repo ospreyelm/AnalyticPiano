@@ -408,7 +408,7 @@ DJANGO_VITE = {
         "dev_server_host": "localhost",
         "dev_server_port": 5173,
         "static_url_prefix": "dist",
-        "manifest_path": path.join(ROOT_DIR, "lab", "static", "dist", "manifest.json"),
+        "manifest_path": path.join(ROOT_DIR, "lab", "static", "dist", ".vite", "manifest.json"),
     }
 }
 

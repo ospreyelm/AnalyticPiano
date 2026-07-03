@@ -1,4 +1,14 @@
 ARG PYTHON_VERSION=3.12-slim
+ARG NODE_VERSION=22-slim
+
+FROM node:${NODE_VERSION} AS frontend-build
+
+WORKDIR /code
+
+COPY package.json package-lock.json /code/
+RUN npm ci
+COPY . /code
+RUN npm run build
 
 FROM python:${PYTHON_VERSION}
 
@@ -19,6 +29,7 @@ RUN pip install pipenv
 COPY Pipfile Pipfile.lock /code/
 RUN pipenv install --deploy --system
 COPY . /code
+COPY --from=frontend-build /code/lab/static/dist /code/lab/static/dist
 
 RUN DJANGO_SETTINGS_MODULE=harmony.settings.fly \
     SECRET_KEY=build-placeholder \
