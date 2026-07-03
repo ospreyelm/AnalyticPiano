@@ -34,11 +34,11 @@ export default  {
     },
     identification: {
       short: "Identify the Roman numeral for each chord.",
-      help:  "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°). Uppercase = major, lowercase = minor.",
+      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = do-mi-sol. A I6 = the third of the chord in the bass = 3, 5, 1 = mi-sol-do. A IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Find the root of the chord: look at the bottom note in root position (rearrange the chord so thirds stack from the bottom).",
-        "Decide the quality: major (uppercase), minor (lowercase), diminished (°), augmented (+).",
-        "Count scale degrees from the tonic to name the Roman numeral.",
+        "Find the bass, then count scale degrees from the tonic to name the Roman numeral. If the bass isn't the root, the figure tells you which chord tone is in the bass: 6 = third in the bass, 6/4 = fifth in the bass.",
+        "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
+        "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
       ],
     },
     symbolic_identification: {
@@ -50,10 +50,10 @@ export default  {
     },
     chorale_identification: {
       short: "Identify the Roman numerals in the chorale.",
-      help:  "Work through each chord in the chorale and enter its Roman numeral. Consider the key and all voices.",
+      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = do-mi-sol; a I6 = the third in the bass = 3, 5, 1 = mi-sol-do; a IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Look at the bass line: the lowest note (in root position) gives you the scale degree.",
-        "Check whether the chord is major, minor, or diminished to choose uppercase/lowercase.",
+        "Find the bass of each chord, then count scale degrees from the tonic to name the Roman numeral. If the bass isn't the root, the figure tells you which chord tone is in the bass: 6 = third in the bass, 6/4 = fifth in the bass.",
+        "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
       ],
     },
     analysis: {
