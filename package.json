@@ -60,7 +60,6 @@
     "json-schema-traverse": "^1.0.0",
     "json-schema-typed": "^8.0.2",
     "lightningcss": "^1.32.0",
-    "lightningcss-darwin-arm64": "^1.32.0",
     "lodash": "^4.18.1",
     "math-intrinsics": "^1.1.0",
     "mcp-refactor-typescript": "^2.1.0",
