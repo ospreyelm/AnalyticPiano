@@ -307,8 +307,14 @@ class TestIdentificationLabels(unittest.TestCase):
         self.assertIn("minor", result[0]["choices"])
 
     def test_triad_inversion_answer(self):
-        result = mb.triad("jC_", "major", 1, "close", "identification", "inversion")
-        self.assertEqual(result[0]["answer"], "first inversion")
+        # R3: triad inversion labels name the chord tone in the bass, never "inversion".
+        expected = ["root position", "third in the bass", "fifth in the bass"]
+        for inv, label in enumerate(expected):
+            result = mb.triad("jC_", "major", inv, "close", "identification", "inversion")
+            self.assertEqual(result[0]["answer"], label,
+                             f"Inversion {inv}: expected {label!r}")
+            self.assertEqual(result[0]["choices"], expected)
+            self.assertNotIn("inversion", label.lower())
 
     def test_seventh_quality_answer(self):
         result = mb.seventh_chord("jC_", "dominant", 0, "close", "identification", "quality")
