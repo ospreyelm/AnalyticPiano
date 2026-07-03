@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 from apps.exercises.umto_factory import save_chordal_umto_exercise
-from apps.teacher.tests.test_views_db import _make_playlist, _make_teacher
+from apps.teacher.tests.test_views_db import _make_playlist, _make_superuser, _make_teacher
 
 
 def _make_exercise(author, public=True):
@@ -141,6 +141,32 @@ class PlaylistAddRemoveTest(TestCase):
 
         response = self.client.post(
             reverse("teacher:playlist-remove-exercise", args=[self.playlist.id, ordered.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ExercisePlaylistOrdered.objects.filter(pk=ordered.pk).exists())
+
+    def test_superuser_can_remove_exercise_from_others_playlist(self):
+        """Superusers can edit any playlist (matching can_edit in the template),
+        including official/factory-authored ones they didn't personally author.
+
+        Regression: the backend lookup only checked authored_by=request.user,
+        so a superuser saw the (enabled) remove button but the click 404'd."""
+        other = _make_teacher(email="factory@example.com")
+        playlist = _make_playlist(other, name="Official PL")
+        exercise = _make_exercise(other)
+        ordered = ExercisePlaylistOrdered.objects.create(
+            playlist=playlist,
+            exercise=exercise,
+            order=0,
+        )
+
+        superuser = _make_superuser()
+        client = Client()
+        client.login(email=superuser.email, password="pass")
+
+        response = client.post(
+            reverse("teacher:playlist-remove-exercise", args=[playlist.id, ordered.pk])
         )
 
         self.assertEqual(response.status_code, 200)
