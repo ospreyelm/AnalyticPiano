@@ -145,7 +145,11 @@ class GenerateTranspositionsCommandTest(TestCase):
         chord = copy.data["score"]["umto"]["chords"][0]
         spelling = chord.get("spelling")
         self.assertIsNotNone(spelling, "Transposed copy must carry spelling")
-        self.assertEqual(spelling, ["G", "B", "D"])
+        # Octave is required, not just letter+accidental: without it, re-parsing
+        # this spelling collapses every note onto the same default octave,
+        # which corrupts bass detection (and therefore every figured-bass/
+        # roman-numeral figure) for the transposed copy.
+        self.assertEqual(spelling, ["G3", "B3", "D4"])
 
     def test_analysis_slices_carried_unchanged(self):
         """Analysis slices should be recalculated correctly for the target key."""

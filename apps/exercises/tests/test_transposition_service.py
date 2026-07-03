@@ -276,6 +276,55 @@ class TranspositionServiceTest(TestCase):
         self.assertIn("Test Chords in C (G)", descriptions)
         self.assertIn("Test Chords in C (Bb)", descriptions)
 
+    def test_figured_bass_and_roman_numeral_invariant_under_transposition(self):
+        """Figured bass / roman numerals describe intervals above the bass and
+        scale-degree function, not absolute pitch — they must not change under
+        a pure transposition.
+
+        Regression: transposed copies wrote spelling without octave info
+        (Pitch.name instead of Pitch.nameWithOctave). When that spelling was
+        re-parsed, every note in the chord collapsed onto the same default
+        octave, so music21's chord.bass() picked the wrong note as bass and
+        corrupted every interval-above-bass figure for the transposed copy,
+        even though the transposed pitches themselves were correct.
+        """
+        # First-inversion vii° in C major: bass D3, upper voices F4/B4 — bass in
+        # a distinctly lower octave than the upper voices is exactly the case
+        # that silently breaks if octave info is dropped from spelling.
+        source = save_chordal_umto_exercise(
+            description="RO8 excerpt",
+            author=self.author,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [48, 64, 72], "hidden": [],
+                 "spelling": ["C3", "E4", "C5"]},
+                {"offset": 1.0, "duration": 1.0, "visible": [50, 65, 71], "hidden": [],
+                 "spelling": ["D3", "F4", "B4"]},
+            ],
+            key="jC_",
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+            analysis_type="figured_bass_unabbreviated",
+        )
+        source_analysis = source.data["score"]["umto"]["analysis"]
+        source_figures = [s["content"]["raw_figured_bass"] for s in source_analysis]
+        source_romans = [s["content"]["roman_numeral"] for s in source_analysis]
+
+        created = generate_transposed_copies(
+            source_exercise=source,
+            key_set=["G"],
+            author=self.author,
+        )
+
+        self.assertEqual(len(created), 1)
+        tgt_analysis = created[0].data["score"]["umto"]["analysis"]
+        tgt_figures = [s["content"]["raw_figured_bass"] for s in tgt_analysis]
+        tgt_romans = [s["content"]["roman_numeral"] for s in tgt_analysis]
+
+        self.assertEqual(tgt_figures, source_figures)
+        self.assertEqual(tgt_romans, source_romans)
+
     def test_skips_identity_key_transposition(self):
         """Test that a key matching the source's own key is skipped, not cloned.
 
