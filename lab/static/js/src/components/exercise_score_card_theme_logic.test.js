@@ -23,6 +23,7 @@ console.log("\nexercise_score_card_theme_logic:");
 
 try {
   var mod = require("./exercise_score_card_theme_logic");
+  mod = mod.default || mod;
 
   assertEqual("blue arc token uses warm accent", mod.arc.blue, "#8d6b52");
   assertEqual("blue banner uses warm cream surface", mod.banner.blueBg, "#efe2d1");

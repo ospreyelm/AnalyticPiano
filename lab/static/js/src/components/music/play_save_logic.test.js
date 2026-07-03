@@ -1,5 +1,6 @@
 "use strict";
 var mod = require("./play_save_logic");
+mod = mod.default || mod;
 
 var pass = 0, fail = 0;
 function assertEqual(name, got, want) {

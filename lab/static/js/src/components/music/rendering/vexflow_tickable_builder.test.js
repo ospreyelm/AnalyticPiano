@@ -5,6 +5,7 @@
 
 var assert = require("assert");
 var TickableBuilder = require("./vexflow_tickable_builder");
+TickableBuilder = TickableBuilder.default || TickableBuilder;
 
 function restItem() {
   return { kind: "rest", duration: { type: "quarter", dots: 0 } };

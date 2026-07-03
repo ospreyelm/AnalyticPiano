@@ -5,6 +5,7 @@
 
 var assert = require("assert");
 var Renderer = require("./vexflow_annotation_renderer");
+Renderer = Renderer.default || Renderer;
 
 function fakeCtx() {
   var calls = { fillText: [], save: 0, restore: 0 };

@@ -23,6 +23,7 @@ console.log("\ncomputer_keyboard_ux_logic:");
 
 try {
   var mod = require("./computer_keyboard_ux_logic");
+  mod = mod.default || mod;
 
   assertEqual(
     "exercise default input mode is qwerty",

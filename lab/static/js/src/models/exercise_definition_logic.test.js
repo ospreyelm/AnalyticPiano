@@ -2,6 +2,7 @@
 
 var assert = require("assert");
 var Logic = require("./exercise_definition_logic");
+Logic = Logic.default || Logic;
 
 function testFindsWindowByMusicalOffsetNotArrayIndex() {
   var windows = [

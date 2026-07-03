@@ -2,6 +2,7 @@
 
 var assert = require("assert");
 var Logic = require("./identification_label_layout_logic");
+Logic = Logic.default || Logic;
 
 function testPlacesKeyLabelOnBeatSlot() {
   var position = Logic.getKeyLabelPosition({

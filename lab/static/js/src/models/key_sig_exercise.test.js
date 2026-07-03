@@ -1,6 +1,7 @@
 "use strict";
 
 var logic = require("./key_sig_exercise_logic");
+logic = logic.default || logic;
 
 function assertEqual(label, actual, expected) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {

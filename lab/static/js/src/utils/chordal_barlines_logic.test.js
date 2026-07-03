@@ -1,5 +1,9 @@
 "use strict";
-var mod = require("./chordal_barlines_logic");
+// chordal_barlines_logic.js uses ESM `export default`; Node's require()
+// returns the default export under `.default` rather than spreading it onto
+// the returned object. Unwrap once so the rest of the file reads naturally.
+var _mod = require("./chordal_barlines_logic");
+var mod = _mod.default || _mod;
 
 var pass = 0, fail = 0;
 function assertEqual(name, got, want) {

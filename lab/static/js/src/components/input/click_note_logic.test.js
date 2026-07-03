@@ -4,6 +4,7 @@
 "use strict";
 
 var mod = require("./click_note_logic");
+mod = mod.default || mod;
 
 var fail = 0;
 function assertEqual(label, actual, expected) {

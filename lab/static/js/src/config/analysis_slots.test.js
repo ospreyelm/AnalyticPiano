@@ -1,5 +1,6 @@
 "use strict";
 var mod = require("./analysis_slots");
+mod = mod.default || mod;
 
 var pass = 0, fail = 0;
 function assertEqual(name, got, want) {

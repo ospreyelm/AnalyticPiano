@@ -2,6 +2,7 @@
 // Run: node lab/static/js/src/models/chordal_problems_logic.test.js
 "use strict";
 var logic = require("./chordal_problems_logic");
+logic = logic.default || logic;
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

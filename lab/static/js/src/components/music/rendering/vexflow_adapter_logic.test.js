@@ -5,6 +5,7 @@
 
 var assert = require("assert");
 var Logic = require("./vexflow_adapter_logic");
+Logic = Logic.default || Logic;
 
 function fakeTickable(opts) {
   opts = opts || {};

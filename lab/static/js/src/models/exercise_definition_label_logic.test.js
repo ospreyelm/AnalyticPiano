@@ -2,6 +2,7 @@
 
 var assert = require("assert");
 var LabelLogic = require("./exercise_definition_label_logic");
+LabelLogic = LabelLogic.default || LabelLogic;
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

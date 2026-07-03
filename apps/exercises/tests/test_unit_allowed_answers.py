@@ -91,10 +91,14 @@ _GENERATED_JS = _REPO_ROOT / "lab/static/js/src/config/unit_allowed_answers.js"
 
 
 def _parse_generated_js():
-    """Extract the JSON object literal embedded in the generated AMD module."""
+    """Extract the JSON object literal embedded in the generated ESM module.
+
+    The generator emits `export default { ... };` (ESM, matching every other
+    file in lab/static/js/src/config/). Parse that shape directly.
+    """
     text = _GENERATED_JS.read_text()
-    match = re.search(r"return\s+(\{.*\});\s*\}\);\s*$", text, re.DOTALL)
-    assert match, "generated module does not match expected AMD shape"
+    match = re.search(r"export\s+default\s+(\{.*\});\s*$", text, re.DOTALL)
+    assert match, "generated module does not match expected ESM `export default` shape"
     return json.loads(match.group(1))
 
 

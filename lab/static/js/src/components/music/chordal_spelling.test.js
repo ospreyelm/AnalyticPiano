@@ -2,6 +2,7 @@
 // Run: node lab/static/js/src/components/music/chordal_spelling.test.js
 "use strict";
 var S = require("./chordal_spelling");
+S = S.default || S;
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

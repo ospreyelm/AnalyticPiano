@@ -2,6 +2,7 @@
 "use strict";
 
 var mod = require("./keyboard_range_logic");
+mod = mod.default || mod;
 var fail = 0;
 
 function assertEqual(label, actual, expected) {

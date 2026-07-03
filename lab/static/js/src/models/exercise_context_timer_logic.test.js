@@ -1,6 +1,7 @@
 "use strict";
 
 var TimerLogic = require("./exercise_context_timer_logic");
+TimerLogic = TimerLogic.default || TimerLogic;
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

@@ -16,6 +16,7 @@ function assertEqual(label, actual, expected) {
 }
 
 var logic = require("./exercise_completion_flow_logic");
+logic = logic.default || logic;
 
 assertEqual("null score card does not block", logic._shouldDeferCompletionAutomation(null), false);
 assertEqual(

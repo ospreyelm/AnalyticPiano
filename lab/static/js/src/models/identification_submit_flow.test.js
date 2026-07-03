@@ -6,6 +6,7 @@
 "use strict";
 
 var logic = require("./identification_submit_flow_logic");
+logic = logic.default || logic;
 
 var pass = 0;
 var fail = 0;

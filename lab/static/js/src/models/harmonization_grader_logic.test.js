@@ -1,6 +1,7 @@
 "use strict";
 
 var logic = require("./harmonization_grader_logic");
+logic = logic.default || logic;
 
 var failed = 0;
 
