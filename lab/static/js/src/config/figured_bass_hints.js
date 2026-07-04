@@ -177,10 +177,18 @@ function buildIdentificationHints(definition, analysisType) {
   if (!problems.length) return null;
 
   var unabbreviated = analysisType === "figured_bass_unabbreviated";
+  // Problems built by buildUMTOIdentificationProblems (and the older
+  // chord-array identification path) never carry a `.content` object on the
+  // final problem — figured_bass/raw_figured_bass are read from the analysis
+  // slice's `.content` only while computing `answer`, upstream, at parse
+  // time. `p.answer` is already the correctly-shaped figure string for this
+  // exercise's analysisType (abbreviated or raw/unabbreviated, matching the
+  // same branch this function was gated on) — read that directly instead of
+  // a `.content` shape that doesn't exist on the built problem objects.
   var seen = {}, distinct = [];
   problems.forEach(function (p) {
-    var content = (p && p.content) || {};
-    var fig = unabbreviated ? content.raw_figured_bass : content.figured_bass;
+    if (!p || p.hidden) return;
+    var fig = p.answer;
     if (fig && !seen.hasOwnProperty(fig)) { seen[fig] = true; distinct.push(fig); }
   });
   if (!distinct.length) return null;
@@ -208,10 +216,78 @@ function buildIdentificationHints(definition, analysisType) {
   };
 }
 
+// Root-position tone set for each diatonic major-key triad, root-third-fifth
+// order. Verified digit-by-digit against this app's own analysis tables
+// (config/analysis/jChords.js chord-tone sets against jDegreesNew.js
+// degree->solfege) — not a hand-guessed table. Chromatic/secondary/minor-key
+// numerals (V/V, vii°/vi, i, iv, Ger, ...) are deliberately absent: their
+// scale-degree spelling depends on key-mode context this builder doesn't
+// have, and a wrong worked example is worse than none.
+var _MAJOR_DIATONIC_TRIADS = {
+  "I": { degrees: "1, 3, 5", solfege: "Do-Mi-So" },
+  "ii": { degrees: "2, 4, 6", solfege: "Re-Fa-La" },
+  "iii": { degrees: "3, 5, 7", solfege: "Mi-So-Ti" },
+  "IV": { degrees: "4, 6, 1", solfege: "Fa-La-Do" },
+  "V": { degrees: "5, 7, 2", solfege: "So-Ti-Re" },
+  "vi": { degrees: "6, 1, 3", solfege: "La-Do-Mi" },
+  "vii°": { degrees: "7, 2, 4", solfege: "Ti-Re-Fa" },
+};
+
+// Strip a trailing figured-bass suffix (e.g. "V6/5" -> "V", "I6" -> "I") to
+// get the base numeral. Roman-numeral names never end in a digit themselves.
+function _baseRomanNumeral(label) {
+  return String(label).replace(/[0-9/]+$/, "").trim();
+}
+
+// Roman-numeral identification / chorale_identification hints. Returns
+// {help, hints} or null (fallback to static instructions). Lists the actual
+// Roman numerals used in THIS exercise (via the same p.answer/p.hidden shape
+// the figured-bass builder reads) instead of a fixed textbook catalog — the
+// app's own grading logic (analyze.js) reads a syllable pattern directly with
+// no third-stacking step, so a per-exercise numeral list is more useful to
+// the student than examples that may not even appear in the exercise.
+function buildRomanIdentificationHints(definition) {
+  var problems = definition && definition.getProblems
+    ? definition.getProblems()
+    : (definition && definition.problems) || [];
+  if (!problems.length) return null;
+
+  var seen = {}, distinct = [];
+  problems.forEach(function (p) {
+    if (!p || p.hidden) return;
+    var rn = p.answer;
+    if (rn && !seen.hasOwnProperty(rn)) { seen[rn] = true; distinct.push(rn); }
+  });
+  if (!distinct.length) return null;
+
+  var seenBase = {}, examples = [];
+  distinct.forEach(function (rn) {
+    var base = _baseRomanNumeral(rn);
+    var entry = _MAJOR_DIATONIC_TRIADS[base];
+    if (entry && !seenBase.hasOwnProperty(base)) {
+      seenBase[base] = true;
+      examples.push("A " + base + " chord = " + entry.degrees + " of the key = " + entry.solfege + ".");
+    }
+  });
+
+  var help = "Name the Roman numeral by where the chord sits in the key.";
+  if (examples.length) help += " " + examples.join(" ");
+  help += " Uppercase = major, lowercase = minor, ° = diminished, + = augmented.";
+
+  return {
+    help: help,
+    hints: [
+      "This exercise uses: " + distinct.join(", ") + ".",
+      "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+    ],
+  };
+}
+
 export default {
   MORE_INFO_URL: MORE_INFO_URL,
   expandFigure: expandFigure,
   requiredNumbersFor: requiredNumbersFor,
   buildHarmonizationHints: buildHarmonizationHints,
   buildIdentificationHints: buildIdentificationHints,
+  buildRomanIdentificationHints: buildRomanIdentificationHints,
 };

@@ -496,6 +496,16 @@
   white-space: pre-wrap;
 }
 
+.ex-hint-panel a.fb-more-info,
+.ex-hint-panel a.fb-more-info:visited {
+  color: #7fd1e8;
+  text-decoration: underline;
+}
+
+.ex-hint-panel a.fb-more-info:hover {
+  color: #a6e3f2;
+}
+
 /* ── Feedback bubble ──────────────────────────────────── */
 
 .feedback-bubble {

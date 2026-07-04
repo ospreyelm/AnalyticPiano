@@ -54,10 +54,7 @@
       "input": {
         "mode": "identification",
         "analysisType": "figured_bass",
-        "slices": [
-          { "figured_bass": "6" },
-          { "figured_bass": "7" }
-        ]
+        "answers": ["6", "7"]
       },
       "expected": {
         "help": "Choose the abbreviated figure. Abbreviations drop redundant intervals — 6 stands for 6-3, 7 for 7-5-3, 6/4 for 6-4, 4/2 (or 2) for 6-4-2. The figure names intervals above the bass, not a chord name.",
@@ -77,9 +74,7 @@
       "input": {
         "mode": "identification",
         "analysisType": "figured_bass_unabbreviated",
-        "slices": [
-          { "raw_figured_bass": "8/6/3" }
-        ]
+        "answers": ["8/6/3"]
       },
       "expected": {
         "help": "Choose the unabbreviated figure — list every generic interval above the bass, including the octave (8). A triad with the third in the bass is 8/6/3, not 6.",

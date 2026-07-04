@@ -25,6 +25,12 @@ function pass(label) { console.log("PASS:", label); }
 // accessors the builders read (getHarmonizationTargets / getProblems /
 // getAnalysisType / getMode). Golden JSON cannot carry functions, so the
 // runner adapts the plain-data input into the shape the builder expects.
+//
+// Identification "answers" mirror buildUMTOIdentificationProblems' real
+// output shape: a flat `answer` string per problem (already the
+// correctly-shaped figure for this exercise's analysisType), not a
+// `.content.figured_bass` object -- built problems never carry a `.content`
+// key at all.
 function mockDefinition(input) {
   var mode = input.mode;
   var analysisType = input.analysisType;
@@ -35,9 +41,11 @@ function mockDefinition(input) {
       getMode: function () { return mode; },
     };
   }
-  var slices = input.slices || [];
+  var answers = input.answers || [];
   return {
-    getProblems: function () { return slices.map(function (c) { return { content: c }; }); },
+    getProblems: function () {
+      return answers.map(function (a) { return { answer: a, hidden: !a }; });
+    },
     getAnalysisType: function () { return analysisType; },
     getMode: function () { return mode; },
   };
