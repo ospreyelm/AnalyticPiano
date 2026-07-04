@@ -347,8 +347,11 @@ function buildRomanIdentificationHints(definition) {
     hints: [
       "This exercise uses: " + distinct.join(", ") + ".",
       // Solfège scale degrees first (matches grader + original pre-wheel help).
-      "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
       "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+      // Position comes from the FIGURE (intervals above the bass), not from a
+      // solfège permutation — 6 and 6/4 are figured-bass intervals, per
+      // docs/music-theory-canon.md §"Figured bass". Don't teach "Mi-So-Do = I6".
+      "The figure after the numeral names intervals above the bass, just like figured bass: 6 means 6/3 (the third of the chord is in the bass), 6/4 means a 4th and 6th above the bass, 7 means 7/5/3, 6/5 means 6/5/3. The numeral itself is the chord's scale degree and quality.",
       // W1 — circle of thirds root-finding wheel (RN deck slide 15 + Triad slide 8).
       "Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more).",
       // T2 — name root + quality first (Triad deck slide 12).
