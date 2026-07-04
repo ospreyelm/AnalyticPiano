@@ -29,13 +29,17 @@ export default  {
       hints: [
         "Figured bass intervals above the bass note (Kellner):\n  No symbol  1 - 3 - 5\n  6          3 - 6 - 8\n  6/4        4 - 6 - 8\n  7          1 - 3 - 5 - 7\n  6/5        3 - 5 - 6 - 8\n  4/3        3 - 4 - 6 - 8\n  2          2 - 4 - 6 - 8",
         "Count from the bass note: 1 = the bass itself (or its octave), 3 = two staff steps up, 5 = four steps up, 6 = five steps up. Key-signature accidentals apply unless the figure shows a sharp or flat.",
+        "Alterations: an accidental next to a number adds that accidental to that generic interval above the bass; a '+' (or strikethrough) raises the interval, a '-' lowers it. Otherwise the note comes from the key signature.",
         "Press Backspace or Delete to remove the last note, or x Clear to start over.",
       ],
     },
     identification: {
       short: "Identify the Roman numeral for each chord.",
-      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = Do-Mi-So. A I6 = the third of the chord in the bass = 3, 5, 1 = Mi-So-Do. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "First, identify the key — Roman numerals have no meaning without one. Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more). A I chord = 1, 3, 5 of the key = Do-Mi-So. A I6 = the third of the chord in the bass = 3, 5, 1 = Mi-So-Do. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
+        "Name the chord as root + quality first (e.g. 'g minor', 'a diminished', 'F augmented', 'F♯ major'), then read its scale degree for the Roman numeral.",
+        "Find the quality in two steps: the bounding fifth (root→fifth), then the lower third (root→third). Perfect fifth + major third = major; perfect fifth + minor third = minor; diminished fifth = diminished; augmented fifth = augmented.",
+        "If this exercise has a seventh chord, it adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
         "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
         "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
         "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
@@ -50,8 +54,11 @@ export default  {
     },
     chorale_identification: {
       short: "Identify the Roman numerals in the chorale.",
-      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = Do-Mi-So; a I6 = the third in the bass = 3, 5, 1 = Mi-So-Do; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "First, identify the key — Roman numerals have no meaning without one. Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more). A I chord = 1, 3, 5 = Do-Mi-So; a I6 = the third in the bass = 3, 5, 1 = Mi-So-Do; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
+        "Name the chord as root + quality first (e.g. 'g minor', 'a diminished', 'F augmented', 'F♯ major'), then read its scale degree for the Roman numeral.",
+        "Find the quality in two steps: the bounding fifth (root→fifth), then the lower third (root→third). Perfect fifth + major third = major; perfect fifth + minor third = minor; diminished fifth = diminished; augmented fifth = augmented.",
+        "If this exercise has a seventh chord, it adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
         "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
         "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
       ],

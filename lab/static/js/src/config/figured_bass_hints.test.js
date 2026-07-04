@@ -185,5 +185,37 @@ assertEqual("roman no answer field -> null", mod.buildRomanIdentificationHints(r
 // --- MORE_INFO_URL exported ---
 assertContains("more-info url exported", mod.MORE_INFO_URL, "gettysburg");
 
+// --- RN help leads with key-first + circle of thirds (plan R1, W1) ---
+assertContains("roman help says identify the key first", iRoman.help, "identify the key");
+assertContains("roman help introduces the circle of thirds", iRoman.help, "circle of thirds");
+assertContains("roman help names the wheel order", iRoman.help, "C-E-G-B-D-F-A");
+assertEqual("roman help never says third-stacking (stacked thirds)", iRoman.help.toLowerCase().indexOf("stacked third"), -1);
+
+// --- Seventh-chord RN (plan S1, S2): worked example + seventh hint step ---
+var dRoman7 = romanDef(["I", "V7", "vii°7"]);
+var iRoman7 = mod.buildRomanIdentificationHints(dRoman7);
+assertContains("roman7 help has V7 worked example with qualityPair", iRoman7.help, "A V7 chord = 5, 7, 2, 4 of the key = So-Ti-Re-Fa = Major-minor.");
+assertContains("roman7 help has vii°7 worked example (half-diminished)", iRoman7.help, "A vii°7 chord = 7, 2, 4, 6 of the key = Ti-Re-Fa-La = diminished-minor.");
+assertContains("roman7 hints list the exercise's numerals incl. sevenths", iRoman7.hints[0], "This exercise uses: I, V7, vii°7.");
+assertContains("roman7 has a seventh-chord hint step", iRoman7.hints.join(" "), "A seventh chord adds a seventh above the root");
+
+// --- Triad-only exercise does NOT fabricate a seventh example ---
+var dRomanTriadOnly = romanDef(["I", "V"]);
+var iTriadOnly = mod.buildRomanIdentificationHints(dRomanTriadOnly);
+assertEqual("roman triad-only help has no seventh worked example", iTriadOnly.help.indexOf("7 chord = "), -1);
+
+// --- 6/5 figure is detected as a seventh chord; 6/4 is not ---
+var dInv7 = romanDef(["V6/5"]);
+var iInv7 = mod.buildRomanIdentificationHints(dInv7);
+assertContains("roman V6/5 detected as seventh -> worked example", iInv7.help, "A V7 chord = ");
+var dTriadInv = romanDef(["V6/4"]);
+var iTriadInv = mod.buildRomanIdentificationHints(dTriadInv);
+assertEqual("roman V6/4 not treated as seventh", iTriadInv.help.indexOf("7 chord = "), -1);
+
+// --- F2: alteration rule present in figured-bass hints ---
+assertContains("harm hints state the alteration rule", h64.hints.join(" "), "Alterations:");
+assertContains("ident hints state the alteration rule", iH.hints.join(" "), "Alterations:");
+assertContains("ident unabb hints state the alteration rule", iHu.hints.join(" "), "Alterations:");
+
 if (fail > 0) { console.error("\n" + fail + " test(s) failed"); process.exit(1); }
 console.log("\nAll tests passed");

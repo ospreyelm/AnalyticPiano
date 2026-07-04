@@ -164,6 +164,8 @@ function buildHarmonizationHints(definition, analysisType) {
     hints: [
       "Per figure: " + figureLines.join("  |  ") + ".",
       "Count from the bass: 3 = two staff steps up, 5 = four steps, 6 = five steps, 7 = six steps. The plain numbers are the ones you must keep; the parenthesized ones you may drop or double.",
+      // F2 — alteration rule. Paraphrased from Triad deck slide 16 `figured-bass-alterations`.
+      "Alterations: an accidental next to a number adds that accidental to that generic interval above the bass; a '+' (or strikethrough) raises the interval, a '-' lowers it. Otherwise the note comes from the key signature.",
     ],
     moreInfo: true,
   };
@@ -198,6 +200,8 @@ function buildIdentificationHints(definition, analysisType) {
       help: "Choose the unabbreviated figure — list every generic interval above the bass, including the octave (8). A triad with the third in the bass is 8/6/3, not 6.",
       hints: [
         "Distinct figures in this exercise: " + distinct.join("  |  ") + ".",
+        // F2 — alteration rule (Triad deck slide 16).
+        "Alterations: an accidental next to a number adds that accidental to that generic interval above the bass; a '+' (or strikethrough) raises it, a '-' lowers it. Otherwise the note comes from the key signature.",
       ],
       moreInfo: true,
     };
@@ -211,6 +215,8 @@ function buildIdentificationHints(definition, analysisType) {
     help: "Choose the abbreviated figure. Abbreviations drop redundant intervals — 6 stands for 6-3, 7 for 7-5-3, 6/4 for 6-4, 4/2 (or 2) for 6-4-2. The figure names intervals above the bass, not a chord name.",
     hints: [
       "Expansions: " + expansions.join("  |  ") + ".",
+      // F2 — alteration rule (Triad deck slide 16).
+      "Alterations: an accidental next to a number adds that accidental to that generic interval above the bass; a '+' (or strikethrough) raises it, a '-' lowers it. Otherwise the note comes from the key signature.",
     ],
     moreInfo: true,
   };
@@ -233,19 +239,59 @@ var _MAJOR_DIATONIC_TRIADS = {
   "vii°": { degrees: "7, 2, 4", solfege: "Ti-Re-Fa" },
 };
 
+// Diatonic seventh chords on each major-key scale degree, root-third-fifth-
+// seventh order, with the triad-quality / seventh-quality pairing taught in
+// the MUS 141 "RN and Seventh Chord" deck (slide 16 `seventh-chord-quality-1`,
+// notation id `s16-scale-degree-seventh-qualities`). Verified against the
+// app's analysis tables the same way the triad table is. The grader already
+// distinguishes half-diminished (viiø7, hChords.js `36y`) from fully-
+// diminished (vii°7, hChords.js `369`) — different structures, both handled.
+// Same major-only conservatism as the triad table.
+var _MAJOR_DIATONIC_SEVENTHS = {
+  "I":     { degrees: "1, 3, 5, 7", solfege: "Do-Mi-So-Ti", qualityPair: "Major-Major" },
+  "ii":    { degrees: "2, 4, 6, 1", solfege: "Re-Fa-La-Do", qualityPair: "minor-minor" },
+  "iii":   { degrees: "3, 5, 7, 2", solfege: "Mi-So-Ti-Re", qualityPair: "minor-minor" },
+  "IV":    { degrees: "4, 6, 1, 3", solfege: "Fa-La-Do-Mi", qualityPair: "Major-Major" },
+  "V":     { degrees: "5, 7, 2, 4", solfege: "So-Ti-Re-Fa", qualityPair: "Major-minor" },
+  "vi":    { degrees: "6, 1, 3, 5", solfege: "La-Do-Mi-So", qualityPair: "minor-minor" },
+  "vii°":  { degrees: "7, 2, 4, 6", solfege: "Ti-Re-Fa-La", qualityPair: "diminished-minor" },
+};
+
 // Strip a trailing figured-bass suffix (e.g. "V6/5" -> "V", "I6" -> "I") to
 // get the base numeral. Roman-numeral names never end in a digit themselves.
 function _baseRomanNumeral(label) {
   return String(label).replace(/[0-9/]+$/, "").trim();
 }
 
+// Trailing figured-bass suffix of a Roman-numeral label (digits, slashes, and
+// the quality marks °/+ that travel with the figure). Used to detect whether
+// a numeral carries a seventh-chord figure (7, 6/5, 4/3, 4/2) vs a triad
+// figure (6, 6/4, or none). 6/4 is a triad inversion; 6/5, 4/3, 4/2 are
+// seventh-chord inversions.
+function _figureSuffix(label) {
+  var m = String(label).match(/[0-9/°+]+$/);
+  return m ? m[0] : "";
+}
+function _isSeventhNumeral(label) {
+  var s = _figureSuffix(label);
+  return /7/.test(s) || /6\/5/.test(s) || /4\/3/.test(s) || /4\/2/.test(s);
+}
+
 // Roman-numeral identification / chorale_identification hints. Returns
 // {help, hints} or null (fallback to static instructions). Lists the actual
 // Roman numerals used in THIS exercise (via the same p.answer/p.hidden shape
-// the figured-bass builder reads) instead of a fixed textbook catalog — the
-// app's own grading logic (analyze.js) reads a syllable pattern directly with
-// no third-stacking step, so a per-exercise numeral list is more useful to
-// the student than examples that may not even appear in the exercise.
+// the figured-bass builder reads) instead of a fixed textbook catalog.
+//
+// Mental model (per product-owner sign-off on plan
+// docs/superpowers/plans/2026-07-04-roman-numeral-chord-hints-from-teaching-extracts.md):
+// lead with the **circle of thirds** wheel (always the same order
+// C-E-G-B-D-F-A; root = furthest counter-clockwise before the large gap of a
+// fourth) — paraphrased from the MUS 141 "RN and Seventh Chord" deck slide 15
+// `seventh-chords-root-finding` and the "Triad Intro" deck slide 8. The wheel
+// is NOT the "stacked-thirds" construction commit 9ed9442e removed; it is a
+// different, memorable framing, and it yields the same root the grader's
+// syllable-pattern logic (analyze.js) rewards. Solfège stays as a secondary
+// step.
 function buildRomanIdentificationHints(definition) {
   var problems = definition && definition.getProblems
     ? definition.getProblems()
@@ -270,14 +316,43 @@ function buildRomanIdentificationHints(definition) {
     }
   });
 
-  var help = "Name the Roman numeral by where the chord sits in the key.";
+  // Seventh-chord worked examples (plan Item S1) — only for numerals that
+  // actually carry a seventh figure in THIS exercise, and only for the safe
+  // major-diatonic table. Mirrors deck slide 16 qualityPair values.
+  var seenBase7 = {}, sevenExamples = [];
+  distinct.forEach(function (rn) {
+    if (!_isSeventhNumeral(rn)) return;
+    var base = _baseRomanNumeral(rn);
+    var entry = _MAJOR_DIATONIC_SEVENTHS[base];
+    if (entry && !seenBase7.hasOwnProperty(base)) {
+      seenBase7[base] = true;
+      sevenExamples.push("A " + base + "7 chord = " + entry.degrees + " of the key = " + entry.solfege + " = " + entry.qualityPair + ".");
+    }
+  });
+
+  // R1 (identify the key first) + W1 (circle-of-thirds wheel) lead the help.
+  // Paraphrased from RN deck slide 9 ("Roman numerals have no significance
+  // without a key") and slide 15 + Triad slide 8 (wheel).
+  var help = "First, identify the key — Roman numerals have no meaning without one. " +
+    "Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more). " +
+    "Name the chord by its root and its quality, then place it on its scale degree for the Roman numeral.";
   if (examples.length) help += " " + examples.join(" ");
+  if (sevenExamples.length) help += " " + sevenExamples.join(" ");
   help += " Uppercase = major, lowercase = minor, ° = diminished, + = augmented.";
 
   return {
     help: help,
     hints: [
       "This exercise uses: " + distinct.join(", ") + ".",
+      // T2 — name root + quality first (Triad deck slide 12).
+      "Name the chord as root + quality first (e.g. 'g minor', 'a diminished', 'F augmented', 'F♯ major'), then read its scale degree for the Roman numeral.",
+      // T1a — two-step quality (Triad deck slide 11).
+      "Find the quality in two steps: the bounding fifth (root→fifth), then the lower third (root→third). Perfect fifth + major third = major; perfect fifth + minor third = minor; diminished fifth = diminished; augmented fifth = augmented.",
+      // S2 + S1 — seventh-chord framing + qualityPair examples (RN deck slides 14, 16).
+      sevenExamples.length
+        ? "A seventh chord adds a seventh above the root to a triad. Name its quality in two parts — the triad quality, then the seventh (root→seventh). " + sevenExamples.join(" ")
+        : "If this exercise has a seventh chord, it adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
+      // Solfège secondary — keep, matches the grader's syllable-pattern mental model.
       "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
     ],
   };
