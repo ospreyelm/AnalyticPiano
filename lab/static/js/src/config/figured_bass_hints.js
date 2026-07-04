@@ -330,20 +330,27 @@ function buildRomanIdentificationHints(definition) {
     }
   });
 
-  // R1 (identify the key first) + W1 (circle-of-thirds wheel) lead the help.
-  // Paraphrased from RN deck slide 9 ("Roman numerals have no significance
-  // without a key") and slide 15 + Triad slide 8 (wheel).
-  var help = "First, identify the key — Roman numerals have no meaning without one. " +
-    "Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more). " +
-    "Name the chord by its root and its quality, then place it on its scale degree for the Roman numeral.";
+  // Solfège / scale-degree framing leads (matches the grader's syllable-
+  // pattern mental model and the pre-wheel help text); the circle-of-thirds
+  // wheel follows as a root-finding aid. Per product-owner sign-off on plan
+  // §4 C2: keep the solfège scale degrees first "like before", then the wheel.
+  // Wheel wording paraphrased from RN deck slide 9 ("Roman numerals have no
+  // significance without a key") + slide 15 + Triad slide 8.
+  var help = "Name the Roman numeral by where the chord sits in the key.";
   if (examples.length) help += " " + examples.join(" ");
   if (sevenExamples.length) help += " " + sevenExamples.join(" ");
   help += " Uppercase = major, lowercase = minor, ° = diminished, + = augmented.";
+  help += " First identify the key — Roman numerals have no meaning without one — then find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more).";
 
   return {
     help: help,
     hints: [
       "This exercise uses: " + distinct.join(", ") + ".",
+      // Solfège scale degrees first (matches grader + original pre-wheel help).
+      "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+      "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+      // W1 — circle of thirds root-finding wheel (RN deck slide 15 + Triad slide 8).
+      "Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more).",
       // T2 — name root + quality first (Triad deck slide 12).
       "Name the chord as root + quality first (e.g. 'g minor', 'a diminished', 'F augmented', 'F♯ major'), then read its scale degree for the Roman numeral.",
       // T1a — two-step quality (Triad deck slide 11).
@@ -352,8 +359,6 @@ function buildRomanIdentificationHints(definition) {
       sevenExamples.length
         ? "A seventh chord adds a seventh above the root to a triad. Name its quality in two parts — the triad quality, then the seventh (root→seventh). " + sevenExamples.join(" ")
         : "If this exercise has a seventh chord, it adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
-      // Solfège secondary — keep, matches the grader's syllable-pattern mental model.
-      "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
     ],
   };
 }

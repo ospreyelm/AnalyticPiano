@@ -190,6 +190,11 @@ assertContains("roman help says identify the key first", iRoman.help, "identify 
 assertContains("roman help introduces the circle of thirds", iRoman.help, "circle of thirds");
 assertContains("roman help names the wheel order", iRoman.help, "C-E-G-B-D-F-A");
 assertEqual("roman help never says third-stacking (stacked thirds)", iRoman.help.toLowerCase().indexOf("stacked third"), -1);
+// Solfège scale degrees come BEFORE the circle of thirds (product-owner order).
+assertEqual("roman help: solfege Do-Mi-So precedes circle of thirds",
+  iRoman.help.indexOf("Do-Mi-So") < iRoman.help.indexOf("circle of thirds"), true);
+assertEqual("roman hints: solfege position step precedes wheel step",
+  iRoman.hints.join("\n").indexOf("Do-Mi-So = I") < iRoman.hints.join("\n").indexOf("Find the root with the circle of thirds"), true);
 
 // --- Seventh-chord RN (plan S1, S2): worked example + seventh hint step ---
 var dRoman7 = romanDef(["I", "V7", "vii°7"]);
