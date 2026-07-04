@@ -2210,7 +2210,7 @@
           },
           {
             "n": "A2",
-            "title": "6/3 chords (first inversion)",
+            "title": "6/3 chords (third in the bass)",
             "feat": "6 figure, doubling rules",
             "tags": [
               "fb_6_3",
@@ -2219,7 +2219,7 @@
           },
           {
             "n": "A3",
-            "title": "6/4 chords (second inversion)",
+            "title": "6/4 chords (fifth in the bass)",
             "feat": "6/4 figure, cadential & passing 6/4",
             "tags": [
               "fb_6_4",

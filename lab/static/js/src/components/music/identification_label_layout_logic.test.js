@@ -1,7 +1,8 @@
 "use strict";
 
 var assert = require("assert");
-var Logic = require("./identification_label_layout_logic");
+var { requireDefault } = require("../../../test/require_esm");
+var Logic = requireDefault(require("./identification_label_layout_logic"));
 
 function testPlacesKeyLabelOnBeatSlot() {
   var position = Logic.getKeyLabelPosition({

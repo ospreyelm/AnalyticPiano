@@ -1,6 +1,7 @@
 "use strict";
 
-var logic = require("./voice_leading_logic");
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./voice_leading_logic"));
 
 function assertEqual(label, actual, expected) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {

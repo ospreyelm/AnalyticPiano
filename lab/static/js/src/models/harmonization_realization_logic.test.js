@@ -1,6 +1,7 @@
 "use strict";
 
-var logic = require("./harmonization_realization_logic");
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./harmonization_realization_logic"));
 
 var failed = 0;
 

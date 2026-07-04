@@ -371,7 +371,7 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
         from apps.exercises.models import Exercise, Playlist
 
         playlist = Playlist.objects.get(
-            name="Unit 10 - First Inversions (Harmonization)",
+            name="Unit 10 - Third in the Bass (Harmonization)",
             authored_by=self.user,
         )
         exercise = Exercise.objects.get(
@@ -383,7 +383,7 @@ class GenerateHarmonizationFromClausulaeCommandTests(TestCase):
             "unit:10",
             "Inversions_First",
         ]
-        assert exercise.description == "First-Inversion Cadence in C"
+        assert exercise.description == "Third-in-the-Bass Cadence in C"
         assert "Inversions_First" in exercise.skill_tags
         assert "Cadence_Perfect_Authentic" not in exercise.skill_tags
 

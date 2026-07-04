@@ -124,6 +124,7 @@ _GOLDEN_FILES = [
     "transposition.json",
     "harmonization_e2e.json",
     "figure_realization.json",
+    "figured_bass_hints.json",
 ]
 
 

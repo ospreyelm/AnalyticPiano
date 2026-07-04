@@ -1,6 +1,7 @@
 "use strict";
 
-var TimerLogic = require("./exercise_context_timer_logic");
+var { requireDefault } = require("../../test/require_esm");
+var TimerLogic = requireDefault(require("./exercise_context_timer_logic"));
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

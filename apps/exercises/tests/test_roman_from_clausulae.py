@@ -307,7 +307,7 @@ class GenerateRomanFromClausulaeCommandTests(TestCase):
         from apps.exercises.models import Exercise, Playlist
 
         playlist = Playlist.objects.get(
-            name="Unit 10 — First Inversions (Roman Numerals)",
+            name="Unit 10 — Third in the Bass (Roman Numerals)",
             authored_by=self.user,
         )
         exercise = Exercise.objects.get(
@@ -319,7 +319,7 @@ class GenerateRomanFromClausulaeCommandTests(TestCase):
             "unit:10",
             "Inversions_First",
         ]
-        assert exercise.description == "First-Inversion Cadence in C"
+        assert exercise.description == "Third-in-the-Bass Cadence in C"
         assert "Inversions_First" in exercise.skill_tags
         assert "Cadence_Perfect_Authentic" not in exercise.skill_tags
         assert {"I6", "V6", "vii°6"}.issubset(set(exercise.data["allowed_answers"]))
@@ -374,7 +374,7 @@ class GenerateRomanFromClausulaeCommandTests(TestCase):
         from apps.exercises.models import Exercise
 
         rows = Exercise.objects.filter(
-            description="First-Inversion Cadence in C",
+            description="Third-in-the-Bass Cadence in C",
             authored_by=self.user,
         ).order_by("id")
         assert rows.count() == 2

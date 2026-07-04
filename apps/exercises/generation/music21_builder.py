@@ -74,8 +74,8 @@ LABEL_MAP = {
             "answer":  lambda quality, inv, k: quality,
         },
         "inversion": {
-            "choices": lambda k: ["root position", "first inversion", "second inversion"],
-            "answer":  lambda quality, inv, k: ["root position", "first inversion", "second inversion"][inv],
+            "choices": lambda k: ["root position", "third in the bass", "fifth in the bass"],
+            "answer":  lambda quality, inv, k: ["root position", "third in the bass", "fifth in the bass"][inv],
         },
     },
     "seventh_chord": {

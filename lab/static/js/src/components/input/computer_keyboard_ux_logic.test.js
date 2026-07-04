@@ -22,7 +22,8 @@ function assertEqual(label, actual, expected) {
 console.log("\ncomputer_keyboard_ux_logic:");
 
 try {
-  var mod = require("./computer_keyboard_ux_logic");
+  var { requireDefault } = require("../../../test/require_esm");
+  var mod = requireDefault(require("./computer_keyboard_ux_logic"));
 
   assertEqual(
     "exercise default input mode is qwerty",

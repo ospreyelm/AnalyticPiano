@@ -206,7 +206,7 @@
           },
           {
             "n": "10",
-            "title": "First inversions",
+            "title": "Chords with the Third in the Bass",
             "feat": "I⁶, V⁶, vii°⁶",
             "tags": [
               "inversions_first",
@@ -497,7 +497,7 @@
           },
           {
             "n": "12",
-            "title": "Second inversions",
+            "title": "Chords with the Fifth in the Bass",
             "feat": "Cadential, passing, pedal 6/4",
             "tags": [
               "cadential_64",

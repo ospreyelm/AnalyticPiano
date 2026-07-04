@@ -5,7 +5,8 @@
 
 "use strict";
 
-var logic = require("./identification_submit_flow_logic");
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./identification_submit_flow_logic"));
 
 var pass = 0;
 var fail = 0;

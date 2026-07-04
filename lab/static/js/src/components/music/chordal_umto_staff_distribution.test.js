@@ -4,7 +4,8 @@ var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
 
-var logic = require("./chordal_umto_staff_distribution");
+var { requireDefault } = require("../../../test/require_esm");
+var logic = requireDefault(require("./chordal_umto_staff_distribution"));
 
 function getVoiceCountFromConfig() {
   var configPath = path.resolve(__dirname, "../../config/general.js");

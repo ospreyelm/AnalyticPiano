@@ -2,7 +2,8 @@
 
 var fs = require("fs");
 var path = require("path");
-var grader = require("../lab/static/js/src/models/harmonization_grader_logic");
+var { requireDefault } = require("../lab/static/js/test/require_esm");
+var grader = requireDefault(require("../lab/static/js/src/models/harmonization_grader_logic"));
 
 var failed = 0;
 

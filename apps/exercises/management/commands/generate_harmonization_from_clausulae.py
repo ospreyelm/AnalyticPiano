@@ -244,15 +244,26 @@ def _save_exercise(
     complexity: int,
     is_public: bool,
     overwrite: bool,
+    legacy_descriptions: list[str] | None = None,
 ) -> Exercise:
-    ex = (
-        Exercise.objects.filter(
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(
             description=description,
             authored_by=author,
             skill_tags__contains=[skill_tags[0]],
         ).first()
-        if overwrite else None
-    )
+        # A rename (e.g. "First-Inversion Cadence in C" -> "Third-in-the-Bass
+        # Cadence in C") changes the description this lookup keys on, so a
+        # rerun after the rename would otherwise miss the existing row and
+        # create a duplicate. Fall back to any legacy description for the
+        # same exercise before giving up and creating a new one.
+        if ex is None and legacy_descriptions:
+            ex = Exercise.objects.filter(
+                description__in=legacy_descriptions,
+                authored_by=author,
+                skill_tags__contains=[skill_tags[0]],
+            ).first()
     if ex is None:
         ex = Exercise(
             description=description,
@@ -264,11 +275,12 @@ def _save_exercise(
         )
         ex.save()
     else:
+        ex.description = description
         ex.data = payload
         ex.skill_tags = list(skill_tags)
         ex.complexity = complexity
         ex.is_public = is_public
-        ex.save(update_fields=["data", "skill_tags", "complexity", "is_public"])
+        ex.save(update_fields=["description", "data", "skill_tags", "complexity", "is_public"])
 
     ex.data["exerciseId"] = ex.id
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
@@ -311,16 +323,26 @@ def _build_playlist(
 
 def _student_facing_playlist_name(unit: int) -> str:
     if unit == 10:
-        return f"Unit {unit} - First Inversions (Harmonization)"
+        return f"Unit {unit} - Third in the Bass (Harmonization)"
     return f"Unit {unit} - Authentic Cadences (Harmonization)"
 
 
 def _legacy_playlist_names(unit: int, voices_arg: str) -> list[str]:
+    if unit == 10:
+        # Pre-rename name for this unit specifically (no voice-count suffix,
+        # unlike the generic Authentic-Cadences pattern below).
+        return ["Unit 10 - First Inversions (Harmonization)"]
     suffixes = ["all"] if voices_arg == "all" else [f"{voices_arg}-voice"]
     return [
         f"Unit {unit} - Authentic Cadences (Harmonization) {suffix}"
         for suffix in suffixes
     ]
+
+
+def _legacy_exercise_descriptions(unit: int, key: str) -> list[str]:
+    if unit == 10:
+        return [f"First-Inversion Cadence in {key}"]
+    return []
 
 
 def _rename_legacy_playlist(
@@ -352,7 +374,7 @@ def _fixed_unit_slots(unit: int, n_voices: int) -> list[dict[str, tuple]]:
 
 def _exercise_description(unit: int, key: str, combo_idx: int, combo_count: int) -> str:
     if unit == 10:
-        return f"First-Inversion Cadence in {key}"
+        return f"Third-in-the-Bass Cadence in {key}"
 
     prefix = f"Harmonization Cadence in {key}"
     return prefix if combo_count == 1 else f"{prefix} var{combo_idx}"
@@ -388,7 +410,7 @@ def _playlist_skill_tags_for_unit(unit: int) -> list[str]:
 
 
 def _heading_label_for_unit(unit: int) -> str:
-    return "first-inversion cadences" if unit == 10 else "authentic cadences"
+    return "third-in-the-bass cadences" if unit == 10 else "authentic cadences"
 
 
 def _make_exercises(
@@ -438,6 +460,7 @@ def _make_exercises(
                     complexity=unit,
                     is_public=options["public"],
                     overwrite=options["overwrite"],
+                    legacy_descriptions=_legacy_exercise_descriptions(unit, key),
                 )
             )
             stdout.write(f"  {desc}")
