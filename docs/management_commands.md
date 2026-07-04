@@ -379,6 +379,27 @@ Gate: `pytest apps/exercises/tests/test_theory_goldens.py` (Python) and
 
 ---
 
+## Build / codegen
+
+**`build_figured_bass_lookup`** — Generate
+`lab/static/js/src/config/figured_bass_hints_data.js` (ESM), the client-side
+lookup the figured-bass hint layer reads at render time. Emits two lookups
+from the Python source of truth: `_SHORTHANDS` (mirror of
+`figures.py:_SHORTHANDS`) and `_REQUIRED_NUMBERS_BY_FIGURE` (per-figure
+required generic intervals at the `{min:3,max:4}` voice-count policy, computed
+via `figure_realization.required_numbers` — the same computation the grader
+trusts, so hints never diverge from the saved analysis). Python remains the
+source of truth; the sync test fails CI on drift.
+
+```
+python manage.py build_figured_bass_lookup
+```
+
+Gate: `pytest apps/exercises/tests/test_figured_bass_hints_data.py`. Re-run
+after any change to `figures.py` or `figure_realization.py`.
+
+---
+
 ## Simulation / QA
 
 **`simulate_adaptive_playlists`** — Create three mock students (`student_alpha`, `student_beta`, `student_gamma`) with different performance patterns and run them through a shared adaptive playlist for five steps. Writes `playlist_simulation_report.json` and asserts:
