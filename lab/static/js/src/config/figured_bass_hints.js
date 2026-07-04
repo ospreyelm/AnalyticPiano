@@ -177,10 +177,18 @@ function buildIdentificationHints(definition, analysisType) {
   if (!problems.length) return null;
 
   var unabbreviated = analysisType === "figured_bass_unabbreviated";
+  // Problems built by buildUMTOIdentificationProblems (and the older
+  // chord-array identification path) never carry a `.content` object on the
+  // final problem — figured_bass/raw_figured_bass are read from the analysis
+  // slice's `.content` only while computing `answer`, upstream, at parse
+  // time. `p.answer` is already the correctly-shaped figure string for this
+  // exercise's analysisType (abbreviated or raw/unabbreviated, matching the
+  // same branch this function was gated on) — read that directly instead of
+  // a `.content` shape that doesn't exist on the built problem objects.
   var seen = {}, distinct = [];
   problems.forEach(function (p) {
-    var content = (p && p.content) || {};
-    var fig = unabbreviated ? content.raw_figured_bass : content.figured_bass;
+    if (!p || p.hidden) return;
+    var fig = p.answer;
     if (fig && !seen.hasOwnProperty(fig)) { seen[fig] = true; distinct.push(fig); }
   });
   if (!distinct.length) return null;

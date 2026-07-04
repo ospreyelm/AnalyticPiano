@@ -34,9 +34,15 @@ function harmDef(targets) {
     getAnalysisType: function () { return "figured_bass"; },
   };
 }
-function identDef(slices) {
+function identDef(answers) {
+  // Mirrors the real shape buildUMTOIdentificationProblems produces: a flat
+  // `answer` string per problem (already the correctly-shaped figure for
+  // this exercise's analysisType), not a `.content.figured_bass` object --
+  // problems never carry a `.content` key.
   return {
-    getProblems: function () { return slices.map(function (c) { return { content: c }; }); },
+    getProblems: function () {
+      return answers.map(function (a) { return { answer: a, hidden: !a }; });
+    },
     getAnalysisType: function () { return "figured_bass"; },
   };
 }
@@ -108,11 +114,7 @@ assertContains("harm diff-policy 6 shows essential 6-3", hDiffPolicies.hints[0],
 assertContains("harm diff-policy 7 shows essential 7-3 and omittable (5)", hDiffPolicies.hints[0], "7 → 7-3-(5)");
 
 // --- Identification, abbreviated: dedupes distinct figures, plain expansion ---
-var dI = identDef([
-  { figured_bass: "6" },
-  { figured_bass: "7" },
-  { figured_bass: "6" },
-]);
+var dI = identDef(["6", "7", "6"]);
 var iH = mod.buildIdentificationHints(dI, "figured_bass");
 var sixExpansions = (iH.hints[0].match(/6 → 6-3/g) || []).length;
 assertEqual("ident dedupes 6 expansion", sixExpansions, 1);
@@ -121,15 +123,23 @@ assertContains("ident help says abbreviated", iH.help, "abbreviated");
 assertEqual("ident help never says inversion", iH.help.toLowerCase().indexOf("inversion"), -1);
 
 // --- Identification, unabbreviated ---
-var dIu = identDef([{ raw_figured_bass: "8/6/3" }, { raw_figured_bass: "8/5/3" }]);
+var dIu = identDef(["8/6/3", "8/5/3"]);
 var iHu = mod.buildIdentificationHints(dIu, "figured_bass_unabbreviated");
 assertContains("ident unabb lists 8/6/3", iHu.hints[0], "8/6/3");
 assertContains("ident unabb help mentions octave", iHu.help, "octave (8)");
 
+// --- hidden problems (non-target slices) excluded from distinct figures ---
+var dHidden = identDef(["6"]);
+dHidden.getProblems = function () {
+  return [{ answer: "6", hidden: false }, { answer: "7", hidden: true }];
+};
+var iHHidden = mod.buildIdentificationHints(dHidden, "figured_bass");
+assertEqual("ident excludes hidden problem's figure", iHHidden.hints[0].indexOf("7 →"), -1);
+
 // --- no FB slices -> null ---
 assertEqual("ident no slices -> null", mod.buildIdentificationHints(identDef([]), "figured_bass"), null);
-assertEqual("ident no figured_bass field -> null",
-  mod.buildIdentificationHints(identDef([{ other: "x" }]), "figured_bass"), null);
+assertEqual("ident no answer field -> null",
+  mod.buildIdentificationHints(identDef([null]), "figured_bass"), null);
 
 // --- MORE_INFO_URL exported ---
 assertContains("more-info url exported", mod.MORE_INFO_URL, "gettysburg");
