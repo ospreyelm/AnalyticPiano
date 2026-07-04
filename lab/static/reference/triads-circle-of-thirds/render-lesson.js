@@ -187,8 +187,14 @@ function drawIllustrativeVexflow(target, n) {
       duration: note.duration || "q",
     });
     note.keys.forEach((k, i) => {
-      if (k.includes("#")) sn.addModifier(new Accidental("#"), i);
-      if (k.includes("b") && !k.startsWith("b")) sn.addModifier(new Accidental("b"), i);
+      // VexFlow key syntax: <letter a-g><accidentals #bn>/<octave>. Parse the
+      // accidental run between the letter and the slash — "bb/4" is B-flat
+      // (letter b, accidental b), NOT B-natural. The old `k.includes("b") &&
+      // !k.startsWith("b")` check skipped every B-flat because "bb/4" starts
+      // with "b", so all flats on the letter B silently dropped.
+      const m = k.match(/^([a-g])([#bn]*)\//);
+      const acc = m ? m[2] : "";
+      if (acc) sn.addModifier(new Accidental(acc), i);
     });
     return sn;
   });
