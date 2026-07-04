@@ -243,6 +243,37 @@
       ]
     },
     {
+      "slideNumber": 8.5,
+      "id": "circle-of-thirds-wheel",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "THE CIRCLE OF THIRDS WHEEL",
+      "bullets": [
+        "The letters always run in the same order around the wheel: C-E-G-B-D-F-A (and back to C)",
+        "To name a chord, read clockwise from its root: the next stop is the third, the one after that is the fifth, and a seventh chord adds one more",
+        "The root is the furthest pitch counter-clockwise before the large gap of a fourth — that gap is what tells you the chord has ended"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of thirds wheel rooted on C, highlighting the C-E-G triad (root, third, fifth).",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "thirds",
+            "root": "C",
+            "chordSize": 3
+          }
+        },
+        {
+          "purpose": "Circle of thirds wheel rooted on G, highlighting the G-B-D-F seventh chord (root, third, fifth, seventh).",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "thirds",
+            "root": "G",
+            "chordSize": 4
+          }
+        }
+      ]
+    },
+    {
       "slideNumber": 9,
       "id": "chord-member-names",
       "eyebrow": "INTRODUCTION TO TRIADS",
