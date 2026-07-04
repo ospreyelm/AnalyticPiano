@@ -1,0 +1,122 @@
+/* Run: node lab/static/js/src/config/figured_bass_hints.test.js */
+"use strict";
+var mod = require("./figured_bass_hints");
+mod = mod.default || mod;
+var fail = 0;
+function assertEqual(label, actual, expected) {
+  var a = JSON.stringify(actual), e = JSON.stringify(expected);
+  if (a === e) { console.log("ok - " + label); }
+  else { fail += 1; console.error("FAIL - " + label + "\n  expected: " + e + "\n  actual:   " + a); }
+}
+function assertContains(label, haystack, needle) {
+  if (haystack && haystack.indexOf(needle) !== -1) { console.log("ok - " + label); }
+  else { fail += 1; console.error("FAIL - " + label + "\n  missing: " + JSON.stringify(needle) + "\n  in:      " + JSON.stringify(haystack)); }
+}
+
+// --- expandFigure mirrors figures.py:expand_figure_string ---
+assertEqual("expand 6", mod.expandFigure("6"), ["6", "3"]);
+assertEqual("expand 7", mod.expandFigure("7"), ["7", "5", "3"]);
+assertEqual("expand 6/4", mod.expandFigure("6/4"), ["6", "4"]);
+assertEqual("expand 4/2", mod.expandFigure("4/2"), ["6", "4", "2"]);
+assertEqual("expand empty -> 5/3", mod.expandFigure(""), ["5", "3"]);
+
+// --- requiredNumbersFor: pure lookup ---
+assertEqual("req 6 @ 3-4", mod.requiredNumbersFor("6", { min: 3, max: 4 }), [3, 6]);
+assertEqual("req 7 @ 3-4", mod.requiredNumbersFor("7", { min: 3, max: 4 }), [3, 7]);
+assertEqual("req 6/4 @ 3-4", mod.requiredNumbersFor("6/4", { min: 3, max: 4 }), [4, 6]);
+assertEqual("req 4/2 @ 3-4", mod.requiredNumbersFor("4/2", { min: 3, max: 4 }), [2, 4]);
+assertEqual("req unknown figure -> null", mod.requiredNumbersFor("ZZZ", { min: 3, max: 4 }), null);
+
+// --- mock definitions ---
+function harmDef(targets) {
+  return {
+    getHarmonizationTargets: function () { return targets; },
+    getAnalysisType: function () { return "figured_bass"; },
+  };
+}
+function identDef(slices) {
+  return {
+    getProblems: function () { return slices.map(function (c) { return { content: c }; }); },
+    getAnalysisType: function () { return "figured_bass"; },
+  };
+}
+
+// --- Harmonization, abbreviated ---
+// 6/4 at {3,4}: 6 and 4 both essential, [+8] doubling (no 2/9).
+var d64 = harmDef([{ displayFigure: "6/4", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "4"] }]);
+var h64 = mod.buildHarmonizationHints(d64, "figured_bass");
+assertContains("harm 6/4 has essential 6-4", h64.hints[0], "6/4 → 6-4");
+assertContains("harm 6/4 marks [+8] doubling", h64.hints[0], "[+8]");
+assertContains("harm 6/4 has no omittable parens (5)", h64.hints[0], "6-4-[+8]");
+assertEqual("harm 6/4 moreInfo flag", h64.moreInfo, true);
+assertContains("harm help names intervals above the bass", h64.help, "intervals above the bass");
+assertEqual("harm help never says inversion", h64.help.toLowerCase().indexOf("inversion"), -1);
+
+// 7 at {3,4}: 7,3 essential; 5 omittable; [+8].
+var d7 = harmDef([{ displayFigure: "7", voiceCountPolicy: { min: 3, max: 4 }, figures: ["7", "5", "3"] }]);
+var h7 = mod.buildHarmonizationHints(d7, "figured_bass");
+assertContains("harm 7 essential 7-3", h7.hints[0], "7-3");
+assertContains("harm 7 omittable (5)", h7.hints[0], "(5)");
+assertContains("harm 7 [+8]", h7.hints[0], "[+8]");
+
+// 4/2 at {3,4}: 4,2 essential; 6 omittable; NO [+8] (has 2).
+var d42 = harmDef([{ displayFigure: "4/2", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "4", "2"] }]);
+var h42 = mod.buildHarmonizationHints(d42, "figured_bass");
+assertContains("harm 4/2 essential 4-2", h42.hints[0], "4-2");
+assertContains("harm 4/2 omittable (6)", h42.hints[0], "(6)");
+assertEqual("harm 4/2 no [+8] (has 2)", h42.hints[0].indexOf("[+8]"), -1);
+
+// --- Harmonization, unabbreviated: reads target.figures, parenthesizes 8 ---
+var dUn = harmDef([{ displayFigure: "8/6/3", figures: ["8", "6", "3"], voiceCountPolicy: { min: 3, max: 4 } }]);
+var hUn = mod.buildHarmonizationHints(dUn, "figured_bass_unabbreviated");
+assertContains("unabb reads figures stack (8)-6-3", hUn.hints[0], "(8)-6-3");
+assertContains("unabb help mentions octave", hUn.help, "octave (8)");
+
+// --- no targets -> null (fallback signal) ---
+assertEqual("harm no targets -> null", mod.buildHarmonizationHints(harmDef([]), "figured_bass"), null);
+
+// --- figure absent from lookup -> null (whole-exercise fallback) ---
+var dBad = harmDef([{ displayFigure: "ZZZ", voiceCountPolicy: { min: 3, max: 4 }, figures: ["Z"] }]);
+assertEqual("harm unknown figure -> null", mod.buildHarmonizationHints(dBad, "figured_bass"), null);
+
+// --- distinct figures collapse; one line per distinct figure ---
+var dMulti = harmDef([
+  { displayFigure: "6", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "3"] },
+  { displayFigure: "6/4", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "4"] },
+  { displayFigure: "6", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "3"] },
+]);
+var hMulti = mod.buildHarmonizationHints(dMulti, "figured_bass");
+// "6" should appear once as a figure key, "6/4" once.
+var sixCount = (hMulti.hints[0].match(/6 → /g) || []).length;
+assertEqual("harm dedupes 6 to one line", sixCount, 1);
+assertContains("harm multi has 6/4 line", hMulti.hints[0], "6/4 →");
+
+// --- Identification, abbreviated: dedupes distinct figures, plain expansion ---
+var dI = identDef([
+  { figured_bass: "6" },
+  { figured_bass: "7" },
+  { figured_bass: "6" },
+]);
+var iH = mod.buildIdentificationHints(dI, "figured_bass");
+var sixExpansions = (iH.hints[0].match(/6 → 6-3/g) || []).length;
+assertEqual("ident dedupes 6 expansion", sixExpansions, 1);
+assertContains("ident has 7 expansion", iH.hints[0], "7 → 7-5-3");
+assertContains("ident help says abbreviated", iH.help, "abbreviated");
+assertEqual("ident help never says inversion", iH.help.toLowerCase().indexOf("inversion"), -1);
+
+// --- Identification, unabbreviated ---
+var dIu = identDef([{ raw_figured_bass: "8/6/3" }, { raw_figured_bass: "8/5/3" }]);
+var iHu = mod.buildIdentificationHints(dIu, "figured_bass_unabbreviated");
+assertContains("ident unabb lists 8/6/3", iHu.hints[0], "8/6/3");
+assertContains("ident unabb help mentions octave", iHu.help, "octave (8)");
+
+// --- no FB slices -> null ---
+assertEqual("ident no slices -> null", mod.buildIdentificationHints(identDef([]), "figured_bass"), null);
+assertEqual("ident no figured_bass field -> null",
+  mod.buildIdentificationHints(identDef([{ other: "x" }]), "figured_bass"), null);
+
+// --- MORE_INFO_URL exported ---
+assertContains("more-info url exported", mod.MORE_INFO_URL, "gettysburg");
+
+if (fail > 0) { console.error("\n" + fail + " test(s) failed"); process.exit(1); }
+console.log("\nAll tests passed");
