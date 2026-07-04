@@ -3,8 +3,8 @@
  */
 "use strict";
 
-var mod = require("./click_note_logic");
-mod = mod.default || mod;
+var { requireDefault } = require("../../../test/require_esm");
+var mod = requireDefault(require("./click_note_logic"));
 
 var fail = 0;
 function assertEqual(label, actual, expected) {

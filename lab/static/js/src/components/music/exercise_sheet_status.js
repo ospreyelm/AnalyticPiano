@@ -273,6 +273,18 @@ export default  {
         }
       }
 
+      // Detach any existing hint controls before wiping innerHTML below.
+      // jQuery's .html() strips bound event handlers from descendants before
+      // replacing them (jQuery.cleanData runs first); .detach() is the one
+      // removal method that preserves handlers/data for later re-insertion,
+      // which is what lets _renderHintControls reuse the same button/panel
+      // (and its in-progress hint step) across re-renders of one exercise
+      // instead of rebuilding from scratch every call.
+      if (this._hintCache) {
+        this._hintCache.$btn.detach();
+        this._hintCache.$panel.detach();
+      }
+
       $textEl.html(html);
       this._renderHintControls($textEl);
 
@@ -292,10 +304,19 @@ export default  {
       }
       var mode = definition.getMode ? definition.getMode() : null;
       var dyn = null;
-      if (mode === "harmonization") {
+      // "playback" covers the teacher-authored "Play + figures" mode
+      // (InteractionMode.PLAYBACK + analysisType figured_bass*), which reads
+      // the same harmonizationTargets shape as "harmonization" and needs the
+      // same essential/omittable hint content.
+      if (mode === "harmonization" || mode === "playback") {
         dyn = FbHints.buildHarmonizationHints(definition, analysisType);
       } else if (mode === "identification" || mode === "chorale_identification") {
         dyn = FbHints.buildIdentificationHints(definition, analysisType);
+      } else {
+        // No dynamic builder is defined for this mode at all (distinct from
+        // a builder running and returning null) — fall back silently, no
+        // warning, since nothing was ever expected to run here.
+        return null;
       }
       if (!dyn) {
         // Fallback: helper returned null (no targets / no FB slices / figure
@@ -311,38 +332,59 @@ export default  {
     },
 
     _renderHintControls: function ($textEl) {
-      // Inject hint button + panel once; skip if already present.
-      if ($textEl.find('.ex-hint-btn').length) return;
-      var self = this;
+      var definition = this.exerciseContext && this.exerciseContext.getDefinition
+        ? this.exerciseContext.getDefinition()
+        : null;
+      var exerciseId = definition && definition.exercise
+        ? definition.exercise.exerciseId
+        : null;
+
+      // Same exercise as the last render: re-attach the already-built
+      // controls (click handler and in-progress hint step intact) instead
+      // of recomputing hints and rebuilding the DOM on every call — this
+      // function used to run on every note/chord the student played, since
+      // renderExerciseText's $textEl.html(html) call (right before this)
+      // wipes the DOM every time and the old "already present" guard here
+      // could never see the button it had just wiped out.
+      if (this._hintCache && this._hintCache.exerciseId === exerciseId) {
+        $textEl.append(this._hintCache.$btn).append(this._hintCache.$panel);
+        return;
+      }
+
       var dyn = this._getDynamicInstructions();
       var instructions = dyn || this._getModeInstructions();
       var hints = instructions.hints || [];
-      if (!hints.length && !instructions.help) return;
+      if (!hints.length && !instructions.help) {
+        this._hintCache = null;
+        return;
+      }
 
       var $btn = $('<button type="button" class="ex-hint-btn" title="Get a hint">? Hint</button>');
       var $panel = $('<div class="ex-hint-panel" role="status" aria-live="polite" style="display:none;"></div>');
       var step = -1;
 
+      // Each step carries an explicit html flag set at construction time,
+      // rather than being inferred at render time by sniffing the string's
+      // leading characters (content-based sniffing would misrender any
+      // hint/help string that happened to start with the same characters).
       var allSteps = [];
-      if (instructions.help) allSteps.push(instructions.help);
-      hints.forEach(function (h) { allSteps.push(h); });
-      // Dynamic figured-bass hints end with a "more info" anchor (HTML, not
-      // plain text). Detect an anchor step by leading "<a " and render via
-      // .html(); all other steps are plain text via .text().
+      if (instructions.help) allSteps.push({ text: instructions.help, html: false });
+      hints.forEach(function (h) { allSteps.push({ text: h, html: false }); });
       if (instructions.moreInfo) {
-        allSteps.push(
-          '<a class="fb-more-info" target="_blank" rel="noopener noreferrer" href="' +
-          FbHints.MORE_INFO_URL + '">More on reading figured bass →</a>'
-        );
+        allSteps.push({
+          text: '<a class="fb-more-info" target="_blank" rel="noopener noreferrer" href="' +
+            FbHints.MORE_INFO_URL + '">More on reading figured bass →</a>',
+          html: true,
+        });
       }
 
       $btn.on('click', function () {
         step = Math.min(step + 1, allSteps.length - 1);
         var s = allSteps[step];
-        if (typeof s === "string" && s.indexOf("<a ") === 0) {
-          $panel.html(s).show();
+        if (s.html) {
+          $panel.html(s.text).show();
         } else {
-          $panel.text(s).show();
+          $panel.text(s.text).show();
         }
         if (step === allSteps.length - 1) {
           $btn.text('✓ Hint').prop('disabled', true);
@@ -351,6 +393,7 @@ export default  {
         }
       });
 
+      this._hintCache = { exerciseId: exerciseId, $btn: $btn, $panel: $panel };
       $textEl.append($btn).append($panel);
     },
     renderExerciseHistory: function () {

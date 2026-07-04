@@ -1,7 +1,7 @@
 "use strict";
 
-var logic = require("./key_sig_exercise_logic");
-logic = logic.default || logic;
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./key_sig_exercise_logic"));
 
 function assertEqual(label, actual, expected) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {

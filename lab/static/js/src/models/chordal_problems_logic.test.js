@@ -1,8 +1,8 @@
 // lab/static/js/src/models/chordal_problems_logic.test.js
 // Run: node lab/static/js/src/models/chordal_problems_logic.test.js
 "use strict";
-var logic = require("./chordal_problems_logic");
-logic = logic.default || logic;
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./chordal_problems_logic"));
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

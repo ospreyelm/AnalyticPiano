@@ -1,6 +1,6 @@
 "use strict";
-var mod = require("./note_entry_gate_logic");
-mod = mod.default || mod;
+var { requireDefault } = require("../../../test/require_esm");
+var mod = requireDefault(require("./note_entry_gate_logic"));
 
 var pass = 0, fail = 0;
 function assertEqual(name, got, want) {

@@ -4,8 +4,8 @@
 "use strict";
 
 var assert = require("assert");
-var TickableBuilder = require("./vexflow_tickable_builder");
-TickableBuilder = TickableBuilder.default || TickableBuilder;
+var { requireDefault } = require("../../../../test/require_esm");
+var TickableBuilder = requireDefault(require("./vexflow_tickable_builder"));
 
 function restItem() {
   return { kind: "rest", duration: { type: "quarter", dots: 0 } };

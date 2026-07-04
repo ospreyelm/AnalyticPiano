@@ -2,11 +2,8 @@
 
 var fs = require("fs");
 var path = require("path");
-// harmonization_grader_logic.js uses ESM `export default`; Node's require()
-// returns the default export under `.default` rather than spreading it onto
-// the returned object. Unwrap once so the rest of the file reads naturally.
-var _graderMod = require("../lab/static/js/src/models/harmonization_grader_logic");
-var grader = _graderMod.default || _graderMod;
+var { requireDefault } = require("../lab/static/js/test/require_esm");
+var grader = requireDefault(require("../lab/static/js/src/models/harmonization_grader_logic"));
 
 var failed = 0;
 

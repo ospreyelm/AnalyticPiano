@@ -18,6 +18,7 @@ import pytest
 
 from apps.exercises.harmonization import figure_realization as fr
 from apps.exercises.harmonization.figures import _SHORTHANDS, _parse_token, expand_figure_string
+from apps.exercises.management.commands.build_figured_bass_lookup import _POLICIES
 
 # apps/exercises/tests/test_figured_bass_hints_data.py -> repo root is parents[3]
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -38,8 +39,6 @@ def _present_and_altered(figure):
     present, altered = set(), set()
     for raw in expand_figure_string(figure):
         tok = _parse_token(raw)
-        if tok.number == 8:
-            continue
         present.add(tok.number)
         if tok.accidental or tok.quality_alter:
             altered.add(tok.number)
@@ -124,10 +123,46 @@ def test_altered_tone_is_always_required():
         )
 
 
-def test_no_octave_in_required_set():
-    """8 (octave doubling) is never a named requirement -- it is rendered
-    separately as [+8]. The generated required-numbers lists must not contain 8."""
+def test_octave_required_only_in_failsafe_figures():
+    """Octave (8) is included in required_numbers only for fail-safe figures
+    (those without a TABLE prototype) when 8 is present in the figure tokens.
+    For figures with a TABLE prototype, octave is handled by required_numbers()
+    and may or may not be required depending on voice-count policy."""
+    from apps.exercises.harmonization import figure_realization as fr
+
     parsed = _parse_generated_js()
     for figure, by_policy in parsed["_REQUIRED_NUMBERS_BY_FIGURE"].items():
+        prototype, _ = fr.normalize(figure)
+        expanded = expand_figure_string(figure)
+        has_octave_token = "8" in expanded
+
         for policy_key, nums in by_policy.items():
-            assert 8 not in nums, f"{figure!r} {policy_key}: 8 leaked into required set {nums}"
+            octave_in_required = 8 in nums
+
+            if prototype is None:
+                # Fail-safe figures: octave is required if it was in the figure
+                if has_octave_token:
+                    assert octave_in_required, (
+                        f"{figure!r} {policy_key}: fail-safe with octave token should "
+                        f"require 8, got {nums}"
+                    )
+            else:
+                # TABLE-based figures: octave should never be in required
+                # (the TABLE prototype handles intervals, octave is only optional doubling)
+                assert not octave_in_required, (
+                    f"{figure!r} {policy_key}: TABLE-based figure should not require "
+                    f"octave, got {nums}"
+                )
+
+
+def test_present_policies_are_well_formed():
+    """_POLICIES itself is well-formed (int min/max, min<=max). The live-corpus
+    drift check (does every voiceCountPolicy shape actually stored on
+    Exercise rows appear in _POLICIES) runs inside the
+    build_figured_bass_lookup management command itself, not here -- this is
+    a plain pytest module (no django_db fixture, no test-DB isolation) and
+    querying Exercise.objects would either error for lack of DB access or,
+    if given DB access, only ever see the empty/fixture-only pytest test
+    database, never the real corpus this check needs to observe."""
+    for policy in _POLICIES:
+        assert int(policy.get("min", 3)) <= int(policy.get("max", 4))

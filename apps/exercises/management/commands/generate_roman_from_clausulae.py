@@ -398,15 +398,26 @@ def _save_exercise(
     complexity: int,
     is_public: bool,
     overwrite: bool,
+    legacy_descriptions: list[str] | None = None,
 ) -> Exercise:
-    ex = (
-        Exercise.objects.filter(
+    ex = None
+    if overwrite:
+        ex = Exercise.objects.filter(
             description=description,
             authored_by=author,
             skill_tags__contains=[skill_tags[0]],
         ).first()
-        if overwrite else None
-    )
+        # A rename (e.g. "Third-in-the-Bass Cadence in C" replacing
+        # "First-Inversion Cadence in C") changes the description this lookup
+        # keys on, so a rerun after the rename would otherwise miss the
+        # existing row and create a duplicate. Fall back to any legacy
+        # description for the same exercise before creating a new one.
+        if ex is None and legacy_descriptions:
+            ex = Exercise.objects.filter(
+                description__in=legacy_descriptions,
+                authored_by=author,
+                skill_tags__contains=[skill_tags[0]],
+            ).first()
     if ex is None:
         ex = Exercise(
             description=description,
@@ -418,17 +429,52 @@ def _save_exercise(
         )
         ex.save()
     else:
+        ex.description = description
         ex.data       = payload
         ex.skill_tags = list(skill_tags)
         ex.complexity = complexity
         ex.is_public  = is_public
-        ex.save(update_fields=["data", "skill_tags", "complexity", "is_public"])
+        ex.save(update_fields=["description", "data", "skill_tags", "complexity", "is_public"])
 
     # Backfill the database-assigned id into the payload.
     ex.data["exerciseId"] = ex.id
     ex.data["score"]["umto"]["metadata"]["exercise_id"] = ex.id
     ex.save(update_fields=["data"])
     return ex
+
+
+def _legacy_playlist_names(unit: int, voices_arg: str) -> list[str]:
+    if unit == 10:
+        # Pre-rename name for this unit specifically (no voice-count suffix,
+        # unlike the generic Authentic-Cadences pattern below).
+        return ["Unit 10 — First Inversions (Roman Numerals)"]
+    suffix = "" if voices_arg == "all" else f" {voices_arg}-voice"
+    return [f"Unit {unit} — Authentic Cadences (Roman Numerals){suffix}"]
+
+
+def _legacy_exercise_descriptions(unit: int, key: str) -> list[str]:
+    if unit == 10:
+        return [f"First-Inversion Cadence in {key}"]
+    return []
+
+
+def _rename_legacy_playlist(
+    *,
+    author,
+    playlist_name: str,
+    legacy_names: list[str],
+) -> None:
+    if Playlist.objects.filter(name=playlist_name, authored_by=author).exists():
+        return
+    legacy = (
+        Playlist.objects.filter(name__in=legacy_names, authored_by=author)
+        .order_by("id")
+        .first()
+    )
+    if legacy is None:
+        return
+    legacy.name = playlist_name
+    legacy.save(update_fields=["name"])
 
 
 def _build_playlist(
@@ -610,6 +656,7 @@ def _make_exercises(
                 complexity=unit,
                 is_public=options["public"],
                 overwrite=options["overwrite"],
+                legacy_descriptions=_legacy_exercise_descriptions(unit, key),
             )
             exs.append(ex)
             stdout.write(f"  {desc}")
@@ -674,9 +721,15 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"  → {len(exs)} exercises generated.")
             )
 
+        playlist_name = _playlist_name(unit, voices_arg)
+        _rename_legacy_playlist(
+            author=author,
+            playlist_name=playlist_name,
+            legacy_names=_legacy_playlist_names(unit, voices_arg),
+        )
         playlist = _build_playlist(
             author=author,
-            playlist_name=_playlist_name(unit, voices_arg),
+            playlist_name=playlist_name,
             exercises=all_exercises,
             skill_tags=_playlist_skill_tags_for_unit(unit),
             is_public=options["public"],

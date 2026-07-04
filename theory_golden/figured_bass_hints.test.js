@@ -10,10 +10,8 @@
 
 var fs = require("fs");
 var path = require("path");
-// figured_bass_hints.js is ESM `export default`; Node's require() returns the
-// default under `.default` rather than spreading it. Unwrap once.
-var _mod = require("../lab/static/js/src/config/figured_bass_hints");
-var FbHints = _mod.default || _mod;
+var { requireDefault } = require("../lab/static/js/test/require_esm");
+var FbHints = requireDefault(require("../lab/static/js/src/config/figured_bass_hints"));
 
 var failed = 0;
 function fail(label, detail) {

@@ -1,7 +1,7 @@
 /* Run: node lab/static/js/src/config/feedback_catalog.test.js */
 "use strict";
-var mod = require("./feedback_catalog");
-mod = mod.default || mod;
+var { requireDefault } = require("../../test/require_esm");
+var mod = requireDefault(require("./feedback_catalog"));
 var fail = 0;
 function assertEqual(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);

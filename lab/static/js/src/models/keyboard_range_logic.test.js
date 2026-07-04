@@ -1,8 +1,8 @@
 /* Run: node lab/static/js/src/models/keyboard_range_logic.test.js */
 "use strict";
 
-var mod = require("./keyboard_range_logic");
-mod = mod.default || mod;
+var { requireDefault } = require("../../test/require_esm");
+var mod = requireDefault(require("./keyboard_range_logic"));
 var fail = 0;
 
 function assertEqual(label, actual, expected) {

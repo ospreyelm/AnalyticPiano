@@ -1,7 +1,7 @@
 "use strict";
 
-var logic = require("./key_context_logic");
-logic = logic.default || logic;
+var { requireDefault } = require("../../test/require_esm");
+var logic = requireDefault(require("./key_context_logic"));
 
 var failed = 0;
 

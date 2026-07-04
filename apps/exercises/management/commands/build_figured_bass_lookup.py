@@ -27,6 +27,7 @@ from django.core.management.base import BaseCommand
 
 from apps.exercises.harmonization import figure_realization as fr
 from apps.exercises.harmonization.figures import _SHORTHANDS, _parse_token, expand_figure_string
+from apps.exercises.models import Exercise
 
 # Four levels up from apps/exercises/management/commands/ -> repo root
 _OUT_PATH = os.path.abspath(os.path.join(
@@ -51,15 +52,14 @@ def _present_and_altered(figure: str) -> tuple[set[int], frozenset[int]]:
     Which numbers are required is a pure function of the figure string and
     voice-count policy (never of key or bass) -- _parse_token yields the
     generic number and alteration per expanded token without any pitch
-    context. 8 (octave doubling) is dropped: it is never a named requirement,
-    only an optional doubling, and is rendered separately as [+8].
+    context. Octave (8) is included: when a figure fails to resolve to any
+    prototype (fail-safe path), figures.py includes 8 in required_numbers,
+    so this must too.
     """
     present: set[int] = set()
     altered: set[int] = set()
     for raw_token in expand_figure_string(figure):
         token = _parse_token(raw_token)
-        if token.number == 8:
-            continue
         present.add(token.number)
         if token.accidental or token.quality_alter:
             altered.add(token.number)
@@ -103,3 +103,30 @@ class Command(BaseCommand):
         with open(_OUT_PATH, "w") as fh:
             fh.write(module)
         self.stdout.write(self.style.SUCCESS(f"Wrote {_OUT_PATH}"))
+        self._warn_on_uncovered_policies()
+
+    def _warn_on_uncovered_policies(self) -> None:
+        """Guard against silent data drift: warn (loudly, at generation time)
+        if any voiceCountPolicy shape actually stored on Exercise rows isn't
+        covered by _POLICIES. Runs here -- against whichever real database is
+        configured when this command is invoked -- rather than as a pytest
+        test, since a test would only ever see the empty/fixture-only pytest
+        test database, never the live corpus this check needs to observe."""
+        covered = {_policy_key(p) for p in _POLICIES}
+        uncovered: dict[str, dict] = {}
+        for exercise in Exercise.objects.all().only("id", "data").iterator():
+            for target in (exercise.data or {}).get("harmonizationTargets") or []:
+                policy = target.get("voiceCountPolicy")
+                if policy:
+                    key = _policy_key(policy)
+                    if key not in covered:
+                        uncovered[key] = policy
+        if uncovered:
+            self.stdout.write(self.style.WARNING(
+                f"WARNING: {len(uncovered)} voiceCountPolicy shape(s) found in "
+                f"stored exercises are NOT covered by _POLICIES: {list(uncovered.values())}. "
+                f"Hints for those targets will silently fall back to static "
+                f"instructions (requiredNumbersFor returns nothing for an "
+                f"uncovered policy). Add the shape(s) to _POLICIES above and "
+                f"re-run this command."
+            ))

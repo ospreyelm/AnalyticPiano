@@ -1,7 +1,7 @@
 /* Run: node lab/static/js/src/config/figured_bass_hints.test.js */
 "use strict";
-var mod = require("./figured_bass_hints");
-mod = mod.default || mod;
+var { requireDefault } = require("../../test/require_esm");
+var mod = requireDefault(require("./figured_bass_hints"));
 var fail = 0;
 function assertEqual(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -90,6 +90,22 @@ var hMulti = mod.buildHarmonizationHints(dMulti, "figured_bass");
 var sixCount = (hMulti.hints[0].match(/6 → /g) || []).length;
 assertEqual("harm dedupes 6 to one line", sixCount, 1);
 assertContains("harm multi has 6/4 line", hMulti.hints[0], "6/4 →");
+
+// --- each distinct figure uses its OWN target's voiceCountPolicy, not targets[0] ---
+// Two targets with different figures and different policies. The fix ensures
+// each figure's required-numbers line reflects the policy from the target
+// that actually has that figure, not from targets[0].
+var dDiffPolicies = harmDef([
+  { displayFigure: "6", voiceCountPolicy: { min: 3, max: 4 }, figures: ["6", "3"] },
+  { displayFigure: "7", voiceCountPolicy: { min: 3, max: 4 }, figures: ["7", "5", "3"] },
+]);
+var hDiffPolicies = mod.buildHarmonizationHints(dDiffPolicies, "figured_bass");
+// Both figures should render successfully with their respective policies.
+assertContains("harm diff-policy 6 renders", hDiffPolicies.hints[0], "6 →");
+assertContains("harm diff-policy 7 renders", hDiffPolicies.hints[0], "7 →");
+// Verify the essential/omittable breakdown is correct for each.
+assertContains("harm diff-policy 6 shows essential 6-3", hDiffPolicies.hints[0], "6 → 6-3");
+assertContains("harm diff-policy 7 shows essential 7-3 and omittable (5)", hDiffPolicies.hints[0], "7 → 7-3-(5)");
 
 // --- Identification, abbreviated: dedupes distinct figures, plain expansion ---
 var dI = identDef([

@@ -4,8 +4,8 @@
 "use strict";
 
 var assert = require("assert");
-var Renderer = require("./vexflow_annotation_renderer");
-Renderer = Renderer.default || Renderer;
+var { requireDefault } = require("../../../../test/require_esm");
+var Renderer = requireDefault(require("./vexflow_annotation_renderer"));
 
 function fakeCtx() {
   var calls = { fillText: [], save: 0, restore: 0 };

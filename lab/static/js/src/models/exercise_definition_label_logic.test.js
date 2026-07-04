@@ -1,8 +1,8 @@
 "use strict";
 
 var assert = require("assert");
-var LabelLogic = require("./exercise_definition_label_logic");
-LabelLogic = LabelLogic.default || LabelLogic;
+var { requireDefault } = require("../../test/require_esm");
+var LabelLogic = requireDefault(require("./exercise_definition_label_logic"));
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

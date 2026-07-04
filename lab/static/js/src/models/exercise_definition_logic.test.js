@@ -1,8 +1,8 @@
 "use strict";
 
 var assert = require("assert");
-var Logic = require("./exercise_definition_logic");
-Logic = Logic.default || Logic;
+var { requireDefault } = require("../../test/require_esm");
+var Logic = requireDefault(require("./exercise_definition_logic"));
 
 function testFindsWindowByMusicalOffsetNotArrayIndex() {
   var windows = [

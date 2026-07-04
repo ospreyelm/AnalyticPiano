@@ -109,7 +109,10 @@ function _distinctDisplayFigures(targets) {
   var seen = {}, out = [];
   targets.forEach(function (t) {
     var f = t && t.displayFigure;
-    if (f && !seen.hasOwnProperty(f)) { seen[f] = true; out.push(f); }
+    if (f && !seen.hasOwnProperty(f)) {
+      seen[f] = true;
+      out.push({ figure: f, voiceCountPolicy: t.voiceCountPolicy || null });
+    }
   });
   return out;
 }
@@ -148,10 +151,11 @@ function buildHarmonizationHints(definition, analysisType) {
   var figures = _distinctDisplayFigures(targets);
   var figureLines = [];
   for (var i = 0; i < figures.length; i++) {
-    var policy = (targets[0] && targets[0].voiceCountPolicy) || null;
-    var line = _renderNotationLine(figures[i], policy);
+    var figureEntry = figures[i];
+    var policy = figureEntry.voiceCountPolicy || null;
+    var line = _renderNotationLine(figureEntry.figure, policy);
     if (!line) return null; // figure not in lookup -> whole-exercise fallback
-    figureLines.push(figures[i] + " → " + line);
+    figureLines.push(figureEntry.figure + " → " + line);
   }
   if (!figureLines.length) return null;
 

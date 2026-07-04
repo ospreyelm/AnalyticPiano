@@ -1,6 +1,6 @@
 "use strict";
-var mod = require("./analysis_slots");
-mod = mod.default || mod;
+var { requireDefault } = require("../../test/require_esm");
+var mod = requireDefault(require("./analysis_slots"));
 
 var pass = 0, fail = 0;
 function assertEqual(name, got, want) {

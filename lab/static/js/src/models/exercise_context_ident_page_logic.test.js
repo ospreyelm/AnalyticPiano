@@ -1,7 +1,7 @@
 "use strict";
 
-var IdentPageLogic = require("./exercise_context_ident_page_logic");
-IdentPageLogic = IdentPageLogic.default || IdentPageLogic;
+var { requireDefault } = require("../../test/require_esm");
+var IdentPageLogic = requireDefault(require("./exercise_context_ident_page_logic"));
 
 var pass = 0, fail = 0;
 function eq(label, actual, expected) {

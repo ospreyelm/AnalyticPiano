@@ -4,8 +4,8 @@
 "use strict";
 
 var assert = require("assert");
-var Logic = require("./vexflow_adapter_logic");
-Logic = Logic.default || Logic;
+var { requireDefault } = require("../../../../test/require_esm");
+var Logic = requireDefault(require("./vexflow_adapter_logic"));
 
 function fakeTickable(opts) {
   opts = opts || {};

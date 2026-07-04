@@ -36,7 +36,7 @@ export default  {
       short: "Identify the Roman numeral for each chord.",
       help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = do-mi-sol. A I6 = the third of the chord in the bass = 3, 5, 1 = mi-sol-do. A IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Find the bass, then count scale degrees from the tonic to name the Roman numeral. If the bass isn't the root, the figure tells you which chord tone is in the bass: 6 = third in the bass, 6/4 = fifth in the bass.",
+        "Find the root: rearrange the chord's notes so thirds stack from the bottom. Then compare the bass to the root — same note is root position; a third above is third in the bass (e.g. I6); a fifth above is fifth in the bass (e.g. I6/4). Count scale degrees from the tonic to name the numeral itself.",
         "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
         "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
       ],
@@ -52,7 +52,7 @@ export default  {
       short: "Identify the Roman numerals in the chorale.",
       help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = do-mi-sol; a I6 = the third in the bass = 3, 5, 1 = mi-sol-do; a IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Find the bass of each chord, then count scale degrees from the tonic to name the Roman numeral. If the bass isn't the root, the figure tells you which chord tone is in the bass: 6 = third in the bass, 6/4 = fifth in the bass.",
+        "Find the root of each chord: rearrange its notes so thirds stack from the bottom. Then compare the bass to the root — same note is root position; a third above is third in the bass (e.g. I6); a fifth above is fifth in the bass (e.g. I6/4). Count scale degrees from the tonic to name the numeral itself.",
         "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
       ],
     },

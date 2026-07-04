@@ -210,6 +210,16 @@ CATALOG = [
             "python manage.py reanalyze_knowledge_graph",
         ),
     ]),
+    ("Build / codegen", [
+        (
+            "build_figured_bass_lookup",
+            "Regenerate lab/static/js/src/config/figured_bass_hints_data.js (the "
+            "_SHORTHANDS mirror and required-numbers-by-figure lookup the student "
+            "hint layer reads) from figures.py/figure_realization.py. Warns if any "
+            "live exercise uses a voiceCountPolicy shape not covered by _POLICIES.",
+            "python manage.py build_figured_bass_lookup",
+        ),
+    ]),
     ("Theory verification", [
         (
             "dump_theory_goldens",

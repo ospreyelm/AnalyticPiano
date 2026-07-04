@@ -1,7 +1,7 @@
 /* Run: node lab/static/js/src/models/input_method_logic.test.js */
 "use strict";
-var mod = require("./input_method_logic");
-mod = mod.default || mod;
+var { requireDefault } = require("../../test/require_esm");
+var mod = requireDefault(require("./input_method_logic"));
 var fail = 0;
 function assertEqual(label, actual, expected) {
   var a = JSON.stringify(actual), e = JSON.stringify(expected);
