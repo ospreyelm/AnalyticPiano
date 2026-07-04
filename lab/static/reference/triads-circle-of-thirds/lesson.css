@@ -1,0 +1,223 @@
+/* ============================================================
+   lesson.css
+   Styles for the "Seventh Chords and Roman Numerals" lesson.
+   Written with CSS custom properties so it can be re-themed to
+   match the surrounding Django/Vite site without touching markup.
+   ============================================================ */
+
+:root {
+  --lesson-bg: #1c1d21;
+  --lesson-surface: #26272c;
+  --lesson-text: #d7d7da;
+  --lesson-text-dim: #9a9ba1;
+  --lesson-heading: #2ea3e0;
+  --lesson-white-panel: #ffffff;
+  --lesson-white-panel-text: #1a1a1a;
+  --lesson-accent-red: #c0392b;
+  --lesson-accent-blue: #2e86ab;
+  --lesson-rule: #3a3b41;
+  --lesson-radius: 10px;
+  --lesson-font: "Helvetica Neue", Arial, sans-serif;
+}
+
+.lesson {
+  font-family: var(--lesson-font);
+  color: var(--lesson-text);
+  background: var(--lesson-bg);
+  line-height: 1.5;
+}
+
+.lesson * {
+  box-sizing: border-box;
+}
+
+.lesson-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  border-bottom: 1px solid var(--lesson-rule);
+}
+
+.lesson-section:last-child {
+  border-bottom: none;
+}
+
+.lesson-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  color: var(--lesson-text-dim);
+  border-bottom: 1px solid var(--lesson-rule);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.lesson-title {
+  color: var(--lesson-heading);
+  font-size: 1.9rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem;
+  text-transform: uppercase;
+}
+
+.lesson-bullets,
+.lesson-bullets ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lesson-bullets > li {
+  position: relative;
+  padding-left: 1.4rem;
+  margin-bottom: 0.9rem;
+  font-size: 1.05rem;
+}
+
+.lesson-bullets ul > li {
+  font-size: 0.98rem;
+  color: var(--lesson-text-dim);
+  margin-top: 0.5rem;
+}
+
+.lesson-bullets li::before {
+  content: "\25B8"; /* ▸ matches the deck's bullet glyph */
+  position: absolute;
+  left: 0;
+  color: var(--lesson-heading);
+}
+
+.lesson-figure {
+  background: var(--lesson-white-panel);
+  color: var(--lesson-white-panel-text);
+  border-radius: var(--lesson-radius);
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  overflow-x: auto;
+}
+
+.lesson-figure-caption {
+  font-size: 0.85rem;
+  color: var(--lesson-text-dim);
+  margin-top: 0.5rem;
+}
+
+.lesson-note {
+  font-size: 0.85rem;
+  color: var(--lesson-text-dim);
+  border-left: 3px solid var(--lesson-rule);
+  padding-left: 0.75rem;
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* generic quality / lead-sheet-symbol tables */
+.lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.lesson-table th,
+.lesson-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+}
+
+.lesson-table th {
+  background: #f0f0f0;
+}
+
+/* warning callout (generic triangle, not a pixel match of the deck icon) */
+.lesson-warning {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--lesson-surface);
+  border-radius: var(--lesson-radius);
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.lesson-warning-icon {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  color: #f1c40f;
+}
+
+/* ---------- Circle-of-thirds component ---------- */
+.cot-diagram {
+  display: inline-block;
+  color: var(--lesson-white-panel-text);
+}
+
+.cot-ring {
+  color: #333;
+}
+
+.cot-node-circle {
+  stroke: none;
+}
+
+.cot-node-label {
+  fill: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.cot-interval-label {
+  fill: #c0392b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cot-box {
+  fill: #ffffff;
+  stroke-width: 2;
+}
+
+.cot-box-role {
+  fill: #333;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cot-box-note {
+  fill: #111;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cot-search-arrow {
+  stroke: #6c3fb5;
+  stroke-width: 2.5;
+}
+
+.cot-arrowhead {
+  fill: #6c3fb5;
+}
+
+.cot-root-caption {
+  fill: #333;
+  font-size: 13px;
+}
+
+/* ---------- Notation placeholders ----------
+   These containers are where the coding agent wires up this site's
+   existing VexFlow renderer. See data/lesson-content.json -> notation[]
+   for the structured pitch/rhythm/figure/roman-numeral data.
+*/
+.vexflow-target {
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 0.85rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+}

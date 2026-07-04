@@ -376,9 +376,16 @@ export default  {
       if (instructions.help) allSteps.push({ text: instructions.help, html: false });
       hints.forEach(function (h) { allSteps.push({ text: h, html: false }); });
       if (instructions.moreInfo) {
+        // Builder can carry its own explanation-page URL (e.g. the Roman-numeral
+        // / circle-of-thirds static page); fall back to the figured-bass canon
+        // page when the builder doesn't specify one.
+        var moreUrl = instructions.moreInfoUrl || FbHints.MORE_INFO_URL;
+        var moreLabel = instructions.moreInfoUrl
+          ? 'Open the chord & Roman-numeral lesson →'
+          : 'More on reading figured bass →';
         allSteps.push({
           text: '<a class="fb-more-info" target="_blank" rel="noopener noreferrer" href="' +
-            FbHints.MORE_INFO_URL + '">More on reading figured bass →</a>',
+            moreUrl + '">' + moreLabel + '</a>',
           html: true,
         });
       }

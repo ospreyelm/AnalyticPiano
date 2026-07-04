@@ -24,6 +24,11 @@ var _REQUIRED_NUMBERS_BY_FIGURE = DATA._REQUIRED_NUMBERS_BY_FIGURE || {};
 // contains no "inversion"). Rendered as a real anchor by the render layer.
 var MORE_INFO_URL = "https://musictheory.sites.gettysburg.edu/unit-4-1/reading-figured-bass/";
 
+// Static explanation page for Roman-numeral / circle-of-thirds / chord-quality
+// pedagogy, built (spike §5 of plan 2026-07-04) from the Triad teaching-extract
+// package. Served as a plain static file — no Django route or UMTO wiring.
+var ROMAN_EXPLANATION_URL = "/static/reference/triads-circle-of-thirds/index.html";
+
 // Voice-count policy {min,max} -> the lookup key used by the generated table.
 function _policyKey(voiceCountPolicy) {
   var p = voiceCountPolicy || {};
@@ -330,39 +335,46 @@ function buildRomanIdentificationHints(definition) {
     }
   });
 
-  // Solfège / scale-degree framing leads (matches the grader's syllable-
-  // pattern mental model and the pre-wheel help text); the circle-of-thirds
-  // wheel follows as a root-finding aid. Per product-owner sign-off on plan
-  // §4 C2: keep the solfège scale degrees first "like before", then the wheel.
-  // Wheel wording paraphrased from RN deck slide 9 ("Roman numerals have no
-  // significance without a key") + slide 15 + Triad slide 8.
+  // Help = the lead idea only: name the RN by scale-degree slot, with a
+  // worked triad example per numeral in THIS exercise, and the symbol legend.
+  // Seventh worked examples live in the seventh hint step (not help) so the
+  // help stays short. The circle-of-thirds wheel, full quality derivation, and
+  // figure/seventh detail live on the explanation page (moreInfoUrl) — the
+  // hint panel keeps 3-4 short steps then links there.
   var help = "Name the Roman numeral by where the chord sits in the key.";
   if (examples.length) help += " " + examples.join(" ");
-  if (sevenExamples.length) help += " " + sevenExamples.join(" ");
   help += " Uppercase = major, lowercase = minor, ° = diminished, + = augmented.";
-  help += " First identify the key — Roman numerals have no meaning without one — then find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more).";
+
+  // 3-4 hints max, one idea each, no repeats, conditional on what's in the
+  // exercise. Order: orient → key → solfège quality → (figure | seventh).
+  var hints = [
+    "This exercise uses: " + distinct.join(", ") + ".",
+    // R1 — identify the key first (RN deck slide 9).
+    "First identify the key — Roman numerals have no meaning without one.",
+    // Solfège quality — the grader's syllable-pattern mental model.
+    "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+  ];
+
+  // 4th step — only the most-relevant extra tip, conditional on the exercise.
+  // Position (6, 6/4) comes from the FIGURE (intervals above the bass), not a
+  // solfège permutation — per docs/music-theory-canon.md §"Figured bass".
+  if (sevenExamples.length) {
+    hints.push("A seventh chord adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh). " + sevenExamples.join(" "));
+  } else {
+    var hasFigure = distinct.some(function (rn) { return _figureSuffix(rn) !== ""; });
+    if (hasFigure) {
+      hints.push("The figure after the numeral names intervals above the bass, like figured bass: 6 = 6/3 (third in the bass), 6/4 = a 4th and 6th above the bass, 7 = 7/5/3, 6/5 = 6/5/3.");
+    }
+  }
 
   return {
     help: help,
-    hints: [
-      "This exercise uses: " + distinct.join(", ") + ".",
-      // Solfège scale degrees first (matches grader + original pre-wheel help).
-      "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
-      // Position comes from the FIGURE (intervals above the bass), not from a
-      // solfège permutation — 6 and 6/4 are figured-bass intervals, per
-      // docs/music-theory-canon.md §"Figured bass". Don't teach "Mi-So-Do = I6".
-      "The figure after the numeral names intervals above the bass, just like figured bass: 6 means 6/3 (the third of the chord is in the bass), 6/4 means a 4th and 6th above the bass, 7 means 7/5/3, 6/5 means 6/5/3. The numeral itself is the chord's scale degree and quality.",
-      // W1 — circle of thirds root-finding wheel (RN deck slide 15 + Triad slide 8).
-      "Find the root with the circle of thirds: the letters always run in the same order (C-E-G-B-D-F-A), and the chordal root is the pitch furthest counter-clockwise before the large gap of a fourth; the next clockwise stops are the third and the fifth (a seventh chord adds one more).",
-      // T2 — name root + quality first (Triad deck slide 12).
-      "Name the chord as root + quality first (e.g. 'g minor', 'a diminished', 'F augmented', 'F♯ major'), then read its scale degree for the Roman numeral.",
-      // T1a — two-step quality (Triad deck slide 11).
-      "Find the quality in two steps: the bounding fifth (root→fifth), then the lower third (root→third). Perfect fifth + major third = major; perfect fifth + minor third = minor; diminished fifth = diminished; augmented fifth = augmented.",
-      // S2 + S1 — seventh-chord framing + qualityPair examples (RN deck slides 14, 16).
-      sevenExamples.length
-        ? "A seventh chord adds a seventh above the root to a triad. Name its quality in two parts — the triad quality, then the seventh (root→seventh). " + sevenExamples.join(" ")
-        : "If this exercise has a seventh chord, it adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
-    ],
+    hints: hints,
+    // Link to the explanation page (the static circle-of-thirds + qualities
+    // lesson built from the Triad teaching-extract package). The render layer
+    // appends this as the final hint step.
+    moreInfo: true,
+    moreInfoUrl: ROMAN_EXPLANATION_URL,
   };
 }
 

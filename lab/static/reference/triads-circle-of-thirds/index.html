@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Triads & the Circle of Thirds — Monteverdi Music</title>
+<link rel="stylesheet" href="../assets/styles/theme.css" />
+<link rel="stylesheet" href="./lesson.css" />
+<!-- Spike (plan 2026-07-04 §5): VexFlow from CDN so this static page renders
+     standalone with no Vite/Django wiring. A later pass can swap this for a
+     local VexFlow copy if we keep the page. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/4.2.3/vexflow-min.js"></script>
+<style>
+  /* Re-theme the lesson component to match the surrounding Theory IV design
+     system (lab/static/reference/assets/styles/theme.css). The lesson.css
+     :root block is overridden here so the page reads as a sibling of the
+     other /static/reference/ pages, not a dark-deck import. */
+  :root {
+    --lesson-bg: #ffffff;
+    --lesson-surface: #f9fafb;
+    --lesson-text: var(--color-text-primary);
+    --lesson-text-dim: var(--color-text-secondary);
+    --lesson-heading: var(--color-primary-blue);
+    --lesson-white-panel: #ffffff;
+    --lesson-white-panel-text: var(--color-text-primary);
+    --lesson-accent-red: var(--color-danger);
+    --lesson-accent-blue: var(--color-primary-blue);
+    --lesson-rule: var(--color-border);
+    --lesson-radius: 0.75rem;
+  }
+  .lesson { background: var(--lesson-bg); }
+  .lesson-back {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 0;
+  }
+  .lesson-back a {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+  .lesson-figure {
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .lesson-table th { background: #f3f4f6; color: #111827; }
+  .lesson-table th, .lesson-table td { border-color: #e5e7eb; }
+</style>
+</head>
+<body>
+<main class="lesson">
+  <p class="lesson-back"><a href="javascript:history.back()" rel="noopener">← Back to the exercise</a></p>
+  <div id="lesson-root">
+    <!-- Sections are rendered by ./render-lesson.js from ./lesson-content.json:
+         one source of truth for wording, slides, diagrams, and notation. -->
+  </div>
+</main>
+
+<script type="module">
+  import { renderLesson } from "./render-lesson.js";
+  const res = await fetch("./lesson-content.json");
+  const data = await res.json();
+  renderLesson(document.getElementById("lesson-root"), data);
+</script>
+</body>
+</html>
