@@ -34,10 +34,10 @@ export default  {
     },
     identification: {
       short: "Identify the Roman numeral for each chord.",
-      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = do-mi-sol. A I6 = the third of the chord in the bass = 3, 5, 1 = mi-sol-do. A IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = Do-Mi-So. A I6 = the third of the chord in the bass = 3, 5, 1 = Mi-So-Do. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Find the root: rearrange the chord's notes so thirds stack from the bottom. Then compare the bass to the root — same note is root position; a third above is third in the bass (e.g. I6); a fifth above is fifth in the bass (e.g. I6/4). Count scale degrees from the tonic to name the numeral itself.",
-        "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
+        "Read the syllable pattern directly — no need to rearrange anything. The same three syllables name the chord no matter which one is in the bass; which one IS in the bass tells you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "Quality comes straight from which syllables are present, not from measuring intervals: Do-Mi-So = major; Do-Me-So = minor (the lowered Me is what makes it minor). Do-Me-Se = diminished; Do-Mi-Si = augmented.",
         "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
       ],
     },
@@ -50,10 +50,10 @@ export default  {
     },
     chorale_identification: {
       short: "Identify the Roman numerals in the chorale.",
-      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = do-mi-sol; a I6 = the third in the bass = 3, 5, 1 = mi-sol-do; a IV = 4, 6, 1 = fa-la-do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = Do-Mi-So; a I6 = the third in the bass = 3, 5, 1 = Mi-So-Do; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Find the root of each chord: rearrange its notes so thirds stack from the bottom. Then compare the bass to the root — same note is root position; a third above is third in the bass (e.g. I6); a fifth above is fifth in the bass (e.g. I6/4). Count scale degrees from the tonic to name the numeral itself.",
-        "Decide quality from the stacked thirds, then match major/minor/diminished/augmented to the case and symbol.",
+        "Read the syllable pattern directly — no need to rearrange anything. The same three syllables name the chord no matter which one is in the bass; which one IS in the bass tells you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "Quality comes straight from which syllables are present, not from measuring intervals: Do-Mi-So = major; Do-Me-So = minor (the lowered Me is what makes it minor). Do-Me-Se = diminished; Do-Mi-Si = augmented.",
       ],
     },
     analysis: {
