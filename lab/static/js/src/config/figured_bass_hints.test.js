@@ -141,6 +141,47 @@ assertEqual("ident no slices -> null", mod.buildIdentificationHints(identDef([])
 assertEqual("ident no answer field -> null",
   mod.buildIdentificationHints(identDef([null]), "figured_bass"), null);
 
+// --- Roman-numeral identification: distinct-numeral list from p.answer ---
+function romanDef(answers) {
+  return {
+    getProblems: function () {
+      return answers.map(function (a) { return { answer: a, hidden: !a }; });
+    },
+  };
+}
+var dRoman = romanDef(["I", "V", "I"]);
+var iRoman = mod.buildRomanIdentificationHints(dRoman);
+assertEqual("roman dedupes and lists distinct numerals in exercise order", iRoman.hints[0], "This exercise uses: I, V.");
+assertContains("roman help worked example uses I from this exercise", iRoman.help, "A I chord = 1, 3, 5 of the key = Do-Mi-So.");
+assertContains("roman help worked example uses V from this exercise", iRoman.help, "A V chord = 5, 7, 2 of the key = So-Ti-Re.");
+assertEqual("roman help excludes unused IV example", iRoman.help.indexOf("A IV chord"), -1);
+assertEqual("roman help never says inversion", iRoman.help.toLowerCase().indexOf("inversion"), -1);
+
+// --- inverted numeral (I6) maps to base triad's worked example, once ---
+var dRomanInv = romanDef(["I", "I6"]);
+var iRomanInv = mod.buildRomanIdentificationHints(dRomanInv);
+var iCount = (iRomanInv.help.match(/A I chord/g) || []).length;
+assertEqual("roman collapses I and I6 to one worked example", iCount, 1);
+
+// --- chromatic/secondary numeral not in the safe table -> no fabricated example ---
+var dRomanChromatic = romanDef(["V/V"]);
+var iRomanChromatic = mod.buildRomanIdentificationHints(dRomanChromatic);
+assertEqual("roman omits example for unrecognized numeral", iRomanChromatic.help.indexOf(" chord = "), -1);
+assertContains("roman still names quality symbols generically", iRomanChromatic.help, "Uppercase = major");
+
+// --- hidden problems excluded from distinct numerals ---
+var dRomanHidden = {
+  getProblems: function () {
+    return [{ answer: "I", hidden: false }, { answer: "V", hidden: true }];
+  },
+};
+var iRomanHidden = mod.buildRomanIdentificationHints(dRomanHidden);
+assertEqual("roman excludes hidden problem's numeral", iRomanHidden.hints[0].indexOf("V"), -1);
+
+// --- no problems -> null ---
+assertEqual("roman no problems -> null", mod.buildRomanIdentificationHints(romanDef([])), null);
+assertEqual("roman no answer field -> null", mod.buildRomanIdentificationHints(romanDef([null])), null);
+
 // --- MORE_INFO_URL exported ---
 assertContains("more-info url exported", mod.MORE_INFO_URL, "gettysburg");
 

@@ -36,8 +36,8 @@ export default  {
       short: "Identify the Roman numeral for each chord.",
       help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = Do-Mi-So. A I6 = the third of the chord in the bass = 3, 5, 1 = Mi-So-Do. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Read the syllable pattern directly — no need to rearrange anything. The same three syllables name the chord no matter which one is in the bass; which one IS in the bass tells you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
-        "Quality comes straight from which syllables are present, not from measuring intervals: Do-Mi-So = major; Do-Me-So = minor (the lowered Me is what makes it minor). Do-Me-Se = diminished; Do-Mi-Si = augmented.",
+        "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
         "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
       ],
     },
@@ -52,8 +52,8 @@ export default  {
       short: "Identify the Roman numerals in the chorale.",
       help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = Do-Mi-So; a I6 = the third in the bass = 3, 5, 1 = Mi-So-Do; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "Read the syllable pattern directly — no need to rearrange anything. The same three syllables name the chord no matter which one is in the bass; which one IS in the bass tells you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
-        "Quality comes straight from which syllables are present, not from measuring intervals: Do-Mi-So = major; Do-Me-So = minor (the lowered Me is what makes it minor). Do-Me-Se = diminished; Do-Mi-Si = augmented.",
+        "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
       ],
     },
     analysis: {

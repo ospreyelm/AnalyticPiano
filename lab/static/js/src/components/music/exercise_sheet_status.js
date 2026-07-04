@@ -299,7 +299,9 @@ export default  {
       var definition = exc && exc.getDefinition ? exc.getDefinition() : null;
       if (!definition || !definition.getAnalysisType) return null;
       var analysisType = definition.getAnalysisType();
-      if (analysisType !== "figured_bass" && analysisType !== "figured_bass_unabbreviated") {
+      var isFiguredBass = analysisType === "figured_bass" || analysisType === "figured_bass_unabbreviated";
+      var isRoman = analysisType === "roman";
+      if (!isFiguredBass && !isRoman) {
         return null;
       }
       var mode = definition.getMode ? definition.getMode() : null;
@@ -307,11 +309,14 @@ export default  {
       // "playback" covers the teacher-authored "Play + figures" mode
       // (InteractionMode.PLAYBACK + analysisType figured_bass*), which reads
       // the same harmonizationTargets shape as "harmonization" and needs the
-      // same essential/omittable hint content.
-      if (mode === "harmonization" || mode === "playback") {
+      // same essential/omittable hint content. Roman-numeral analysis has no
+      // harmonization mode (identification only), so it's excluded here.
+      if (isFiguredBass && (mode === "harmonization" || mode === "playback")) {
         dyn = FbHints.buildHarmonizationHints(definition, analysisType);
-      } else if (mode === "identification" || mode === "chorale_identification") {
+      } else if (isFiguredBass && (mode === "identification" || mode === "chorale_identification")) {
         dyn = FbHints.buildIdentificationHints(definition, analysisType);
+      } else if (isRoman && (mode === "identification" || mode === "chorale_identification")) {
+        dyn = FbHints.buildRomanIdentificationHints(definition);
       } else {
         // No dynamic builder is defined for this mode at all (distinct from
         // a builder running and returning null) — fall back silently, no
