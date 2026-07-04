@@ -28,6 +28,7 @@ import ChordalBarlinesLogic from "app/utils/chordal_barlines_logic";
 import UMTOScoreConverter from "app/utils/umto_score_converter";
 import BarlineSpacingUtils from "app/utils/barline_spacing_utils";
 import ExerciseInstructions from "app/config/exercise_instructions";
+import FbHints from "app/config/figured_bass_hints";
 
 export default  {
     _buildHarmonizationPending: function () {
@@ -278,11 +279,43 @@ export default  {
       return this;
     },
 
+    // Dynamic figured-bass hints override the static instructions when the
+    // exercise is figured-bass analysis (abbreviated or unabbreviated). Returns
+    // {help, hints, moreInfo} or null (fall back to static instructions).
+    _getDynamicInstructions: function () {
+      var exc = this.exerciseContext;
+      var definition = exc && exc.getDefinition ? exc.getDefinition() : null;
+      if (!definition || !definition.getAnalysisType) return null;
+      var analysisType = definition.getAnalysisType();
+      if (analysisType !== "figured_bass" && analysisType !== "figured_bass_unabbreviated") {
+        return null;
+      }
+      var mode = definition.getMode ? definition.getMode() : null;
+      var dyn = null;
+      if (mode === "harmonization") {
+        dyn = FbHints.buildHarmonizationHints(definition, analysisType);
+      } else if (mode === "identification" || mode === "chorale_identification") {
+        dyn = FbHints.buildIdentificationHints(definition, analysisType);
+      }
+      if (!dyn) {
+        // Fallback: helper returned null (no targets / no FB slices / figure
+        // absent from the generated lookup). Log so the gap is visible in dev.
+        console.warn(
+          "[figured-bass hints] dynamic builder returned null for mode=" +
+          mode + ", analysisType=" + analysisType +
+          "; falling back to static instructions."
+        );
+        return null;
+      }
+      return dyn;
+    },
+
     _renderHintControls: function ($textEl) {
       // Inject hint button + panel once; skip if already present.
       if ($textEl.find('.ex-hint-btn').length) return;
       var self = this;
-      var instructions = this._getModeInstructions();
+      var dyn = this._getDynamicInstructions();
+      var instructions = dyn || this._getModeInstructions();
       var hints = instructions.hints || [];
       if (!hints.length && !instructions.help) return;
 
@@ -293,10 +326,24 @@ export default  {
       var allSteps = [];
       if (instructions.help) allSteps.push(instructions.help);
       hints.forEach(function (h) { allSteps.push(h); });
+      // Dynamic figured-bass hints end with a "more info" anchor (HTML, not
+      // plain text). Detect an anchor step by leading "<a " and render via
+      // .html(); all other steps are plain text via .text().
+      if (instructions.moreInfo) {
+        allSteps.push(
+          '<a class="fb-more-info" target="_blank" rel="noopener noreferrer" href="' +
+          FbHints.MORE_INFO_URL + '">More on reading figured bass →</a>'
+        );
+      }
 
       $btn.on('click', function () {
         step = Math.min(step + 1, allSteps.length - 1);
-        $panel.text(allSteps[step]).show();
+        var s = allSteps[step];
+        if (typeof s === "string" && s.indexOf("<a ") === 0) {
+          $panel.html(s).show();
+        } else {
+          $panel.text(s).show();
+        }
         if (step === allSteps.length - 1) {
           $btn.text('✓ Hint').prop('disabled', true);
         } else {
