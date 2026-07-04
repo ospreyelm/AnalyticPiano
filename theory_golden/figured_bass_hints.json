@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "id": "fbh-harm-abbrev",
+      "primitive": "figured_bass_hints",
+      "description": "harmonization, abbreviated figures: per-figure essential/omittable/[+8] notation",
+      "input": {
+        "mode": "harmonization",
+        "analysisType": "figured_bass",
+        "targets": [
+          { "displayFigure": "6/4", "voiceCountPolicy": { "min": 3, "max": 4 }, "figures": ["6", "4"] },
+          { "displayFigure": "7", "voiceCountPolicy": { "min": 3, "max": 4 }, "figures": ["7", "5", "3"] }
+        ]
+      },
+      "expected": {
+        "help": "Each measure shows a figured-bass symbol below the staff. The figures name intervals above the bass — count up from the bass note to find those pitches, then press Lock Chord. Parentheses mark tones you may drop in sparse texture or double in four.",
+        "hints": [
+          "Per figure: 6/4 → 6-4-[+8]  |  7 → 7-3-(5)-[+8].",
+          "Count from the bass: 3 = two staff steps up, 5 = four steps, 6 = five steps, 7 = six steps. The plain numbers are the ones you must keep; the parenthesized ones you may drop or double."
+        ],
+        "moreInfo": true
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-07-03"
+    },
+    {
+      "id": "fbh-harm-unabbrev",
+      "primitive": "figured_bass_hints",
+      "description": "harmonization, unabbreviated figures: per-target raw stack, 8 parenthesized as optional doubling",
+      "input": {
+        "mode": "harmonization",
+        "analysisType": "figured_bass_unabbreviated",
+        "targets": [
+          { "displayFigure": "8/6/3", "figures": ["8", "6", "3"], "voiceCountPolicy": { "min": 3, "max": 4 } }
+        ]
+      },
+      "expected": {
+        "help": "This exercise uses unabbreviated figures — every interval above the bass is written, including the octave (8). The figures appear below the staff. Read each number as a generic interval from the bass and play those pitches.",
+        "hints": [
+          "Per chord: (8)-6-3. The (8) is the bass doubled at the octave — optional.",
+          "The 8 is the bass doubled at the octave — optional. The other numbers are the intervals above the bass you must sound."
+        ],
+        "moreInfo": true
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass-required-vs-allowed-tones",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-07-03"
+    },
+    {
+      "id": "fbh-ident-abbrev",
+      "primitive": "figured_bass_hints",
+      "description": "identification, abbreviated figures: distinct-figure plain expansion table",
+      "input": {
+        "mode": "identification",
+        "analysisType": "figured_bass",
+        "slices": [
+          { "figured_bass": "6" },
+          { "figured_bass": "7" }
+        ]
+      },
+      "expected": {
+        "help": "Choose the abbreviated figure. Abbreviations drop redundant intervals — 6 stands for 6-3, 7 for 7-5-3, 6/4 for 6-4, 4/2 (or 2) for 6-4-2. The figure names intervals above the bass, not a chord name.",
+        "hints": [
+          "Expansions: 6 → 6-3  |  7 → 7-5-3."
+        ],
+        "moreInfo": true
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-07-03"
+    },
+    {
+      "id": "fbh-ident-unabbrev",
+      "primitive": "figured_bass_hints",
+      "description": "identification, unabbreviated figures: distinct raw stacks listed",
+      "input": {
+        "mode": "identification",
+        "analysisType": "figured_bass_unabbreviated",
+        "slices": [
+          { "raw_figured_bass": "8/6/3" }
+        ]
+      },
+      "expected": {
+        "help": "Choose the unabbreviated figure — list every generic interval above the bass, including the octave (8). A triad with the third in the bass is 8/6/3, not 6.",
+        "hints": [
+          "Distinct figures in this exercise: 8/6/3."
+        ],
+        "moreInfo": true
+      },
+      "canon_ref": "music-theory-canon.md#figured-bass",
+      "reviewed_by": "avner",
+      "reviewed_at": "2026-07-03"
+    }
+  ]
+}
