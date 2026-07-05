@@ -629,8 +629,14 @@ var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
         ) {
           stem_adjustment = -10;
         }
-        // uses a custom VexFlow function that must be duplicated if VexFlow is updated
-        stave_note.setStemHeightAdjustment(stem_adjustment);
+        // Custom VexFlow function that must be duplicated if VexFlow is updated.
+        // The 4.2.5 upgrade (Nov 2025) dropped this monkeypatch from the vendored
+        // build without anyone noticing — calling it unconditionally threw
+        // uncaught here, aborting note construction and killing stems for every
+        // chorale-format (two-voice) note. Guard it like the calls above.
+        try {
+          stave_note.setStemHeightAdjustment(stem_adjustment);
+        } catch { console.log('Bad parameters for VexFlow .setStemHeightAdjustment') }
 
       } else for (var i = 0, len = modifiers.length; i < len; i++) {
         // as of December 2023, winds up as
