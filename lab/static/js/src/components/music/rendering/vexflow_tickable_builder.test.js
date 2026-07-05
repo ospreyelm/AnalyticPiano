@@ -123,4 +123,36 @@ function testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings() {
 
 testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings();
 
+// Regression: in analysis_match mode, resolveChordNoteStyles() sets a
+// transparent base style on the chord (which VexFlow's StaveNote.setStyle
+// propagates to the shared Stem). setKeyStyle() only recolors individual
+// noteheads, never the stem, so a correctly-played chord used to show a
+// black notehead with an invisible stem forever. itemToTickable() must
+// call chord.setStemStyle() once any key in the chord has been played.
+function testChordRevealsStemOnceAnyKeyPlayed() {
+  var idState = { nextId: 0, playedNoteIds: new Set([0]) }; // key 0 already played
+  var item = chordItem([["C", 0, 4], ["E", 0, 4]]);
+  var chord = TickableBuilder.itemToTickable("treble", item, 0, idState, {}, 0, 0, true, true, {}, {});
+  assert.deepStrictEqual(
+    chord.getStemStyle(),
+    { fillStyle: "#000000", strokeStyle: "#000000" },
+    "stem should be revealed once any key in the chord has been played"
+  );
+}
+
+testChordRevealsStemOnceAnyKeyPlayed();
+
+function testChordKeepsStemHiddenWhenNothingPlayedYet() {
+  var idState = { nextId: 0, playedNoteIds: new Set() };
+  var item = chordItem([["C", 0, 4], ["E", 0, 4]]);
+  var chord = TickableBuilder.itemToTickable("treble", item, 0, idState, {}, 0, 0, true, true, {}, {});
+  assert.deepStrictEqual(
+    chord.getStemStyle(),
+    { fillStyle: "transparent", strokeStyle: "transparent" },
+    "stem should match the hidden notehead base style until something is played"
+  );
+}
+
+testChordKeepsStemHiddenWhenNothingPlayedYet();
+
 console.log("vexflow_tickable_builder tests passed");

@@ -165,6 +165,28 @@ var INCORRECT = "incorrect";
       return this.playedNoteIds;
     },
 
+    /**
+     * Re-applies a previously saved play state (e.g. from localStorage after
+     * a page reload). Must be called AFTER initFromDefinition(), since that
+     * calls reset() and would wipe it. Advances the pointer past any window
+     * whose notes are all already marked played, so grading resumes at the
+     * first incomplete window rather than re-grading finished ones.
+     */
+    restorePlayedState: function (playedNoteIdArray) {
+      if (!playedNoteIdArray || !playedNoteIdArray.length) return this;
+      this.playedNoteIds = new Set(playedNoteIdArray);
+      while (
+        this.pointer < this.windowGroups.length &&
+        this.windowGroups[this.pointer].every(function (idx) {
+          return this.playedNoteIds.has(this.timeline[idx].id);
+        }, this)
+      ) {
+        this.pointer += 1;
+      }
+      this.finished = this.pointer >= this.windowGroups.length;
+      return this;
+    },
+
     getActiveIndex: function () {
       return this.pointer;
     },

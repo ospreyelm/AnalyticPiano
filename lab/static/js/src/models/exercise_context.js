@@ -652,6 +652,8 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       const json_data = JSON.stringify(exercise_report);
       const scoreCard = this.scoreCard;
       const shouldShowScoreCard = !(options && options.showScoreCard === false);
+      const isChoraleGraderExercise = this._isChoraleGraderExercise();
+      const exerciseIdForCleanup = this.definition.exercise.exerciseId;
       $.ajax({
         type: "POST",
         url: "/ajax/exercise-performance/",
@@ -660,6 +662,11 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       })
         .done(function (data) {
           console.log("Exercise performance saved");
+          if (isChoraleGraderExercise && exerciseIdForCleanup) {
+            // Exercise is complete and the score is durably saved server-side —
+            // drop the in-progress local snapshot used to survive reloads.
+            try { localStorage.removeItem("choraleState:" + exerciseIdForCleanup); } catch (e) {}
+          }
           if (shouldShowScoreCard && scoreCard && data && data.status === "ok") {
             scoreCard.show(data);
           }
@@ -910,6 +917,59 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
         typeof this.definition.isHarmonization === "function" &&
         this.definition.isHarmonization()
       );
+    },
+    /**
+     * True for chorale exercises played via ChoraleGrader (playback /
+     * analysis_match modes) — the exercise types that were previously left
+     * with no reload-restore path at all (unlike identification, which has
+     * saveIdentState/restoreIdentState, and harmonization, which has its own
+     * server-side review path).
+     */
+    _isChoraleGraderExercise: function () {
+      return !!(
+        this.grader &&
+        typeof this.grader.getPlayedNoteIds === "function" &&
+        typeof this.grader.restorePlayedState === "function" &&
+        !this._isHarmonizationExercise()
+      );
+    },
+    saveChoraleState: function () {
+      if (!this._isChoraleGraderExercise()) return;
+      var exerciseId = this.definition.exercise.exerciseId;
+      if (!exerciseId) return;
+      var playedIds = [];
+      this.grader.getPlayedNoteIds().forEach(function (id) { playedIds.push(id); });
+      try {
+        localStorage.setItem("choraleState:" + exerciseId, JSON.stringify({
+          playedNoteIds: playedIds,
+          savedAt: Date.now()
+        }));
+      } catch (e) {
+        // localStorage unavailable — ignore
+      }
+    },
+    restoreChoraleState: function (exerciseId) {
+      if (!this._isChoraleGraderExercise()) return;
+      if (!exerciseId) return;
+      var local = this._readLocalChoraleState(exerciseId);
+      if (local && local.playedNoteIds && local.playedNoteIds.length) {
+        this.grader.restorePlayedState(local.playedNoteIds);
+      }
+    },
+    _readLocalChoraleState: function (exerciseId) {
+      try {
+        var raw = localStorage.getItem("choraleState:" + exerciseId);
+        if (!raw) return null;
+        var data = JSON.parse(raw);
+        var sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (!data.savedAt || Date.now() - data.savedAt > sevenDays) {
+          localStorage.removeItem("choraleState:" + exerciseId);
+          return null;
+        }
+        return data;
+      } catch (e) {
+        return null;
+      }
     },
     /**
      * Returns the current identification page index.

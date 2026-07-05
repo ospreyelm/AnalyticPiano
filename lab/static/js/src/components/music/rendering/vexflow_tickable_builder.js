@@ -136,6 +136,13 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
             chord.setKeyStyle(resolved.playedKeyIndices[pk], { fillStyle: '#000000', strokeStyle: '#000000' });
           }
         }
+        // setKeyStyle only recolors individual noteheads — the shared stem
+        // still draws in the transparent base style set above, so a played
+        // chord shows black noteheads with an invisible stem. Reveal the
+        // stem as soon as any key in the chord has been played.
+        if (resolved.playedKeyIndices.length > 0 && chord.setStemStyle) {
+          chord.setStemStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+        }
       }
       if (idState) {
         idState.nextId = (idState.nextId || 0) + keys.length;

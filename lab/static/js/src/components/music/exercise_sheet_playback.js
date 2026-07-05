@@ -197,10 +197,15 @@ export default  {
       // Run the standard grading pipeline (handles state + auto-advance)
       this.exerciseContext.grade();
 
+      // Persist played-note progress so a page reload can restore it — this
+      // exercise type otherwise has no reload-survival path at all (unlike
+      // identification's saveIdentState/localStorage, or harmonization's
+      // server-side review).
+      if (state === "on") {
+        this.exerciseContext.saveChoraleState();
+      }
+
       // Repaint with updated highlights
-      var playedIds = grader.getPlayedNoteIds ? grader.getPlayedNoteIds() : new Set();
-      var idArray = [];
-      playedIds.forEach(function(id) { idArray.push(id); });
       this.render();
       this.autoScroll();
     },
