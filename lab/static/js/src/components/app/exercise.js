@@ -273,6 +273,7 @@ import KeySigMod from "app/models/key_sig_exercise";
     // only, but we keep the raw clause rather than silently changing the gate.
     // Full routing of this clause is deferred (would need a raw-mode accessor).
     var _resolved = _def && _def.getResolvedMode ? _def.getResolvedMode() : null;
+    // eslint-disable-next-line harmonylab-pipelines/no-raw-pipeline-discriminator -- intentional: parse() overrides exercise.mode for type=identification/chorale_identification, so resolved.interactionMode would diverge from the raw config mode. Documented permanent exemption (Phase 1.3).
     var isChoralePlay = definition.mode === "playback" ||
       (_resolved && _resolved.isChorale && !_resolved.isChoraleIdentification);
     var methods = [

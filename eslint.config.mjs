@@ -1,9 +1,15 @@
 import globals from "globals";
+import noRawPipelineDiscriminator from "./eslint-rules/no-raw-pipeline-discriminator.mjs";
 
 // Flat ESLint config. Primary purpose: catch implicit globals (assignments
 // to undeclared variables) that the RequireJS/AMD -> Vite migration turned
 // from silent sloppy-mode globals into hard ReferenceErrors under ESM strict
 // mode. Keep `no-undef` green and that whole bug class stays dead.
+//
+// Secondary: the `harmonylab-pipelines/no-raw-pipeline-discriminator` rule
+// (Phase 1.3) bans raw pipeline-discriminator comparisons outside the
+// resolver/factory/axis modules, killing the agent grep-confusion that the
+// pipeline-isolation refactor targets. See eslint-rules/no-raw-pipeline-discriminator.mjs.
 export default [
   {
     ignores: [
@@ -39,8 +45,16 @@ export default [
       // Leftover eslint-disable comments from a fuller config are harmless here.
       reportUnusedDisableDirectives: "off",
     },
+    plugins: {
+      "harmonylab-pipelines": {
+        rules: {
+          "no-raw-pipeline-discriminator": noRawPipelineDiscriminator,
+        },
+      },
+    },
     rules: {
       "no-undef": "error",
+      "harmonylab-pipelines/no-raw-pipeline-discriminator": "error",
     },
   },
   {

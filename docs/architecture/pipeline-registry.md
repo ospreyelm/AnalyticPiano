@@ -236,6 +236,110 @@ a `getMode()`/`isChorale()`-style predicate call:
 
 Conclusion: this segment required no commit. Move to Phase 1.3.
 
+## Phase 1.3: ESLint guard against raw pipeline-discriminator comparisons (2026-07-05)
+
+`eslint-rules/no-raw-pipeline-discriminator.mjs` is a custom ESLint rule
+registered as `harmonylab-pipelines/no-raw-pipeline-discriminator` in
+`eslint.config.mjs` and enabled under `npm run lint`. It flags the four
+pipeline-discriminator comparison shapes (per the Phase 1.3 plan) outside the
+resolver/factory/axis modules:
+
+- `<expr>.type === "<discriminator>"` / `.mode` / `.analysisType` (non-computed)
+- `<expr>["type"] === "<discriminator>"` / `["mode"]` / ... (computed access)
+- `getMode() === "<discriminator>"` (bare call or `*.getMode()` method call)
+- `<expr>.get("mode") === "<discriminator>"` / `.get("type")` / ... (Backbone-style accessor)
+- `staffDistribution === "<discriminator>"` (bare identifier or field access)
+
+with `==` / `===` / `!=` / `!==` operators. The discriminated value set is the
+six-pipeline routing literals (sourced from `resolved_mode.js`'s
+`CHORALE_MODES` / `CHORALE_IDENTIFICATION_MODES` / `CHORALE_TYPES` /
+`FIGURED_BASS_TYPES` plus `"matching"`, `"identification"`, and the `"play"`
+default-fill). Out-of-scope "other" types (`umto_symbolic_meter`,
+`umto_key_signature`, `umto_barline_placement`, `musicxml`, `analytical`,
+`analytical_pcs`) are intentionally NOT in the set — `resolvePipeline` maps them
+to `"other"` and the caller handles them, so reads of them are not banned.
+
+This is NOT a blanket string-literal ban (per the plan's Codex correction):
+analysis-family content strings, `.includes(...)` membership tests, UMTO storage
+keys, and taxonomy labels are not matched. `exercise_grader.js`'s analysis-family
+content strings (analysisBool's `supported` array, `abbrev_thoroughbass` /
+`full_thoroughbass`, etc.) are case-body content, not `===` comparisons against a
+field access, so they are not flagged.
+
+### File allowlist (raw strings authoritative by design)
+
+The rule self-skips these files (`ALLOWED_PATH_SUFFIXES` in the rule):
+
+| File | Reason |
+|---|---|
+| `models/resolved_mode.js` | The resolver; raw strings are authoritative here (Phase 1.3 exception #1). |
+| `models/grader_factory.js` | Maps off `resolved.pipeline`, not raw strings (exception #2). |
+| `models/exercise_definition.js` | `parse()` + helpers CONSTRUCT the data `ResolvedMode` consumes; routing these reads would be circular. Definition/parse axis. |
+| `models/input_method_logic.js` | Confirmed-pure input-method axis module (exception #6). |
+| `models/harmonization_targets_logic.js` | Pure harmonization-axis module (local `getMode`/`isHarmonization` helpers, no `ExerciseDefinition` reference) — same shape as `input_method_logic.js`; local axis literal kept. |
+| `models/chord.js` | Confirmed-pure staff-distribution axis consumer (Phase 1.2 audit). Reads only the uppercase `STAFF_DISTRIBUTION` alias from `Config.get("general.staffDistribution")` — zero type/mode/`getMode` reads. Same axis as `chordal_umto_staff_distribution.js`. Its comparisons use the `STAFF_DISTRIBUTION` alias, which the rule's bare-identifier branch (case-sensitive to `staffDistribution`) does not match; allowlisting is the honest classification (axis consumer) rather than relying on the alias escaping the AST match. |
+| `components/music/chordal_umto_staff_distribution.js` | Confirmed-pure staff-distribution axis module (exception #6). |
+| `**/*.test.js` | Tests exercise raw strings by intent. |
+
+### Inline `eslint-disable-next-line` exemptions (permanent, behavior-preserving)
+
+Three sites are NOT allowlisted but carry a documented inline suppression because
+routing them would change behavior (proven by the dedicated reviewer passes in
+prior Phase 1.2 commits):
+
+1. `components/app/exercise.js` chorale-play gate first clause —
+   `definition.mode === "playback"` (Phase 1.2 commit `2ba7c0f9`, exception #3).
+   `parse()` overrides `exercise.mode` for `type=identification` /
+   `chorale_identification`, so `resolved.interactionMode` would diverge from the
+   raw config mode. DB query: 0 rows carry that type/mode pairing, so the
+   divergence is theoretical, but the raw clause is preserved rather than
+   silently changing the gate. Second clause IS routed through `resolved.isChorale`.
+2. `components/music/exercise_sheet_identification_logic.js`
+   `_supportsTextInputMode` — `definition.exercise.type === "umto_chorale"`.
+   Routing to `resolved.isChorale` would widen the gate from `type=umto_chorale`
+   to legacy `type=chorale` (behavior change). Raw guard preserved per Phase 1.2
+   no-behavior-change constraint; full routing deferred.
+3. `components/music/stave_note_factory.js` `CHORALE_FORMAT` —
+   `this.chord.settings.staffDistribution === "chorale"`. The literal `"chorale"`
+   here is `DISTRIBUTION_CHORALE` (a layout-axis value, `forms.py:496`), NOT
+   `TYPE_CHORALE` (a pipeline type, `forms.py:455`). Staff-distribution axis
+   consumer, audited pure above. No `ResolvedMode` field removes this layout
+   literal (`resolved.staffStyle` mirrors but does not replace the axis value).
+
+### `exercise_context.js` error_tally (exception #4 — not flagged)
+
+`["analytical", "figured_bass"].includes(this.definition.exercise.type)` is a
+`.includes()` CallExpression, not a `===` BinaryExpression, so the rule does not
+match its shape. It is also a reporting-semantics grouping, not pipeline routing
+(documented inline at `exercise_context.js:601-608`). No suppression needed.
+
+### Known limitation: AST-shape match, no dataflow
+
+The rule is AST-shape-based, not dataflow. It matches the five comparison shapes
+listed above; it does NOT track local aliases. A raw read aliased through a
+local variable escapes the match:
+
+- Uppercase aliases: `chord.js`'s `var STAFF_DISTRIBUTION = Config.get("general.staffDistribution")` then `STAFF_DISTRIBUTION === "chorale"` — not matched (bare-identifier branch is case-sensitive to `staffDistribution`). `chord.js` is allowlisted as a confirmed-pure axis consumer, so this is classification, not escape.
+- Local-variable aliases: `var m = definition.exercise.mode; m === "playback"` — not matched. No such site exists in the current codebase outside allowlisted files (verified by the Phase 1.2 reviewer passes + grep). A future agent writing one would escape the rule; a dataflow-tracking rule is out of scope for the plan's AST-lint approach.
+
+### Verification (2026-07-05)
+
+- Permanent regression test: `eslint-rules/no-raw-pipeline-discriminator.test.mjs`
+  (run via `node eslint-rules/no-raw-pipeline-discriminator.test.mjs`) locks in
+  the rule's contract — 16 banned shapes flagged (the five plan targets +
+  `!==`/`!=`/literal-first/deep-chain/`"play"` variants), 12 clean shapes not
+  flagged (out-of-scope "other" types, non-discriminator field/value,
+  analysis-content literal, `.includes()`, relational/arithmetic operators).
+  28 assertions, all green.
+- Rule also validated against a temporary in-tree fixture during development
+  (6 banned shapes flagged, 5 allowed shapes clean); fixture deleted before
+  commit. The permanent `.test.mjs` above replaces it.
+- `npm run lint` passes clean on the post-Phase-1.2 codebase with the rule
+  enabled (exit 0).
+- Resolver + grader + logic tests green: `resolved_mode.test.js`,
+  `grader_factory.test.js`, `input_method_logic.test.js`,
+  `harmonization_grader_logic.test.js`.
+
 ## Status (2026-07-05)
 
 - Phase 0.3 done: `resolved_mode.js` + test committed (`0a85f0a5`). No production
@@ -243,6 +347,15 @@ Conclusion: this segment required no commit. Move to Phase 1.3.
 - Phase 0.2 done: this registry doc (`0a14d06a`).
 - Phase 2 skeleton done: `grader_factory.js` + test (`d3e00aec`). `create()` is
   a stub; no production call sites wired.
+- Phase 1.1 done: `ExerciseDefinition` predicates wired to `ResolvedMode`
+  (`6e0b6850`).
+- Phase 1.2 done: all listed discriminator-read sites routed through
+  `ResolvedMode` (`2ba7c0f9`, `f307fc93`, `69616ca2`, `f8df38d9`, `2e370c21`);
+  staff-distribution axis audited as pure, no change (`020bcb5c`).
+- Phase 1.3 done: `no-raw-pipeline-discriminator` ESLint rule landed
+  (`harmonylab-pipelines/no-raw-pipeline-discriminator`), allowlist + 3 inline
+  exemptions documented above. `npm run lint` clean. **Phase 1 exit criteria
+  met.**
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
