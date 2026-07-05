@@ -53,8 +53,10 @@
 
 <script type="module">
   import { renderLesson } from "./render-lesson.js";
-  const res = await fetch("./lesson-content.json");
-  const data = await res.json();
+  // Importing the JSON (rather than fetch()ing it) lets Vite bundle it into
+  // the built page — a runtime fetch would 404 against /static/dist/ where
+  // the built HTML is served (lesson-content.json is not copied to dist/).
+  import data from "./lesson-content.json";
   renderLesson(document.getElementById("lesson-root"), data);
 </script>
 </body>

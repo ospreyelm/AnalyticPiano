@@ -26,8 +26,11 @@ var MORE_INFO_URL = "https://musictheory.sites.gettysburg.edu/unit-4-1/reading-f
 
 // Static explanation page for Roman-numeral / circle-of-thirds / chord-quality
 // pedagogy, built (spike §5 of plan 2026-07-04) from the Triad teaching-extract
-// package. Served as a plain static file — no Django route or UMTO wiring.
-var ROMAN_EXPLANATION_URL = "/static/reference/triads-circle-of-thirds/index.html";
+// package. The page imports the real VexFlow engine via bare specifiers
+// (`vexflow`, `app/...`), so it is Vite-built (vite.config.js entry) and
+// served from /static/dist/ — the raw /static/reference/ source is not
+// browser-resolvable. No Django route or UMTO wiring.
+var ROMAN_EXPLANATION_URL = "/static/dist/triads-circle-of-thirds/index.html";
 
 // Voice-count policy {min,max} -> the lookup key used by the generated table.
 function _policyKey(voiceCountPolicy) {
