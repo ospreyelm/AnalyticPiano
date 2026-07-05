@@ -3,28 +3,38 @@
  * ---------------------------------------------------------------------
  * Turns data/lesson-content.json into DOM sections inside `root`.
  *
- * This is intentionally simple/vanilla so a coding agent can either:
- *   (a) use it as-is inside a Django template + Vite entry, or
- *   (b) treat it as a reference implementation and re-express the same
- *       JSON -> markup mapping inside your framework of choice
- *       (React/Vue/etc.), since the JSON is the real source of truth.
- *
- * Notation rendering (`renderNotationPlaceholder`) is a STUB. This site
- * already renders VexFlow elsewhere, so real integration should replace
- * that function's body with a call into your existing VexFlow wrapper,
- * passing it the same `notation` object (clef/keySignature/timeSignature
- * /voices) documented in lesson-content.json's `meta.notationFormat`.
- * A minimal illustrative VexFlow render is included behind a feature
- * check (`window.Vex`) purely so the demo page shows *something*
- * playable without you having to wire up the real renderer first.
+ * Notation is rendered with the project's real VexFlow engine — the same
+ * pipeline students are graded on (`VexflowAdapter` →
+ * `VexflowRenderPipeline`) — so the lesson draws identically to exercise
+ * and teacher/play views. Each `notation` object is converted into a
+ * renderer-agnostic score model (via `ScoreModel`), then drawn on a
+ * `<canvas>`. Figured-bass symbols ride the engine's harmonization-target
+ * path (matched to each bass note by musical offset). Interval labels
+ * (M2/m2) for the scale slides are post-drawn over the canvas using the
+ * staff-layout callback's column X positions.
  * ---------------------------------------------------------------------
  */
 
 import { renderCircleOfThirds } from "./circle-of-thirds.js";
-// Use this project's own VexFlow build via the vite alias (`vexflow` ->
-// lab/static/js/lib/vexflow.js, 4.2.5). Same import the app's render pipeline
-// uses, so the lesson draws with the exact engine students are graded on.
 import Vex from "vexflow";
+import VexflowAdapter from "app/components/music/rendering/vexflow_adapter";
+import ScoreModel from "app/components/music/score_model";
+
+const BEATS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25 };
+
+// The app's KeySignature model expects a 3-char code `[i|j][A-G][_|#|b]`
+// (i = minor, j = major); e.g. "jC", "jG", "jBb". Lesson JSON uses plain
+// letters ("G", "Bb", undefined). Convert, defaulting to C major (no
+// accidentals) when the slide carries no key signature.
+function keyToCode(key) {
+  if (!key) return "jC_";
+  const m = String(key).match(/^([A-Ga-g])([#b]?)$/);
+  if (!m) return "jC_";
+  const mode = m[1] === m[1].toLowerCase() ? "i" : "j";
+  const letter = m[1].toUpperCase();
+  const acc = m[2] || "_";
+  return mode + letter + acc;
+}
 
 export function renderLesson(root, data) {
   root.innerHTML = "";
@@ -72,8 +82,8 @@ function renderSlide(slide) {
   }
   if (slide.notation) {
     for (const n of slide.notation) {
-      if (typeof n === "string") continue; // cross-reference note, nothing to render here
-      section.appendChild(renderNotationPlaceholder(n));
+      if (typeof n === "string") continue; // cross-reference note, nothing to render
+      section.appendChild(renderNotation(n));
     }
   }
 
@@ -140,25 +150,186 @@ function renderWarningIcon() {
   return wrap;
 }
 
-/**
- * STUB: replace with a call into this site's existing VexFlow renderer.
- * `n` is one of the `notation` objects from lesson-content.json.
- */
-function renderNotationPlaceholder(n) {
+// --- notation -> score model -------------------------------------------------
+
+// Parse a VexFlow key "g/4", "bb/4", "c#/5" -> {step:"A"-"G", alter, octave}.
+// `bb/4` is B-flat (letter b, accidental b), NOT B-natural — the accidental run
+// between the letter and the slash accumulates (#=+1, b=-1, n=0).
+function parseKeyToPitch(key) {
+  const m = String(key).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  if (!m) throw new Error(`lesson notation: unparseable key ${JSON.stringify(key)}`);
+  const step = m[1].toUpperCase();
+  let alter = 0;
+  for (const c of m[2]) alter += (c === "#" ? 1 : c === "b" ? -1 : 0);
+  return { step, alter, octave: parseInt(m[3], 10) };
+}
+
+const LETTER_PC = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+// Absolute pitch (octave*12 + pitch class). Middle C = c/4 = 48; the grand-staff
+// register split sends notes < 48 to the bass voice, >= 48 to treble.
+function keyPitch(key) {
+  const p = parseKeyToPitch(key);
+  const pc = LETTER_PC[p.step.toLowerCase()] + p.alter;
+  return p.octave * 12 + pc;
+}
+
+// Build one score-model item (rest | note | chord) from a list of pitches.
+// Chord notes are wrapped as `{pitch: {...}}` — the shape the render pipeline
+// and timeline builder read (`item.notes[i].pitch`), matching umto_score_converter.
+function itemFromPitches(pitches, duration) {
+  if (!pitches || !pitches.length) return ScoreModel.rest(duration, 0);
+  if (pitches.length === 1) {
+    const p = pitches[0];
+    return ScoreModel.note(p.step, p.alter, p.octave, duration, 0);
+  }
+  return ScoreModel.chord(pitches.map((p) => ({ pitch: p })), duration, 0);
+}
+
+// Convert one lesson `notation` object into a score model + the list of
+// figured-bass targets (one per chord that carries a `figure`). Bass-note
+// onsets accumulate in quarter-beats; each target's `offset` is the bass
+// voice's cumulative quarter-beat position at that chord, which the engine
+// matches back to the note column (offset_qb = note_onset_ticks / 1024).
+function buildScore(n) {
+  const notes = (n.voices && n.voices[0] && n.voices[0].notes) || [];
+  const timeSig = n.timeSignature || "4/4";
+  const parts = timeSig.split("/").map((x) => parseInt(x, 10) || 4);
+  const beatsPerMeasure = parts[0] * (4 / parts[1]); // quarter-beats per measure
+  const clef = n.clef || "treble";
+  const isGrand = clef === "grand-staff";
+  const staffDistribution = isGrand ? "grand_staff" : clef;
+  const meta = {
+    key: keyToCode(n.keySignature),
+    time: timeSig,
+    staffDistribution,
+  };
+
+  const measures = [];
+  const targets = [];
+  let trebleItems = [], bassItems = [];
+  let beatsInMeasure = 0;
+  let globalOffsetQb = 0;
+  let measureNumber = 1;
+
+  for (const note of notes) {
+    const duration = note.duration || "q";
+    const beats = BEATS[duration] || 1;
+    if (note.figure) {
+      targets.push({ offset: globalOffsetQb, displayFigure: note.figure });
+    }
+    const keys = note.keys || [];
+    if (isGrand) {
+      // Register split at middle C (>=48 -> treble, below -> bass), except the
+      // chord's lowest note always anchors the bass staff — a grand-staff
+      // figured-bass example needs a bass line under every chord, even one
+      // stacked entirely at/above middle C (e.g. c/4-g/4-e/5-c/6).
+      const sortedByPitch = keys.map((k, i) => ({ i, pitch: keyPitch(k) })).sort((a, b) => a.pitch - b.pitch);
+      const lowestIdx = sortedByPitch[0].i;
+      const treblePitches = [], bassPitches = [];
+      keys.forEach((k, i) => {
+        const p = parseKeyToPitch(k);
+        if (i !== lowestIdx && keyPitch(k) >= 48) treblePitches.push(p);
+        else bassPitches.push(p);
+      });
+      trebleItems.push(itemFromPitches(treblePitches, duration));
+      bassItems.push(itemFromPitches(bassPitches, duration));
+    } else if (clef === "bass") {
+      bassItems.push(itemFromPitches(keys.map(parseKeyToPitch), duration));
+    } else {
+      trebleItems.push(itemFromPitches(keys.map(parseKeyToPitch), duration));
+    }
+    beatsInMeasure += beats;
+    globalOffsetQb += beats;
+    if (beatsInMeasure >= beatsPerMeasure) {
+      measures.push(mkMeasure(measureNumber++, trebleItems, bassItems, isGrand, clef));
+      trebleItems = []; bassItems = []; beatsInMeasure = 0;
+    }
+  }
+  if (trebleItems.length || bassItems.length) {
+    measures.push(mkMeasure(measureNumber++, trebleItems, bassItems, isGrand, clef));
+  }
+
+  return { score: ScoreModel.score(meta, measures), targets, staffDistribution };
+}
+
+function mkMeasure(num, trebleItems, bassItems, isGrand, clef) {
+  if (isGrand) {
+    return ScoreModel.measure(num, {
+      treble: ScoreModel.staff("treble", [ScoreModel.voice(trebleItems, "up")]),
+      bass: ScoreModel.staff("bass", [ScoreModel.voice(bassItems, "down")]),
+    });
+  }
+  if (clef === "bass") {
+    return ScoreModel.measure(num, {
+      bass: ScoreModel.staff("bass", [ScoreModel.voice(bassItems, "down")]),
+    });
+  }
+  return ScoreModel.measure(num, {
+    treble: ScoreModel.staff("treble", [ScoreModel.voice(trebleItems, "up")]),
+  });
+}
+
+// --- interval labels (scale slides) ------------------------------------------
+
+// Label the ascending interval between two VexFlow keys as a second (M2/m2).
+// Returns null for anything that isn't a stepwise second.
+function intervalLabel(lowKey, highKey) {
+  const a = String(lowKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  const b = String(highKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  if (!a || !b) return null;
+  const accOff = { "#": 1, b: -1, n: 0 };
+  const pcA = LETTER_PC[a[1]] + [...a[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
+  const pcB = LETTER_PC[b[1]] + [...b[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
+  const semis = (parseInt(b[3], 10) - parseInt(a[3], 10)) * 12 + (pcB - pcA);
+  if (semis === 2) return "M2";
+  if (semis === 1) return "m2";
+  return null;
+}
+
+// Post-draw M2/m2 labels between consecutive scale notes, horizontally
+// centered between the two note columns they span. `columns` come from the
+// engine's onStaffLayout callback (sorted by centerX, each carrying its
+// onset in ticks). `notes` is the original scale note list (one key each).
+function drawIntervalLabels(ctx, notes, columns, topLineY) {
+  if (!notes.length || columns.length < 2) return;
+  // Map each note's onset (ticks; 1024 = 1 quarter) -> column centerX.
+  // Onsets accumulate per note: 0, beats[0]*1024, (beats0+beats1)*1024, ...
+  const onsetToX = new Map();
+  let acc = 0;
+  for (const c of columns) onsetToX.set(c.onset, c.centerX);
+  const xs = [];
+  let onset = 0;
+  for (const note of notes) {
+    xs.push(onsetToX.get(onset) || null);
+    onset += (BEATS[note.duration || "q"] || 1) * 1024;
+  }
+  ctx.save();
+  ctx.setFont("bold 11px Arial, sans-serif");
+  ctx.setFillStyle("#c0392b");
+  const y = topLineY - 6;
+  for (let i = 1; i < notes.length; i++) {
+    const label = intervalLabel(notes[i - 1].keys[0], notes[i].keys[0]);
+    if (!label) continue;
+    if (xs[i - 1] == null || xs[i] == null) continue;
+    const midX = (xs[i - 1] + xs[i]) / 2;
+    const w = ctx.measureText(label).width;
+    ctx.fillText(label, midX - w / 2, y);
+  }
+  ctx.restore();
+}
+
+// --- notation render ---------------------------------------------------------
+
+function renderNotation(n) {
   const wrap = el("div", "lesson-figure");
   const target = el("div", "vexflow-target");
   target.dataset.notationId = n.id;
-  target.textContent = `[VexFlow renders "${n.id}" here — see data/lesson-content.json]`;
 
-  // Draw with the project's VexFlow (imported above via the vite alias).
-  if (Vex && Vex.Flow && n.voices && n.voices[0]) {
-    try {
-      target.textContent = "";
-      drawIllustrativeVexflow(target, n);
-    } catch (err) {
-      console.warn("Illustrative VexFlow render skipped:", err);
-      target.textContent = `[VexFlow render of "${n.id}" failed: ${err.message}]`;
-    }
+  try {
+    renderNotationWithEngine(target, n);
+  } catch (err) {
+    console.warn(`Lesson notation "${n.id}" render failed:`, err);
+    target.textContent = `[notation render of "${n.id}" failed: ${err.message}]`;
   }
 
   wrap.appendChild(target);
@@ -169,200 +340,62 @@ function renderNotationPlaceholder(n) {
   return wrap;
 }
 
-// Absolute pitch (octave*12 + pitch class) of a VexFlow key, for register
-// comparisons. Middle C = c/4 = 48; used to split grand-staff notes.
-function keyPitch(key) {
-  const m = String(key).match(/^([a-g])([#bn]*)\/(\d+)$/);
-  if (!m) return 0;
-  const base = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[m[1]];
-  const off = { "#": 1, b: -1, n: 0 };
-  let o = 0;
-  for (const c of m[2]) o += off[c] || 0;
-  return parseInt(m[3], 10) * 12 + base + o;
-}
+function renderNotationWithEngine(target, n) {
+  const { score, targets, staffDistribution } = buildScore(n);
+  const numMeasures = score.measures.length;
+  if (!numMeasures) throw new Error("no measures");
 
-// Build a StaveNote for one chord on one clef, adding accidentals per key.
-// If `keys` is empty, return a rest of the same duration.
-function makeStaveNote(Vex, keys, duration, clef) {
-  const { StaveNote, Accidental } = Vex.Flow;
-  const dur = duration || "w";
-  if (!keys || !keys.length) {
-    const restKey = clef === "bass" ? "d/3" : "d/4";
-    return new StaveNote({ clef, keys: [restKey], duration: dur + "r" });
+  const isGrand = staffDistribution === "grand_staff";
+  // Figured-bass symbols draw below the bass staff (getBottomY() + 16, up to
+  // 3 stacked lines) — extra height keeps them from clipping the canvas edge.
+  const height = isGrand ? (targets.length ? 420 : 260) : 170;
+  const width = Math.max(360, numMeasures * 230);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  // Render at native pixel size (matches teacher/play's notation scale) —
+  // `.lesson-figure` scrolls horizontally rather than shrinking wide scores
+  // down to fit the 900px lesson column.
+  canvas.style.display = "block";
+  target.appendChild(canvas);
+
+  const renderer = new Vex.Flow.Renderer(canvas, Vex.Flow.Renderer.Backends.CANVAS);
+  const notes = (n.voices && n.voices[0] && n.voices[0].notes) || [];
+
+  // Default note styling is exercise UX: gray until played, black once the
+  // student plays it. A static lesson figure has no "played" state — force
+  // every voice slot to black so notation reads as normal engraved music.
+  const opts = {
+    width, height, maxMeasures: numMeasures, staffDistribution,
+    voiceColors: { S: "#000000", A: "#000000", T: "#000000", B: "#000000" },
+  };
+  if (targets.length) {
+    opts.isHarmonization = true;
+    opts.harmonizationTargets = targets;
+    // isHarmonization normally hides voices the student hasn't unlocked yet
+    // (exercise grading UX). This is a static lesson figure, not a graded
+    // exercise — every voice should always be visible, so lock them all.
+    opts.lockedVoices = ["S", "A", "T", "B"];
+    // The annotation pass (figures, romans, etc.) only runs when analysis is
+    // "enabled" — without this, harmonizationTargets are collected into cfg
+    // but drawMeasureAnnotations never runs, so no figure ever draws.
+    opts.analyzeConfig = { enabled: true, mode: {} };
   }
-  const sn = new StaveNote({ clef, keys, duration: dur });
-  keys.forEach((k, i) => {
-    const m = k.match(/^([a-g])([#bn]*)\//);
-    const acc = m ? m[2] : "";
-    if (acc) sn.addModifier(new Accidental(acc), i);
-  });
-  return sn;
-}
 
-// Render a grand-staff notation: treble (top) + bass (bottom), each chord
-// split by register (notes >= middle C on treble, below on bass). Figured-
-// bass symbols are written under the bass staff, centered on each chord.
-function drawGrandStaff(target, n) {
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveConnector } = Vex.Flow;
-  const notes = n.voices[0].notes;
-  const N = notes.length;
-  const width = Math.max(380, N * 110);
-  const renderer = new Renderer(target, Renderer.Backends.SVG);
-  renderer.resize(width, 240);
-  const context = renderer.getContext();
-
-  const trebleStave = new Stave(10, 10, width - 20);
-  trebleStave.addClef("treble");
-  if (n.keySignature) trebleStave.addKeySignature(n.keySignature);
-  if (n.timeSignature) trebleStave.addTimeSignature(n.timeSignature);
-  trebleStave.setContext(context).draw();
-
-  const bassStave = new Stave(10, 130, width - 20);
-  bassStave.addClef("bass");
-  if (n.keySignature) bassStave.addKeySignature(n.keySignature);
-  if (n.timeSignature) bassStave.addTimeSignature(n.timeSignature);
-  bassStave.setContext(context).draw();
-
-  // Join the two staves with a brace + left barline so it reads as one staff
-  // system rather than two disconnected staves.
-  new StaveConnector(trebleStave, bassStave).setType("brace").setContext(context).draw();
-  new StaveConnector(trebleStave, bassStave).setType("singleLeft").setContext(context).draw();
-
-  const trebleNotes = [], bassNotes = [];
-  notes.forEach((note) => {
-    const trebleKeys = [], bassKeys = [];
-    (note.keys || []).forEach((k) => {
-      if (keyPitch(k) >= 48) trebleKeys.push(k);
-      else bassKeys.push(k);
-    });
-    trebleNotes.push(makeStaveNote(Vex, trebleKeys, note.duration, "treble"));
-    bassNotes.push(makeStaveNote(Vex, bassKeys, note.duration, "bass"));
-  });
-
-  const beatMap = { w: 4, h: 2, q: 1, 8: 0.5 };
-  const totalBeats = notes.reduce((s, note) => s + (beatMap[note.duration] || 1), 0);
-  const trebleVoice = new Voice({ num_beats: totalBeats || N, beat_value: 4 }).setStrict(false);
-  trebleVoice.addTickables(trebleNotes);
-  const bassVoice = new Voice({ num_beats: totalBeats || N, beat_value: 4 }).setStrict(false);
-  bassVoice.addTickables(bassNotes);
-  new Formatter()
-    .joinVoices([trebleVoice])
-    .joinVoices([bassVoice])
-    .format([trebleVoice, bassVoice], width - 80);
-  trebleVoice.draw(context, trebleStave);
-  bassVoice.draw(context, bassStave);
-
-  // Figured bass: under the bass staff, centered on each chord's bass note.
-  if (notes.some((x) => x.figure)) {
-    context.save();
-    context.setFont("bold 12px Arial, sans-serif");
-    context.setFillStyle("#c0392b");
-    const y = bassStave.getYForLine(4) + 16;
-    bassNotes.forEach((bn, i) => {
-      const fig = notes[i].figure;
-      if (!fig) return;
-      const x = bn.getAbsoluteX();
-      const w = context.measureText(fig).width;
-      context.fillText(fig, x - w / 2, y);
-    });
-    context.restore();
-  }
-}
-
-// Label the ascending interval between two VexFlow keys as a second (M2/m2).
-// Returns null for anything that isn't a stepwise second — only meant for the
-// scale slides, which move by adjacent scale degrees.
-const LETTER_PC = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
-function intervalLabel(lowKey, highKey) {
-  const a = String(lowKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
-  const b = String(highKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
-  if (!a || !b) return null;
-  const accOff = { "#": 1, b: -1, n: 0 };
-  const pcA = LETTER_PC[a[1]] + [...a[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
-  const pcB = LETTER_PC[b[1]] + [...b[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
-  const octA = parseInt(a[3], 10), octB = parseInt(b[3], 10);
-  const semis = (octB - octA) * 12 + (pcB - pcA);
-  // Only label diatonic seconds (1 or 2 semitones ascending).
-  if (semis === 2) return "M2";
-  if (semis === 1) return "m2";
-  return null;
-}
-
-function drawIllustrativeVexflow(target, n) {
-  // Grand staff: render treble + bass staves, splitting each chord's notes
-  // by register (middle C = c/4 is the boundary — at/above → treble, below
-  // → bass), and write the figured-bass symbol under the bass staff.
-  if (n.clef === "grand-staff") return drawGrandStaff(target, n);
-
-  // VexFlow is loaded as a classic UMD script (index.html) that sets
-  // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
-  // in module scope — reference window.Vex explicitly or import it.
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
-  const notes = n.voices[0].notes;
-  const width = Math.max(300, notes.length * 90);
-  const renderer = new Renderer(target, Renderer.Backends.SVG);
-  renderer.resize(width, 160);
-  const context = renderer.getContext();
-  const stave = new Stave(10, 20, width - 20);
-  stave.addClef(n.clef === "grand-staff" ? "treble" : n.clef || "treble");
-  if (n.keySignature) stave.addKeySignature(n.keySignature);
-  if (n.timeSignature) stave.addTimeSignature(n.timeSignature);
-  stave.setContext(context).draw();
-
-  const vfNotes = notes.map((note) => {
-    const sn = new StaveNote({
-      clef: n.clef === "grand-staff" ? "treble" : n.clef || "treble",
-      keys: note.keys,
-      duration: note.duration || "q",
-    });
-    note.keys.forEach((k, i) => {
-      // VexFlow key syntax: <letter a-g><accidentals #bn>/<octave>. Parse the
-      // accidental run between the letter and the slash — "bb/4" is B-flat
-      // (letter b, accidental b), NOT B-natural. The old `k.includes("b") &&
-      // !k.startsWith("b")` check skipped every B-flat because "bb/4" starts
-      // with "b", so all flats on the letter B silently dropped.
-      const m = k.match(/^([a-g])([#bn]*)\//);
-      const acc = m ? m[2] : "";
-      if (acc) sn.addModifier(new Accidental(acc), i);
-    });
-    return sn;
-  });
-
-  // Scale slides set `showIntervals: true` to label the stepwise interval
-  // between each consecutive note (M2 / m2). Drawn AFTER the voice so we can
-  // read each note's absolute x and place the label horizontally centered
-  // between the two notes it spans (not pinned to the second note). Computed
-  // from pitch classes so it stays correct under any key signature.
-  // (Drawn under the post-draw block below — kept here as a no-op marker so
-  // the flag is visible next to the note loop.)
-
-  const totalBeats = notes.reduce((sum, note) => {
-    const map = { w: 4, h: 2, q: 1, 8: 0.5 };
-    return sum + (map[note.duration] || 1);
-  }, 0);
-
-  const voice = new Voice({ num_beats: totalBeats || notes.length, beat_value: 4 });
-  voice.setStrict(false);
-  voice.addTickables(vfNotes);
-  new Formatter().joinVoices([voice]).format([voice], width - 60);
-  voice.draw(context, stave);
-
-  // Interval labels: horizontally centered between the two notes they span
-  // ((x1 + x2) / 2), drawn above the staff. VexFlow's Annotation modifier
-  // pins to one note's x, so we draw raw text on the SVG context instead.
+  // Collect staff-layout columns for post-drawn interval labels.
+  let layoutInfo = null;
   if (n.showIntervals) {
-    context.save();
-    context.setFont("bold 11px Arial, sans-serif");
-    context.setFillStyle("#c0392b");
-    const y = stave.getYForLine(0) - 6;
-    for (let i = 1; i < vfNotes.length; i++) {
-      const label = intervalLabel(notes[i - 1].keys[0], notes[i].keys[0]);
-      if (!label) continue;
-      const midX = (vfNotes[i - 1].getAbsoluteX() + vfNotes[i].getAbsoluteX()) / 2;
-      const w = context.measureText(label).width;
-      context.fillText(label, midX - w / 2, y);
-    }
-    context.restore();
+    opts.onStaffLayout = (info) => { layoutInfo = info; };
+  }
+
+  VexflowAdapter.render(score, renderer, opts);
+
+  if (n.showIntervals && layoutInfo) {
+    const sys = layoutInfo.systems && layoutInfo.systems[0];
+    const trebleStave = sys && sys.staves.find((s) => s.clef === "treble");
+    const topLineY = trebleStave ? trebleStave.topLineY : 40;
+    drawIntervalLabels(renderer.getContext(), notes, layoutInfo.columns, topLineY);
   }
 }
 
