@@ -217,7 +217,7 @@ function buildIdentificationHints(definition, analysisType) {
     return fig + " → " + expandFigure(fig).join("-");
   });
   return {
-    help: "Choose the abbreviated figure. Abbreviations drop redundant intervals — 6 stands for 6-3, 7 for 7-5-3, 6/4 for 6-4, 4/2 (or 2) for 6-4-2. The figure names intervals above the bass, not a chord name.",
+    help: "Choose the abbreviated figure. Abbreviations represent full figures - 6 stands for 6-3, 7 for 7-5-3, 6/4 for 6-4, 4/2 (or 2) for 6-4-2. The figures represent intervals above the bass.",
     hints: [
       "Expansions: " + expansions.join("  |  ") + ".",
       // F2 — alteration rule (Triad deck slide 16).
