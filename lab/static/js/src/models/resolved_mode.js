@@ -37,12 +37,19 @@
  *                              musicxml, analytical, analytical_pcs (out of
  *                              scope for the six-pipeline split; caller handles)
  *
- * NOTE on the "play" default-fill trap (exercise_definition.js:893): a legacy
- * chorale exercise with no explicit mode gets mode defaulted to "play", which
- * is NOT in isChorale()'s mode list {playback, analysis_match, play-all-voices,
- * analysis}. Those exercises count as chorale via the type=== "chorale"
- * fallback. This resolver preserves that fallback — do NOT drop the type
- * axis from isChorale() without auditing every "play"-mode chorale exercise.
+ * NOTE on the "play" default-fill (exercise_definition.js:893): once parse()
+ * default-fills exercise.mode = "play", getMode() returns "play" (truthy), so
+ * isChorale()'s `if (mode)` branch fires FIRST and runs the mode check. "play"
+ * is NOT in {playback, analysis_match, play-all-voices, analysis}, so isChorale()
+ * returns FALSE — the type-fallback branch (`type === "chorale" || "umto_chorale"`)
+ * NEVER runs when mode is any truthy string, including "play". A legacy
+ * type=chorale exercise that received the "play" default therefore resolves to
+ * pipeline "other" + legacy-stave, NOT "chorale". This resolver mirrors that
+ * behavior faithfully (isChorale returns false). This may be a latent bug in
+ * current code, but the resolver must NOT "fix" it — investigate separately with
+ * a Phase 0 snapshot proving the desired behavior first. Do NOT drop the type
+ * axis from isChorale() without auditing every "play"-mode chorale exercise AND
+ * deciding whether "play"-defaulted chorales should route as chorale.
  */
 
 var CHORALE_MODES = ["playback", "analysis_match", "play-all-voices", "analysis"];

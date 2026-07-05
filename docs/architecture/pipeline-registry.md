@@ -158,15 +158,45 @@ Phase 1 adds: `apps/exercises/services/resolved_mode.py` (Python port).
 - `umto_symbolic_meter`, `umto_barline_placement`, `umto_key_signature`,
   `musicxml`, `analytical`, `analytical_pcs` → `resolvePipeline` returns
   `"other"`. Handled by caller; not part of M1.
+- `umto_identification` (`apps/exercises/forms.py:458`,
+  `TYPE_UMTO_IDENTIFICATION = "umto_identification"`) — teacher-selectable type,
+  but `exercise_definition.js` parse() has no branch for it and no predicate
+  recognizes it, so `resolvePipeline` returns `"other"`. Currently unresolved;
+  add a parse branch or accept "other" deliberately (open question for Phase 1).
 - `/teacher/play/` teacher-authoring surface (see above).
 - URL/template split per type — uniform URL is correct; mode is data, not route.
 - `chorale_identification` type↔mode alias — intentional, kept explicit in
   resolver.
 
+## Known divergences + open questions (recorded 2026-07-05, pre-push review)
+
+1. **`mode="chorale_identification"` literal on `umto_chorale`** —
+   `grader_factory.js` maps pipeline `chorale_identification` →
+   `IdentificationGrader` (predicate intent), but current production
+   `app/exercise.js:119-127` does NOT route this literal to
+   `IdentificationGrader`; it falls through to `ExerciseGrader`/`notesMatch`.
+   Current-gen UMTO data uses `mode="identification"` (the `InteractionMode`
+   enum has no `chorale_identification` member), so the divergence is only live
+   if a persisted row carries the literal. **TODO before Phase 1 wiring:** query
+   the DB for `type="umto_chorale" AND mode="chorale_identification"` and decide
+   explicitly whether the factory follows production or predicate intent. See
+   the CAVEAT in `grader_factory.js`.
+2. **`mode="play"` default-fill** — once `parse()` default-fills
+   `exercise.mode = "play"`, `isChorale()` returns false (truthy mode → mode
+   check → "play" not in the chorale mode list; type fallback never runs). A
+   legacy `type=chorale` exercise with the "play" default resolves to pipeline
+   `"other"` + legacy-stave, NOT `"chorale"`. `resolvePipeline` mirrors this
+   faithfully. This may be a latent bug; do not "fix" in the resolver without a
+   Phase 0 snapshot proving the desired behavior. See the NOTE in
+   `resolved_mode.js`.
+
 ## Status (2026-07-05)
 
 - Phase 0.3 done: `resolved_mode.js` + test committed (`0a85f0a5`). No production
   callers.
+- Phase 0.2 done: this registry doc (`0a14d06a`).
+- Phase 2 skeleton done: `grader_factory.js` + test (`d3e00aec`). `create()` is
+  a stub; no production call sites wired.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on

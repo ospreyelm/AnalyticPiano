@@ -62,6 +62,11 @@ expectKey("chorale_identification-type", { type: "chorale_identification" }, "id
 
 // ---------- chorale_identification (umto_chorale + mode) ----------
 expectKey("chorale_identification-mode", { type: "umto_chorale", mode: "identification" }, "identification");
+// CAVEAT: this asserts the factory's MAPPING, not current production selection.
+// Production app/exercise.js does NOT route mode="chorale_identification" literal
+// to IdentificationGrader (it falls through to ExerciseGrader/notesMatch). The
+// factory maps to "identification" per predicate intent. See grader_factory.js
+// CAVEAT + TODO. Divergence is only live if a persisted row carries this mode.
 expectKey("chorale_identification-mode2", { type: "umto_chorale", mode: "chorale_identification" }, "identification");
 
 // ---------- out-of-scope: "other" pipelines default to legacy_match ----------

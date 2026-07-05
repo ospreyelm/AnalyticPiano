@@ -39,11 +39,30 @@ var GRADER_KEYS = {
   harmonization: "harmonization",
   figured_bass: "legacy_figured_bass",
   identification: "identification",
+  // CAVEAT — known divergence from current production selection for one rare
+  // mode value. For type=umto_chorale + mode="chorale_identification" (literal),
+  // app/exercise.js:119-127 does NOT route to IdentificationGrader: the first
+  // branch requires interactionMode === "identification" exactly (the literal
+  // "chorale_identification" does not match), and !interactionMode is false, so
+  // it falls through to the else branch → new ExerciseGrader() → switch on type
+  // "umto_chorale" → mode is not "harmonization"/"analysis_match" → notesMatch.
+  // This factory maps pipeline "chorale_identification" → "identification"
+  // (IdentificationGrader), which matches the *intent* of the predicates
+  // (isChoraleIdentification() returns true for mode "chorale_identification")
+  // but DIVERGES from current production grader selection. Current-gen UMTO
+  // data uses mode="identification" (the InteractionMode enum has no
+  // "chorale_identification" member), so this divergence is only live if some
+  // persisted row carries the literal "chorale_identification" mode.
+  // TODO (before Phase 1 wiring): query the DB for
+  //   type="umto_chorale" AND mode="chorale_identification"
+  // If rows exist, decide explicitly whether the factory should follow
+  // production (→ legacy_match / notesMatch) or predicate intent (→
+  // identification). Do not claim full current-behavior parity until resolved.
   chorale_identification: "identification",
   // Out-of-scope types (symbolic-meter, key-signature, musicxml, analytical,
-  // analytical_pcs) resolve to "other" in resolved_mode.js. Default to
-  // legacy_match — mirrors the current ExerciseGrader else-branch default
-  // (which falls through to notesMatch). Phase 2 may specialize these.
+  // analytical_pcs, umto_identification) resolve to "other" in resolved_mode.js.
+  // Default to legacy_match — mirrors the current ExerciseGrader else-branch
+  // default (which falls through to notesMatch). Phase 2 may specialize these.
   other: "legacy_match",
 };
 
