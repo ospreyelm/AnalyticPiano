@@ -57,7 +57,7 @@ export default  {
       thoroughbass: false,
       roman_numerals: true,
       roman_numerals_exp: false,
-      chord_labels: true,
+      chord_labels: false,
 
       /* max one of the following may be true */
       intervals: false,

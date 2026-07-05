@@ -236,3 +236,118 @@ class PlayViewSaveChordalUMTOTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Playlist destination is automatic", response.json()["error"])
 
+    def test_empty_roman_numeral_is_backfilled_by_music21(self):
+        """Frontend analyzer (ijFindChord) returns "" for chords it can't
+        classify diatonically. The Play save path must backfill those slices
+        from music21 so the play view's ? identification slots render."""
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jC_",
+            "meter": "4/4",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60, 64, 67], "hidden": [], "duration": 2.0},
+                {"visible": [62, 65, 69], "hidden": [], "duration": 2.0},
+            ],
+            "analysisSlices": [
+                {
+                    "offset": 0.0,
+                    "content": {
+                        "roman_numeral": "",
+                        "raw_roman_numeral": None,
+                        "figured_bass": None,
+                    },
+                    "is_target": True,
+                    "unit_tags": [],
+                },
+                {
+                    "offset": 2.0,
+                    "content": {
+                        "roman_numeral": "",
+                        "raw_roman_numeral": None,
+                        "figured_bass": None,
+                    },
+                    "is_target": True,
+                    "unit_tags": [],
+                },
+            ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
+        }
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        analysis = ex.data["score"]["umto"]["analysis"]
+        self.assertEqual(len(analysis), 2)
+        for slice_ in analysis:
+            rn = slice_["content"]["roman_numeral"]
+            self.assertTrue(rn, f"roman_numeral should be backfilled, got: {rn!r}")
+        # C-major triad in C → "I"; d-minor triad in C → "ii"
+        self.assertEqual(analysis[0]["content"]["roman_numeral"], "I")
+        self.assertEqual(analysis[1]["content"]["roman_numeral"], "ii")
+
+    def test_null_roman_numeral_preserved_as_intentional_blank(self):
+        """A null roman_numeral marks a slice the teacher intentionally hid
+        (e.g. chord outside curriculum). The backfill must NOT turn it into a
+        target — that would render a spurious ? slot."""
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jC_",
+            "meter": "4/4",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60, 64, 67], "hidden": [], "duration": 4.0},
+            ],
+            "analysisSlices": [
+                {
+                    "offset": 0.0,
+                    "content": {
+                        "roman_numeral": None,
+                        "raw_roman_numeral": None,
+                        "figured_bass": None,
+                    },
+                    "is_target": False,
+                    "unit_tags": [],
+                },
+            ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
+        }
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        analysis = ex.data["score"]["umto"]["analysis"]
+        self.assertEqual(len(analysis), 1)
+        self.assertIsNone(analysis[0]["content"]["roman_numeral"])
+
+    def test_filled_roman_numeral_is_not_overwritten(self):
+        """Teacher-reviewed RN labels are overrides; backfill must not clobber."""
+        self.client.login(email="teacher@example.com", password="pw")
+        payload = {
+            "key": "jC_",
+            "meter": "4/4",
+            "staffDistribution": "keyboard",
+            "chord": [
+                {"visible": [60, 64, 67], "hidden": [], "duration": 4.0},
+            ],
+            "analysisSlices": [
+                {
+                    "offset": 0.0,
+                    "content": {
+                        "roman_numeral": "V/V",
+                        "raw_roman_numeral": "V/V",
+                        "figured_bass": None,
+                    },
+                    "is_target": True,
+                    "unit_tags": [],
+                },
+            ],
+            "skillTags": ["unit:1"],
+            "mode": "play",
+        }
+        resp = self.client.post(self.add_url, {"data": json.dumps(payload)})
+        self.assertEqual(resp.status_code, 201)
+        ex = Exercise.objects.get(id=resp.json()["id"])
+        analysis = ex.data["score"]["umto"]["analysis"]
+        self.assertEqual(analysis[0]["content"]["roman_numeral"], "V/V")
+
