@@ -130,3 +130,44 @@ class PlayViewTeacherChromeTests(TestCase):
 
         self.assertIn("#piano .click-note-input", css)
         self.assertIn("#staff-toolbar .input-source-mode-toggle", css)
+
+
+class PlayViewTeacherGuardTests(TestCase):
+    """/teacher/play/ hosts the MusicXML import UI whose API endpoints are
+    @teacher_required. TeacherAccessMiddleware bounces authenticated
+    non-teachers to /s/, but anonymous users relied on the view redirecting them
+    to login — PlayView had no such guard, so anonymous users loaded the import
+    UI and the preview ajax silently 302→HTML fell back to
+    "Failed to preview MusicXML." Regression for a recurring guardrail failure."""
+
+    def test_anonymous_redirected_to_login(self):
+        resp = self.client.get(reverse("lab:play"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
+        self.assertIn("next=/teacher/play", resp["Location"])
+
+    def test_anonymous_does_not_see_import_ui(self):
+        resp = self.client.get(reverse("lab:play"), follow=True)
+        # Lands on the login page, never the play page with the import button.
+        self.assertNotIn("js-btn-import-musicxml", resp.content.decode())
+
+    def test_authenticated_non_teacher_bounced_to_student_home(self):
+        # TeacherAccessMiddleware handles authenticated non-teachers (→ /s/),
+        # so they never reach the import UI.
+        user = User.objects.create_user(email="student@example.com", password="x", role="student")
+        self.client.force_login(user)
+        resp = self.client.get(reverse("lab:play"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertNotIn("js-btn-import-musicxml", resp.content.decode())
+
+    def test_teacher_allowed(self):
+        user = User.objects.create_user(email="teacher@example.com", password="x", role="teacher")
+        self.client.force_login(user)
+        resp = self.client.get(reverse("lab:play"))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_superuser_allowed(self):
+        user = User.objects.create_superuser(email="super@example.com", password="x")
+        self.client.force_login(user)
+        resp = self.client.get(reverse("lab:play"))
+        self.assertEqual(resp.status_code, 200)
