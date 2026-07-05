@@ -168,7 +168,10 @@ function renderNotationPlaceholder(n) {
 }
 
 function drawIllustrativeVexflow(target, n) {
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
+  // VexFlow is loaded as a classic UMD script (index.html) that sets
+  // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
+  // in module scope — reference window.Vex explicitly or import it.
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = window.Vex.Flow;
   const notes = n.voices[0].notes;
   const width = Math.max(300, notes.length * 90);
   const renderer = new Renderer(target, Renderer.Backends.SVG);
