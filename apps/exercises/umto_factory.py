@@ -849,6 +849,62 @@ def save_umto_exercise(
     return ex
 
 
+def _backfill_empty_roman_from_music21(
+    frontend_slices: list, m21_slices: list
+) -> list:
+    """Fill empty-string roman_numeral on frontend analysis slices from music21 slices.
+
+    Matches by offset (rounded to 4 dp). Only the "" sentinel (frontend analyzer
+    couldn't classify) is backfilled; null roman_numeral (intentional blank) and
+    already-filled slices are left untouched. figurd_bass / local_key are also
+    figured_bass / local_key are also backfilled when the slice was unclassifiable.
+    """
+    by_offset = {}
+    for s in m21_slices or []:
+        if not isinstance(s, dict):
+            continue
+        try:
+            by_offset[round(float(s.get("offset", 0.0)), 4)] = s
+        except (TypeError, ValueError):
+            continue
+
+    for fs in frontend_slices:
+        if not isinstance(fs, dict):
+            continue
+        content = fs.get("content")
+        if not isinstance(content, dict):
+            continue
+        rn = content.get("roman_numeral")
+        if rn:  # already filled
+            continue
+        if rn is None:  # intentional blank — leave alone
+            continue
+        # rn == "" → frontend analyzer failed to classify → backfill from music21
+        try:
+            key = round(float(fs.get("offset", 0.0)), 4)
+        except (TypeError, ValueError):
+            continue
+        m21 = by_offset.get(key)
+        if not m21:
+            continue
+        m21_content = m21.get("content") or {}
+        if m21_content.get("roman_numeral"):
+            content["roman_numeral"] = m21_content["roman_numeral"]
+            if not content.get("raw_roman_numeral") and m21_content.get(
+                "raw_roman_numeral"
+            ):
+                content["raw_roman_numeral"] = m21_content["raw_roman_numeral"]
+            if not content.get("local_key") and m21_content.get("local_key"):
+                content["local_key"] = m21_content["local_key"]
+            if not content.get("figured_bass") and m21_content.get("figured_bass"):
+                content["figured_bass"] = m21_content["figured_bass"]
+            if not content.get("raw_figured_bass") and m21_content.get(
+                "raw_figured_bass"
+            ):
+                content["raw_figured_bass"] = m21_content["raw_figured_bass"]
+    return frontend_slices
+
+
 def save_chordal_umto_exercise(
     *,
     description: str,
@@ -913,9 +969,32 @@ def save_chordal_umto_exercise(
     validate_chordal_rhythm(normalized_chords, meter, barline_offsets or [])
 
     if analysis is not None:
-        # Teacher-reviewed (Play) path: use supplied analysis verbatim.
+        # Teacher-reviewed (Play) path: use supplied analysis verbatim, but
+        # backfill any slices whose roman_numeral is the empty-string sentinel.
+        # The frontend analyzer (ijFindChord in analyze.js) returns "" for
+        # chords it cannot classify diatonically (incomplete/doubled/non-
+        # diatonic sonorities); music21 handles those. A null roman_numeral
+        # is an intentional blank (e.g. chord outside curriculum) and is left
+        # alone. Frontend labels stay as overrides; music21 only fills gaps.
         analysis_slices = analysis
         review_status = "reviewed" if analysis else "none"
+        if analysis_slices and any(
+            (s.get("content") or {}).get("roman_numeral") == ""
+            for s in analysis_slices
+            if isinstance(s, dict)
+        ):
+            try:
+                from apps.exercises.utils.umto_import_router import (
+                    build_chordal_analysis_slices,
+                )
+                m21_slices = build_chordal_analysis_slices(
+                    normalized_chords, harmony_key=key
+                )
+                analysis_slices = _backfill_empty_roman_from_music21(
+                    analysis_slices, m21_slices
+                )
+            except Exception as e:
+                print(f"Warning: music21 RN backfill failed: {e}")
     else:
         # Non-Play path (bulk import): auto-generate and mark generated.
         analysis_slices = []
