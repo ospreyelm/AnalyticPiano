@@ -117,14 +117,16 @@ Cross-stack:
 
 | File | Owner | Notes |
 |---|---|---|
-| `lab/static/js/src/models/exercise_grader.js` | god-class (to split) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. Phase 2 extracts each to standalone grader; decommissions this file. |
+| `lab/static/js/src/models/exercise_grader.js` | god-class (audit done, extraction paused) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. **2026-07-05 usage audit (see "Legacy grader retirement audit" below): none of these methods are exercised by reachable student content today.** Per-type standalone extraction is paused pending a product decision; likely shape is one retained legacy fallback class, not five polished classes — see the audit's recommendation. |
 | `lab/static/js/src/models/chorale_grader.js` | `chorale` | Selected by `app/exercise.js:131` for playback/analysis_match |
 | `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
 
-Phase 2 adds: `grader_factory.js`, `grader_state.js`, `legacy_match_grader.js`,
-`legacy_figured_bass_grader.js`, `analysis_match_grader.js`, `analytical_grader.js`,
-`analytical_pcs_grader.js`.
+Phase 2 added: `grader_factory.js`, `grader_state.js`. The originally-planned
+`legacy_match_grader.js`/`legacy_figured_bass_grader.js`/
+`analysis_match_grader.js`/`analytical_grader.js`/`analytical_pcs_grader.js`
+split is paused pending the 2026-07-05 usage audit below — recommendation is
+one retained legacy fallback class instead of five.
 
 ## Models + logic
 
@@ -340,6 +342,125 @@ local variable escapes the match:
   `grader_factory.test.js`, `input_method_logic.test.js`,
   `harmonization_grader_logic.test.js`.
 
+## Legacy grader retirement audit (recorded 2026-07-05)
+
+Before extracting `ExerciseGrader`'s per-type methods (`notesMatch`,
+`figuredBassMatch`/`figuredBassPcsMatch`, `analysisMatch`, `analysisPcsMatch`)
+into standalone grader classes, this audit checks whether any of them are
+still live in student delivery. Queried against the local dev Postgres DB
+(`analyticpiano`, same snapshot used for the prior `mode="play"` / 0-row
+`chorale_identification` findings above — total exercise count matches:
+79,596 rows), via `psql` (`exercises_exercise`, `exercises_playlist`,
+`exercises_exerciseplaylistordered`).
+
+**`Exercise.data->>'type'` distribution — only 5 distinct values exist in the
+entire table:**
+
+| `type` | count |
+|---|---|
+| `umto_chorale` | 53,024 |
+| `umto_barline_placement` | 26,491 |
+| `identification` | 60 |
+| `umto_key_signature` | 18 |
+| `umto_symbolic_meter` | 3 |
+
+`matching`, `analytical`, `analytical_pcs`, `figured_bass`,
+`figured_bass_pcs`, legacy `chorale`, and `chorale_identification` (as a
+`type`) have **zero rows** — not "zero reachable," zero rows at all, of any
+provenance. This is consistent with the AGENTS.md non-negotiable rule that
+these shapes are frozen for new writes.
+
+**`umto_chorale` mode breakdown** (the only type with modes outside the
+resolver's known lists), cross-joined against "reachable in the real student
+delivery gate" — `Playlist.is_public = true`, `playlist_family !=
+'teacher_play'`, and a `unit:*` tag present (`apps/student/views.py`
+`PlayerView.get` requires `user_can_access_playlist()` + a matching `unit:N`
+tag; the `Course`/`PlaylistCourseOrdered.publish_date` mechanism is the
+unauthorized-for-implementation Assignment Slot Foundation work, not live —
+see AGENTS.md "Current product direction" — so it was excluded as a
+reachability gate):
+
+| mode | total | in public unit-tagged playlist |
+|---|---|---|
+| `identification` | 19,059 | 3,312 |
+| `playback` | 18,993 | 2,920 |
+| `analysis_match` | 14,847 | 214 |
+| `harmonization` | 98 | 34 |
+| `play` | 9 | 0 |
+| `identify` | 6 | 0 |
+| `figures` | 6 | 0 |
+| `roman` | 6 | 0 |
+
+The `play`/`identify`/`figures`/`roman` modes are three previously
+undocumented siblings of the already-characterized `mode="play"` bug (see
+"Known divergences" above) — same root cause (`resolveMode()` returns a
+truthy string outside `CHORALE_MODES`/`CHORALE_IDENTIFICATION_MODES`, so
+`isChorale`/`isChoraleIdentification`/`isHarmonization` are all false and
+`resolvePipeline` falls through to `"other"` + legacy-stave). All 27 rows
+across the four modes live only in playlists with empty `tags`/`skill_tags`
+(no `unit:*`), authored by `factory@monteverdi.app` (teacher role, matches
+the "factory seed run" test fixture referenced in the teacher-production-
+roadmap work) or the local dev superuser account — i.e. dev/factory-seed
+fixtures, not reachable via `/s/units/<n>/play/` regardless of `is_public`.
+**Not live student content.**
+
+**Legacy `type="identification"` (60 rows) IS live**: all 60 sit in seven
+`is_public=true`, `unit:5`-tagged playlists (`PA03UH`..`PA03UN`, triad/seventh
+-chord-quality identification), authored by a real student account. But this
+type resolves to `resolvePipeline` pipeline `"identification"`, which
+`app/exercise.js`'s inline grader selection already routes to
+`IdentificationGrader` — **not** `ExerciseGrader`. Live, but outside the god
+class.
+
+**`mode="harmonization"` (98 rows, 34 reachable) does reach `ExerciseGrader`**,
+but only as a thin pass-through: `app/exercise.js`'s selection falls to the
+`else` branch (no dedicated harmonization branch), constructs
+`ExerciseGrader`, and `ExerciseGrader.grade()`'s internal switch immediately
+delegates to `HarmonizationGraderLogic` (`harmonization_grader_logic.js`) — a
+module already extracted as a pure, standalone, tested unit. None of
+`ExerciseGrader`'s own `notesMatch`/`figuredBassMatch`/`analysisMatch` bodies
+execute for this mode.
+
+**Conclusion: none of `ExerciseGrader`'s legacy per-type method bodies
+(`notesMatch`, `figuredBassMatch`/`figuredBassPcsMatch`, `analysisMatch`,
+`analysisPcsMatch`) are exercised by any currently-reachable student
+content.** The only genuinely live path through `ExerciseGrader` today is the
+harmonization delegate, which is already a separately-owned pure module.
+Everything else that reaches `ExerciseGrader`'s legacy switch bodies is
+either zero-row (matching/figured_bass/analytical/analytical_pcs) or
+dev/factory-seed-only (the 27 odd-mode `umto_chorale` rows).
+
+**Recommendation for Phase 2 shape** (supersedes the "extract each grader
+key to a standalone class" framing in the "Graders" table above for the
+legacy keys specifically):
+
+- Do not build five polished, permanent legacy grader classes
+  (`legacy_match_grader.js`, `legacy_figured_bass_grader.js`,
+  `analytical_grader.js`, `analytical_pcs_grader.js`) for code paths with no
+  live data — that is new architecture investment in dead code, and product
+  direction is to migrate remaining legacy student exercise types to UMTO
+  equivalents, not expand legacy surface area.
+- Keep `ExerciseGrader` itself (optionally renamed `LegacyExerciseGrader` in
+  a dedicated rename-only commit later) as a single retained
+  compatibility/fallback wrapper preserving the current switch verbatim,
+  rather than splitting it into several named legacy classes.
+- `GraderFactory`'s `GRADER_KEYS` should map `matching` / `figured_bass` /
+  `"other"` to one explicit fallback key (e.g. `legacy_match` already plays
+  this role for `"other"` today) pointing at the retained
+  `ExerciseGrader`/`LegacyExerciseGrader`, not several distinct legacy
+  classes.
+- The harmonization delegation needs no further extraction — it already
+  routes to an isolated pure module; only the dispatch site
+  (`app/exercise.js`'s grader selection) would need to change if/when
+  `GraderFactory.create()` is wired.
+- Do not "fix" the `play`/`identify`/`figures`/`roman` mode-resolution gap
+  incidentally while doing this — same standing caveat as the documented
+  `mode="play"` case: any behavior change needs its own decision, DB
+  backfill/audit of the (dev-only, currently) affected rows, and a new
+  characterization snapshot.
+- This audit is a local dev DB read; no migrations or data changes were run.
+  Phase 4 (stored-string disambiguation) remains deferred.
+
 ## Status (2026-07-05)
 
 - Phase 0.3 done: `resolved_mode.js` + test committed (`0a85f0a5`). No production
@@ -362,6 +483,11 @@ local variable escapes the match:
   `ChoraleGrader`/`IdentificationGrader` still define their own identical
   copies of these constants — consolidating them is a follow-up slice, not
   done in this commit.
+- Phase 2 legacy-usage audit done (see "Legacy grader retirement audit"
+  above): none of `ExerciseGrader`'s legacy per-type methods are exercised by
+  reachable student content. Method extraction is paused pending a product
+  decision on the recommended shape (single retained legacy fallback class,
+  not five polished per-type classes).
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
