@@ -315,9 +315,23 @@ def generate_transposed_copies(
         tags = [t for t in base_tags if not t.startswith("transposed_from:")]
         tags.append(transposed_from_tag)
 
-        # Check if already exists (idempotency)
+        # Check if already exists (idempotency). Scope to THIS source
+        # exercise via its `transposed_from:<id>` tag (defined above), not
+        # just description. The same chord progression saved under multiple
+        # canonical modes (roman / play_figures / play / harmonization)
+        # produces distinct source exercises (overwrite=False always creates
+        # a new row) that share the same `description`. Matching on
+        # description+author alone would reuse mode-A's transposed siblings
+        # for mode-B's save — and since those siblings carry mode-A's
+        # analysis (mode/analysis_type are baked in at create time), the
+        # wrong-mode siblings leak into mode-B's playlist and render as a
+        # jumble. The `transposed_from` tag is unique per source exercise,
+        # so keying on it keeps each mode's transpositions scoped to that
+        # mode's source.
         existing = Exercise.objects.filter(
-            description=description, authored_by=author
+            skill_tags__contains=[transposed_from_tag],
+            description=description,
+            authored_by=author,
         ).first()
         if existing and not overwrite:
             logger.info(f"Exercise already exists: {existing.id}, skipping")
