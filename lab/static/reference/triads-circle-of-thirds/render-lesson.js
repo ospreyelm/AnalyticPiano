@@ -21,6 +21,10 @@
  */
 
 import { renderCircleOfThirds } from "./circle-of-thirds.js";
+// Use this project's own VexFlow build via the vite alias (`vexflow` ->
+// lab/static/js/lib/vexflow.js, 4.2.5). Same import the app's render pipeline
+// uses, so the lesson draws with the exact engine students are graded on.
+import Vex from "vexflow";
 
 export function renderLesson(root, data) {
   root.innerHTML = "";
@@ -146,16 +150,14 @@ function renderNotationPlaceholder(n) {
   target.dataset.notationId = n.id;
   target.textContent = `[VexFlow renders "${n.id}" here — see data/lesson-content.json]`;
 
-  // Illustrative-only: if VexFlow happens to be on the page (e.g. this
-  // standalone demo), draw a very simple single-voice rendering so the
-  // page isn't just placeholder boxes. Your real integration should
-  // ignore this and use your existing renderer + full voice/beam logic.
-  if (window.Vex && n.voices && n.voices[0]) {
+  // Draw with the project's VexFlow (imported above via the vite alias).
+  if (Vex && Vex.Flow && n.voices && n.voices[0]) {
     try {
       target.textContent = "";
       drawIllustrativeVexflow(target, n);
     } catch (err) {
       console.warn("Illustrative VexFlow render skipped:", err);
+      target.textContent = `[VexFlow render of "${n.id}" failed: ${err.message}]`;
     }
   }
 
@@ -171,7 +173,7 @@ function drawIllustrativeVexflow(target, n) {
   // VexFlow is loaded as a classic UMD script (index.html) that sets
   // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
   // in module scope — reference window.Vex explicitly or import it.
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = window.Vex.Flow;
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
   const notes = n.voices[0].notes;
   const width = Math.max(300, notes.length * 90);
   const renderer = new Renderer(target, Renderer.Backends.SVG);
