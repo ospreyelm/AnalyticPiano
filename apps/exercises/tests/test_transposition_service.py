@@ -146,6 +146,102 @@ class TranspositionServiceTest(TestCase):
         all_in_key_g = Exercise.objects.filter(description="Test Chords in C (G)")
         self.assertEqual(all_in_key_g.count(), 1)
 
+    def test_transpositions_are_scoped_per_source_not_just_description(self):
+        """Transposition idempotency is keyed on the source exercise's
+        `transposed_from:<id>` tag, not just description+author.
+
+        Regression: the same chord progression saved under multiple canonical
+        modes (roman / play_figures / play / harmonization) creates distinct
+        source exercises (overwrite=False always inserts a new row) that share
+        the same `description`. The transposed siblings' descriptions are
+        `f"{source.description} ({key})"` — also identical across modes. With
+        idempotency keyed on description+author alone, mode-B's save found
+        mode-A's already-created transposed siblings (same description) and
+        reused them: appended mode-A's siblings to mode-B's playlist. Those
+        siblings carried mode-A's baked-in analysis, so mode-B's playlist
+        rendered a mode-mismatched jumble.
+
+        Keying on `transposed_from:<source.id>` keeps each mode's siblings
+        scoped to that mode's source (the tag is unique per source row).
+        """
+        same_chords = [
+            {"offset": 0.0, "duration": 1.0, "visible": [60, 64, 67], "hidden": []},
+        ]
+        # Two sources: same description + same chords, different analysis_type
+        # (mirrors saving the same progression under figured-bass vs roman).
+        source_figured = save_chordal_umto_exercise(
+            description="Shared Progression",
+            author=self.author,
+            chords=same_chords,
+            key="jC_",
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+            analysis_type="figured_bass_unabbreviated",
+        )
+        source_roman = save_chordal_umto_exercise(
+            description="Shared Progression",
+            author=self.author,
+            chords=same_chords,
+            key="jC_",
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+            analysis_type="roman",
+        )
+        # Distinct source rows despite the shared description.
+        self.assertNotEqual(source_figured.id, source_roman.id)
+
+        playlist_figured = Playlist.objects.create(
+            name="Figured playlist", authored_by=self.author
+        )
+        playlist_roman = Playlist.objects.create(
+            name="Roman playlist", authored_by=self.author
+        )
+
+        created_figured = generate_transposed_copies(
+            source_exercise=source_figured,
+            key_set=["G"],
+            playlist=playlist_figured,
+            author=self.author,
+            overwrite=False,
+        )
+        created_roman = generate_transposed_copies(
+            source_exercise=source_roman,
+            key_set=["G"],
+            playlist=playlist_roman,
+            author=self.author,
+            overwrite=False,
+        )
+
+        # Each source gets its own transposed sibling (no reuse across modes).
+        self.assertEqual(len(created_figured), 1)
+        self.assertEqual(len(created_roman), 1)
+        self.assertNotEqual(created_figured[0].id, created_roman[0].id)
+
+        # Each sibling carries its own source's analysis_type — the roman
+        # playlist must NOT contain a figured-bass-unabbreviated exercise.
+        self.assertEqual(created_figured[0].data.get("analysisType"), "figured_bass_unabbreviated")
+        self.assertEqual(created_roman[0].data.get("analysisType"), "roman")
+
+        # Each sibling is tagged with its own source's transposed_from id.
+        self.assertIn(f"transposed_from:{source_figured.id}", created_figured[0].skill_tags)
+        self.assertIn(f"transposed_from:{source_roman.id}", created_roman[0].skill_tags)
+
+        # Playlists do NOT cross-contaminate.
+        figured_playlist_ids = {e.id for e in playlist_figured.exercises.all()}
+        roman_playlist_ids = {e.id for e in playlist_roman.exercises.all()}
+        self.assertEqual(figured_playlist_ids, {created_figured[0].id})
+        self.assertEqual(roman_playlist_ids, {created_roman[0].id})
+        self.assertFalse(figured_playlist_ids & roman_playlist_ids)
+
+        # Two distinct transposed rows in the DB (one per mode), not one shared.
+        self.assertEqual(
+            Exercise.objects.filter(description="Shared Progression (G)").count(), 2
+        )
+
     def test_preserves_skill_tags_and_adds_transposed_from_tag(self):
         """Test that skill tags are preserved and transposed_from tag is added."""
         created = generate_transposed_copies(
