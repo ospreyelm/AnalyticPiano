@@ -4,7 +4,7 @@
  * GraderFactory — Phase 2 skeleton (M1).
  *
  * Maps a ResolvedMode to the grader class that scores it. One grader per
- * pipeline — kills the dual `analysis_match` path (today `umto_chorale` +
+ * LIVE pipeline — kills the dual `analysis_match` path (today `umto_chorale` +
  * `mode=analysis_match` is graded by `ChoraleGrader` via app/exercise.js:131,
  * while `ExerciseGrader.analysisMatch` at grader.js:142 is a latent/dead
  * fallback). This factory owns the selection so there is exactly one path.
@@ -17,27 +17,44 @@
  * Testable surface: `resolveGraderKey(resolvedMode)` → string. Pure, import-free,
  * immune to the `app/` alias resolution wall that blocks full-boot tests.
  *
- * Grader keys:
- *   "legacy_match"         — LegacyMatchGrader (Phase 2.1 extraction from
- *                            ExerciseGrader.notesMatch)
- *   "chorale"             — ChoraleGrader (existing)
- *   "harmonization"       — HarmonizationGraderLogic (existing, pure-fn)
- *   "legacy_figured_bass"  — LegacyFiguredBassGrader (Phase 2.1 extraction from
- *                            ExerciseGrader.figuredBassMatch/figuredBassPcsMatch)
+ * Grader keys — REVISED 2026-07-05 per the legacy-grader-usage audit in
+ * docs/architecture/pipeline-registry.md ("Legacy grader retirement audit").
+ * That audit found zero live student-reachable rows for `matching`,
+ * `figured_bass`/`figured_bass_pcs`, and the `"other"` catch-all (27
+ * dev/factory-seed-only rows). Per product direction (migrate remaining
+ * legacy types to UMTO, do not expand legacy grader architecture), these
+ * dead/unknown paths collapse to ONE fallback key instead of one class per
+ * legacy type:
+ *   "legacy_exercise"     — ExerciseGrader, kept as a single retained
+ *                            compatibility fallback (NOT split into
+ *                            per-type classes — matching, figured_bass,
+ *                            and "other" all map here)
+ *   "chorale"             — ChoraleGrader (existing, live)
+ *   "harmonization"       — current behavior: ExerciseGrader constructed,
+ *                            whose internal switch delegates to
+ *                            HarmonizationGraderLogic (existing pure-fn
+ *                            module, already extracted, live — 34
+ *                            reachable rows). Kept as its own key because
+ *                            it is a live pipeline, not a dead one, even
+ *                            though today's *implementation* still goes
+ *                            through ExerciseGrader as a pass-through.
  *   "identification"      — IdentificationGrader (existing; serves both
  *                            `identification` and `chorale_identification`
  *                            pipelines, matching current behavior)
  *
- * The Phase 2.1 extraction (legacy_match, legacy_figured_bass, analysis_match,
- * analytical, analytical_pcs) is deferred until the resolver contract is reviewed
- * and `create()` is wired. Until then, the KEY resolution is the contract.
+ * No per-type legacy class split (legacy_match_grader.js,
+ * legacy_figured_bass_grader.js, analytical_grader.js, analytical_pcs_grader.js)
+ * is planned. `create()` remains an unwired stub — wiring `app/exercise.js` to
+ * this factory is deferred until it can reproduce the current branch order
+ * exactly, including the `mode="chorale_identification"` and raw-mode-fallback
+ * caveats below.
  */
 
 var GRADER_KEYS = {
-  matching: "legacy_match",
+  matching: "legacy_exercise",
   chorale: "chorale",
   harmonization: "harmonization",
-  figured_bass: "legacy_figured_bass",
+  figured_bass: "legacy_exercise",
   identification: "identification",
   // CAVEAT — known divergence from current production selection for one rare
   // mode value. For type=umto_chorale + mode="chorale_identification" (literal),
@@ -61,9 +78,12 @@ var GRADER_KEYS = {
   chorale_identification: "identification",
   // Out-of-scope types (symbolic-meter, key-signature, musicxml, analytical,
   // analytical_pcs, umto_identification) resolve to "other" in resolved_mode.js.
-  // Default to legacy_match — mirrors the current ExerciseGrader else-branch
-  // default (which falls through to notesMatch). Phase 2 may specialize these.
-  other: "legacy_match",
+  // 2026-07-05 audit: the only rows that ever reach this bucket in practice
+  // (umto_chorale with an unrecognized mode — play/identify/figures/roman)
+  // are dev/factory-seed fixtures, unreachable via student delivery. Default
+  // to legacy_exercise — mirrors the current ExerciseGrader else-branch
+  // default (which falls through to notesMatch).
+  other: "legacy_exercise",
 };
 
 /**
@@ -72,28 +92,30 @@ var GRADER_KEYS = {
  * @returns {string} grader key
  */
 function resolveGraderKey(resolvedMode) {
-  if (!resolvedMode) return "legacy_match";
-  return GRADER_KEYS[resolvedMode.pipeline] || "legacy_match";
+  if (!resolvedMode) return "legacy_exercise";
+  return GRADER_KEYS[resolvedMode.pipeline] || "legacy_exercise";
 }
 
 /**
  * Instantiates the grader for a resolved mode. SKELETON — NOT WIRED.
  *
- * Production wiring deferred until the resolver contract (resolved_mode.js) is
- * reviewed. Calling this before wiring throws. The lazy require map is sketched
+ * Production wiring deferred until `app/exercise.js`'s inline selection can be
+ * reproduced exactly, including the documented `mode="chorale_identification"`
+ * divergence and the raw-mode-fallback ("play"/"identify"/"figures"/"roman")
+ * caveats. Calling this before wiring throws. The lazy require map is sketched
  * here to document the intended class mapping; it is not executed at module load
  * so this file stays import-free and testable in plain `node`.
  *
  * @param {object} resolvedMode - output of resolvePipeline()
  * @param {object} settings - grader constructor settings
  * @returns {object} grader instance
- * @throws {Error} always, until Phase 2.1 extraction + wiring is complete
+ * @throws {Error} always, until wiring is reviewed and complete
  */
 function create(resolvedMode /* , settings */) {
   throw new Error(
-    "GraderFactory.create not yet implemented — resolver contract under review. " +
-      "Use resolveGraderKey() for the selection decision; production wiring " +
-      "lands in Phase 2.1 after legacy grader extraction."
+    "GraderFactory.create not yet implemented — production wiring requires " +
+      "exact reproduction of app/exercise.js's current branch order. " +
+      "Use resolveGraderKey() for the selection decision until then."
   );
 }
 

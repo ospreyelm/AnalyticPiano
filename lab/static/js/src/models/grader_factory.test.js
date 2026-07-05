@@ -27,7 +27,7 @@ function expectKey(label, exercise, expectedKey) {
 }
 
 // ---------- matching ----------
-expectKey("matching", { type: "matching" }, "legacy_match");
+expectKey("matching", { type: "matching" }, "legacy_exercise");
 
 // ---------- chorale: playback ----------
 expectKey("chorale-playback", { type: "umto_chorale", mode: "playback" }, "chorale");
@@ -51,8 +51,8 @@ expectKey("chorale-umto-no-mode", { type: "umto_chorale" }, "chorale");
 expectKey("harmonization", { type: "umto_chorale", mode: "harmonization" }, "harmonization");
 
 // ---------- figured_bass (legacy) ----------
-expectKey("figured_bass", { type: "figured_bass" }, "legacy_figured_bass");
-expectKey("figured_bass_pcs", { type: "figured_bass_pcs" }, "legacy_figured_bass");
+expectKey("figured_bass", { type: "figured_bass" }, "legacy_exercise");
+expectKey("figured_bass_pcs", { type: "figured_bass_pcs" }, "legacy_exercise");
 
 // ---------- identification (non-chorale) ----------
 expectKey("identification", { type: "identification" }, "identification");
@@ -69,23 +69,39 @@ expectKey("chorale_identification-mode", { type: "umto_chorale", mode: "identifi
 // CAVEAT + TODO. Divergence is only live if a persisted row carries this mode.
 expectKey("chorale_identification-mode2", { type: "umto_chorale", mode: "chorale_identification" }, "identification");
 
-// ---------- out-of-scope: "other" pipelines default to legacy_match ----------
-expectKey("symbolic-meter", { type: "umto_symbolic_meter" }, "legacy_match");
-expectKey("musicxml", { type: "musicxml" }, "legacy_match");
-expectKey("analytical", { type: "analytical" }, "legacy_match");
-expectKey("key-signature", { type: "umto_key_signature" }, "legacy_match");
+// ---------- out-of-scope: "other" pipelines default to legacy_exercise ----------
+expectKey("symbolic-meter", { type: "umto_symbolic_meter" }, "legacy_exercise");
+expectKey("musicxml", { type: "musicxml" }, "legacy_exercise");
+expectKey("analytical", { type: "analytical" }, "legacy_exercise");
+expectKey("key-signature", { type: "umto_key_signature" }, "legacy_exercise");
 
 // ---------- null/undefined safety ----------
-assertField("null resolvedMode", resolveGraderKey(null), "legacy_match");
-assertField("undefined resolvedMode", resolveGraderKey(undefined), "legacy_match");
-assertField("empty object", resolveGraderKey({}), "legacy_match");
-assertField("unknown pipeline", resolveGraderKey({ pipeline: "nonexistent" }), "legacy_match");
+assertField("null resolvedMode", resolveGraderKey(null), "legacy_exercise");
+assertField("undefined resolvedMode", resolveGraderKey(undefined), "legacy_exercise");
+assertField("empty object", resolveGraderKey({}), "legacy_exercise");
+assertField("unknown pipeline", resolveGraderKey({ pipeline: "nonexistent" }), "legacy_exercise");
 
 // ---------- GRADER_KEYS table integrity ----------
 assertField("GRADER_KEYS has 6 canonical + other", Object.keys(GRADER_KEYS).length, 7);
 assertField("GRADER_KEYS.chorale", GRADER_KEYS.chorale, "chorale");
 assertField("GRADER_KEYS.identification covers chorale_identification",
   GRADER_KEYS.identification, GRADER_KEYS.chorale_identification);
+
+// ---------- 2026-07-05 audit: legacy/unknown/dead paths collapse to ONE key ----------
+// Per docs/architecture/pipeline-registry.md "Legacy grader retirement audit":
+// matching, figured_bass, and "other" have zero live-student-reachable rows.
+// Product direction is one retained ExerciseGrader fallback, not per-type
+// legacy classes — assert they all resolve to the same fallback key.
+assertField("GRADER_KEYS.matching collapses to legacy_exercise", GRADER_KEYS.matching, "legacy_exercise");
+assertField("GRADER_KEYS.figured_bass collapses to legacy_exercise", GRADER_KEYS.figured_bass, "legacy_exercise");
+assertField("GRADER_KEYS.other collapses to legacy_exercise", GRADER_KEYS.other, "legacy_exercise");
+assertField("matching === figured_bass fallback key", GRADER_KEYS.matching, GRADER_KEYS.figured_bass);
+assertField("matching === other fallback key", GRADER_KEYS.matching, GRADER_KEYS.other);
+// harmonization stays its OWN key — it is live (34 reachable rows), not a
+// dead/unknown path, even though today's implementation still constructs
+// ExerciseGrader as the delegate. Must NOT collapse into legacy_exercise.
+assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
+  GRADER_KEYS.harmonization !== GRADER_KEYS.matching, true);
 
 // ---------- create() is a stub that throws (skeleton guard) ----------
 (function () {

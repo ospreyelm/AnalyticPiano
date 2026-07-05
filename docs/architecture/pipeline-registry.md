@@ -444,11 +444,12 @@ legacy keys specifically):
   a dedicated rename-only commit later) as a single retained
   compatibility/fallback wrapper preserving the current switch verbatim,
   rather than splitting it into several named legacy classes.
-- `GraderFactory`'s `GRADER_KEYS` should map `matching` / `figured_bass` /
-  `"other"` to one explicit fallback key (e.g. `legacy_match` already plays
-  this role for `"other"` today) pointing at the retained
-  `ExerciseGrader`/`LegacyExerciseGrader`, not several distinct legacy
-  classes.
+- Done: `GraderFactory`'s `GRADER_KEYS` now maps `matching` / `figured_bass` /
+  `"other"` to one explicit fallback key, `legacy_exercise`, pointing at the
+  retained `ExerciseGrader`/`LegacyExerciseGrader`, not several distinct
+  legacy classes. `harmonization` stays its own key (live, 34 reachable
+  rows) even though its current implementation still constructs
+  `ExerciseGrader` as a pass-through to `HarmonizationGraderLogic`.
 - The harmonization delegation needs no further extraction — it already
   routes to an isolated pure module; only the dispatch site
   (`app/exercise.js`'s grader selection) would need to change if/when
