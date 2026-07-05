@@ -29,15 +29,18 @@ export default  {
       hints: [
         "Figured bass intervals above the bass note (Kellner):\n  No symbol  1 - 3 - 5\n  6          3 - 6 - 8\n  6/4        4 - 6 - 8\n  7          1 - 3 - 5 - 7\n  6/5        3 - 5 - 6 - 8\n  4/3        3 - 4 - 6 - 8\n  2          2 - 4 - 6 - 8",
         "Count from the bass note: 1 = the bass itself (or its octave), 3 = two staff steps up, 5 = four steps up, 6 = five steps up. Key-signature accidentals apply unless the figure shows a sharp or flat.",
+        "Alterations: an accidental next to a number adds that accidental to that generic interval above the bass; a '+' (or strikethrough) raises the interval, a '-' lowers it. Otherwise the note comes from the key signature.",
         "Press Backspace or Delete to remove the last note, or x Clear to start over.",
       ],
     },
     identification: {
       short: "Identify the Roman numeral for each chord.",
-      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = Do-Mi-So. A I6 = the third of the chord in the bass = 3, 5, 1 = Mi-So-Do. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "Name the Roman numeral by where the chord sits in the key. A I chord = 1, 3, 5 of the key = Do-Mi-So. A IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "First identify the key — Roman numerals have no meaning without one.",
         "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+        "The figure after the numeral names intervals above the bass, like figured bass: 6 = 6/3 (third in the bass), 6/4 = a 4th and 6th above the bass, 7 = 7/5/3, 6/5 = 6/5/3.",
+        "A seventh chord adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
         "Click the question-mark labels on the score and type or select the Roman numeral (e.g. IV, V7, ii°).",
       ],
     },
@@ -50,10 +53,12 @@ export default  {
     },
     chorale_identification: {
       short: "Identify the Roman numerals in the chorale.",
-      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = Do-Mi-So; a I6 = the third in the bass = 3, 5, 1 = Mi-So-Do; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
+      help:  "Name each chord's Roman numeral by where it sits in the key. A I chord = 1, 3, 5 = Do-Mi-So; a IV = 4, 6, 1 = Fa-La-Do. Uppercase = major, lowercase = minor, ° = diminished, + = augmented.",
       hints: [
-        "The same three syllables name the chord regardless of which one is in the bass — whichever one is in the bass gives you the position: Do-Mi-So = I; Mi-So-Do = I6; So-Do-Mi = I6/4.",
+        "First identify the key — Roman numerals have no meaning without one.",
         "Quality comes from which syllables are present: Do-Mi-So = major, Do-Me-So = minor, Do-Me-Se = diminished, Do-Mi-Si = augmented.",
+        "The figure after the numeral names intervals above the bass, like figured bass: 6 = 6/3 (third in the bass), 6/4 = a 4th and 6th above the bass, 7 = 7/5/3, 6/5 = 6/5/3.",
+        "A seventh chord adds a seventh above the root to a triad; name its quality in two parts — the triad quality, then the seventh (root→seventh).",
       ],
     },
     analysis: {

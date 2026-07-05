@@ -1,0 +1,590 @@
+{
+  "meta": {
+    "title": "Introduction to Triads",
+    "course": "MUS 141",
+    "instructor": "Dr. Amanda Heim",
+    "source": "Converted from the original .pptx/.pdf deck. All bullet text is verbatim from the original slides. Diagrams were re-derived from the deck's own images/logic (not guessed) as noted per-item; worked-example chord pitches were transcribed or derived analytically as noted in 'derivationNote' fields.",
+    "notationFormat": "Each `notation` object is a renderer-agnostic description (clef, keySignature, timeSignature, voices of {keys, duration, figure, roman}) meant to be converted to this site's existing VexFlow calls by the coding agent -- it is NOT already-rendered VexFlow code.",
+    "diagramComponent": "circle-of-thirds.js exports renderCircleOfThirds(container, options). See that file's header comment for the full API. `diagram` objects below map directly to its `options` argument."
+  },
+  "slides": [
+    {
+      "slideNumber": 1,
+      "id": "title",
+      "type": "title",
+      "title": "INTRODUCTION TO TRIADS",
+      "subtitle": ["MUS 141", "Dr. Amanda Heim"]
+    },
+    {
+      "slideNumber": 2,
+      "id": "revisiting-major-scale",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "First, let’s revisit the major scale",
+        "The diatonic, stepwise pattern of major and minor seconds creates the major scale, no matter the starting pitch"
+      ],
+      "notation": [
+        {
+          "id": "s2-c-major-scale",
+          "purpose": "C major scale showing stepwise intervals of major and minor seconds.",
+          "clef": "treble",
+          "showIntervals": true,
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/4"], "duration": "q" },
+                { "keys": ["d/4"], "duration": "q" },
+                { "keys": ["e/4"], "duration": "q" },
+                { "keys": ["f/4"], "duration": "q" },
+                { "keys": ["g/4"], "duration": "q" },
+                { "keys": ["a/4"], "duration": "q" },
+                { "keys": ["b/4"], "duration": "q" },
+                { "keys": ["c/5"], "duration": "q" }
+              ]
+            }
+          ],
+          "derivationNote": "C major scale (C4 to C5) in treble clef. Stepwise intervals indicated in the deck are: M2, M2, m2, M2, M2, M2, m2."
+        },
+        {
+          "id": "s2-bb-major-scale",
+          "purpose": "Bb major scale showing stepwise intervals of major and minor seconds starting from Bb3.",
+          "clef": "treble",
+          "showIntervals": true,
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["bb/3"], "duration": "q" },
+                { "keys": ["c/4"], "duration": "q" },
+                { "keys": ["d/4"], "duration": "q" },
+                { "keys": ["eb/4"], "duration": "q" },
+                { "keys": ["f/4"], "duration": "q" },
+                { "keys": ["g/4"], "duration": "q" },
+                { "keys": ["a/4"], "duration": "q" },
+                { "keys": ["bb/4"], "duration": "q" }
+              ]
+            }
+          ],
+          "derivationNote": "Bb major scale (Bb3 to Bb4) in treble clef. Stepwise intervals indicated in the deck are: M2, M2, m2, M2, M2, M2, m2."
+        }
+      ]
+    },
+    {
+      "slideNumber": 3,
+      "id": "diatonic-collection-circle",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "Now, let’s look at the diatonic collection as a circle"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Diatonic circle of seconds showing natural letters in stepwise order (C fixed at 12 o'clock), with M2/m2 intervals around the rim.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": []
+          }
+        }
+      ]
+    },
+    {
+      "slideNumber": 4,
+      "id": "choose-three-non-adjacent",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "In order to form a triad, we simply choose three non-adjacent pitch classes"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of seconds highlighting C, E, G in red to show they are non-adjacent.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["C", "E", "G"]
+          }
+        }
+      ],
+      "notation": [
+        {
+          "id": "s4-c-major-scale-highlighted",
+          "purpose": "C major scale in treble clef with notes C4, E4, and G4 highlighted (circled in red).",
+          "clef": "treble",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/4"], "duration": "q", "highlighted": true },
+                { "keys": ["d/4"], "duration": "q" },
+                { "keys": ["e/4"], "duration": "q", "highlighted": true },
+                { "keys": ["f/4"], "duration": "q" },
+                { "keys": ["g/4"], "duration": "q", "highlighted": true },
+                { "keys": ["a/4"], "duration": "q" },
+                { "keys": ["b/4"], "duration": "q" },
+                { "keys": ["c/5"], "duration": "q" }
+              ]
+            }
+          ],
+          "derivationNote": "C major scale (C4 to C5) in treble clef. The triad members C4, E4, and G4 are circled in red on the slide, modeled here with a 'highlighted' boolean property."
+        }
+      ]
+    },
+    {
+      "slideNumber": 5,
+      "id": "built-on-any-scale-degree",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "A triad can be built on any scale degree, as long as we choose every other pitch class"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of seconds highlighting C, E, G in red.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["C", "E", "G"]
+          }
+        },
+        {
+          "purpose": "Circle of seconds highlighting E, G, B in red to show another triad built from E.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["E", "G", "B"]
+          }
+        }
+      ]
+    },
+    {
+      "slideNumber": 6,
+      "id": "solfege-syllables-spacing",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "Remember, because we are choosing three pitch classes from a seven-note collection, they will NOT be evenly spaced",
+        "Consider every triad as a collection of three non-adjacent solfege syllables",
+        "In this example, there is a larger space between Mi and La (P4) than between the other triad members, which are separated by thirds",
+        "This asymmetry will later help us to find the chordal root!"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of seconds labeled with solfege syllables (Do at 12 o'clock), with Do, Mi, La highlighted in red to show the asymmetric spacing (large gap between Mi and La).",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "customCycle": ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti"],
+            "chordTones": ["Do", "Mi", "La"]
+          }
+        }
+      ]
+    },
+    {
+      "slideNumber": 7,
+      "id": "not-a-triad",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "NOT A TRIAD!",
+      "bullets": [
+        "The following are examples of sonorities that are NOT triads!",
+        "Triads cannot have adjacent pitch classes, no matter how they are voiced"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Non-triad example highlighting adjacent notes C, E, B on the circle of seconds.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["C", "E", "B"]
+          }
+        },
+        {
+          "purpose": "Non-triad example highlighting adjacent notes C, D, B on the circle of seconds.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["C", "D", "B"]
+          }
+        }
+      ]
+    },
+    {
+      "slideNumber": 8,
+      "id": "triad-quality-intervals",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "The quality of a triad is determined by the size/quality of the intervals between the voices",
+        "Begin by removing the pitches that lie in between the triad members",
+        "The root (which we will consider the “lowest” pitch) will be the furthest pitch counter-clockwise before the large gap of a fourth"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of seconds with non-triad tones (D, F, A, B) hidden, leaving only C, E, G to show the asymmetric spacing clearly.",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "seconds",
+            "chordTones": ["C", "E", "G"],
+            "hideNonChordTones": true
+          }
+        }
+      ],
+      "notation": [
+        {
+          "id": "s8-c-major-triad-intervals",
+          "purpose": "Stacked C major triad on treble staff showing Major Third (lower third), minor third (upper third), and Perfect Fifth (bounding fifth).",
+          "clef": "treble",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/4", "e/4", "g/4"], "duration": "w" }
+              ]
+            }
+          ],
+          "derivationNote": "C major triad (C4-E4-G4) stacked vertically. The slide indicates the intervals: lower Major Third (M3), upper minor third (m3), and bounding Perfect Fifth (P5)."
+        }
+      ]
+    },
+    {
+      "slideNumber": 8.5,
+      "id": "circle-of-thirds-wheel",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "THE CIRCLE OF THIRDS WHEEL",
+      "bullets": [
+        "The letters always run in the same order around the wheel: C-E-G-B-D-F-A (and back to C)",
+        "To name a chord, read clockwise from its root: the next stop is the third, the one after that is the fifth, and a seventh chord adds one more",
+        "The root is the furthest pitch counter-clockwise before the large gap of a fourth — that gap is what tells you the chord has ended"
+      ],
+      "diagrams": [
+        {
+          "purpose": "Circle of thirds wheel rooted on C, highlighting the C-E-G triad (root, third, fifth).",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "thirds",
+            "root": "C",
+            "chordSize": 3
+          }
+        },
+        {
+          "purpose": "Circle of thirds wheel rooted on G, highlighting the G-B-D-F seventh chord (root, third, fifth, seventh).",
+          "component": "circle-of-thirds",
+          "options": {
+            "mode": "thirds",
+            "root": "G",
+            "chordSize": 4
+          }
+        }
+      ]
+    },
+    {
+      "slideNumber": 9,
+      "id": "chord-member-names",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "Each pitch in the triad bears a specific name",
+        "When stacked in a series of thirds, the lowest note is the root, the middle note is the third, and the top note is the fifth"
+      ],
+      "notation": [
+        {
+          "id": "s9-triad-members-labeled",
+          "purpose": "C major triad in treble clef with labels Root, Third, and Fifth pointing to each chord member.",
+          "clef": "treble",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/4", "e/4", "g/4"], "duration": "w", "noteLabels": ["Root", "Third", "Fifth"] }
+              ]
+            }
+          ],
+          "derivationNote": "C major triad (C4-E4-G4) stacked. Note labels point to each notehead: Root on C4, Third on E4, Fifth on G4."
+        }
+      ]
+    },
+    {
+      "slideNumber": 10,
+      "id": "four-qualities-of-triads",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "There are four qualities of triads, based on the intervals between the chord members"
+      ],
+      "tables": [
+        {
+          "purpose": "Triad quality definition table containing interval formulas and examples built on A.",
+          "columns": ["Quality", "Thirds", "Built up from A", "Bounding 5th"],
+          "rows": [
+            { "quality": "Diminished", "thirds": "minor third / minor third", "builtUpFromA": "A-C-E\u266d", "boundingFifth": "diminished" },
+            { "quality": "Minor", "thirds": "minor third / major third", "builtUpFromA": "A-C-E", "boundingFifth": "perfect" },
+            { "quality": "Major", "thirds": "major third / minor third", "builtUpFromA": "A-C\u266f-E", "boundingFifth": "perfect" },
+            { "quality": "Augmented", "thirds": "major third / major third", "builtUpFromA": "A-C\u266f-E\u266f", "boundingFifth": "augmented" }
+          ]
+        }
+      ],
+      "notation": [
+        {
+          "id": "s10-triads-built-from-a",
+          "purpose": "The four triad qualities built from A: diminished (A-C-Eb), minor (A-C-E), major (A-C#-E), and augmented (A-C#-E#).",
+          "clef": "treble",
+          "voices": [
+            { "notes": [{ "keys": ["a/4", "c/5", "eb/5"], "duration": "w", "label": "Diminished" }] },
+            { "notes": [{ "keys": ["a/4", "c/5", "e/5"], "duration": "w", "label": "Minor" }] },
+            { "notes": [{ "keys": ["a/4", "c#/5", "e/5"], "duration": "w", "label": "Major" }] },
+            { "notes": [{ "keys": ["a/4", "c#/5", "e#/5"], "duration": "w", "label": "Augmented" }] }
+          ],
+          "derivationNote": "Diminished (A-C-Eb), minor (A-C-E), major (A-C#-E), and augmented (A-C#-E#) triads in treble clef. Qualities are derived from tertian stack formulas from A."
+        }
+      ]
+    },
+    {
+      "slideNumber": 11,
+      "id": "how-to-determine-quality",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "What is the quality?  Stack the triad from root-third-fifth.",
+        "ID the bounding fifth",
+        "ID the lower third",
+        "If the bounding fifth is perfect, the triad will be either major or minor, depending on the quality of the lower third",
+        "If the bounding fifth is diminished, the triad will be diminished",
+        "If the bounding fifth is augmented, the triad will be augmented"
+      ],
+      "notation": [
+        {
+          "id": "s11-g-minor-triad-analysis",
+          "purpose": "Stacked G minor triad (G4, Bb4, D5) labeled with intervals: Perfect Fifth and Minor Third, identifying it as a Minor Triad.",
+          "clef": "treble",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["g/4", "bb/4", "d/5"], "duration": "w", "label": "Minor Triad" }
+              ]
+            }
+          ],
+          "derivationNote": "G minor triad (G4-Bb4-D5) in treble clef. The slide highlights the intervals: Minor Third (G to Bb) and Perfect Fifth (G to D)."
+        }
+      ]
+    },
+    {
+      "slideNumber": 12,
+      "id": "naming-root-and-quality",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "When describing the quality of a triad, we do so by naming the root and the quality",
+        "g minor",
+        "a diminished",
+        "F Augmented",
+        "F# Major"
+      ],
+      "notation": [
+        {
+          "id": "s12-examples-bass-clef",
+          "purpose": "Examples of g minor (G2, Bb2, D3) and a diminished (A2, C3, Eb3) triads in bass clef.",
+          "clef": "bass",
+          "voices": [
+            { "notes": [{ "keys": ["g/2", "bb/2", "d/3"], "duration": "w", "label": "g minor" }] },
+            { "notes": [{ "keys": ["a/2", "c/3", "eb/3"], "duration": "w", "label": "a diminished" }] }
+          ],
+          "derivationNote": "First two naming examples, written on the bass staff: g minor (G2-Bb2-D3) with flat on B, and a diminished (A2-C3-Eb3) with flat on E."
+        },
+        {
+          "id": "s12-examples-treble-clef",
+          "purpose": "Examples of F Augmented (F4, A4, C#5) and F# Major (F#4, A#4, C#5) triads in treble clef.",
+          "clef": "treble",
+          "voices": [
+            { "notes": [{ "keys": ["f/4", "a/4", "c#/5"], "duration": "w", "label": "F Augmented" }] },
+            { "notes": [{ "keys": ["f#/4", "a#/4", "c#/5"], "duration": "w", "label": "F# Major" }] }
+          ],
+          "derivationNote": "Last two naming examples, written on the treble staff: F Augmented (F4-A4-C#5) with sharp on C, and F# Major (F#4-A#4-C#5) with sharps on F, A, and C."
+        }
+      ]
+    },
+    {
+      "slideNumber": 13,
+      "id": "practice-building-triads",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "Practice building the following triads",
+        "F Major",
+        "d minor",
+        "a diminished"
+      ],
+      "notation": [
+        {
+          "id": "s13-practice-triads",
+          "purpose": "Practice triads: F Major (F4-A4-C5), d minor (D4-F4-A4), and a diminished (A4-C5-Eb5) in treble clef.",
+          "clef": "treble",
+          "voices": [
+            { "notes": [{ "keys": ["f/4", "a/4", "c/5"], "duration": "w", "label": "F Major" }] },
+            { "notes": [{ "keys": ["d/4", "f/4", "a/4"], "duration": "w", "label": "d minor" }] },
+            { "notes": [{ "keys": ["a/4", "c/5", "eb/5"], "duration": "w", "label": "a diminished" }] }
+          ],
+          "derivationNote": "Treble staff practice chords: F Major (F4-A4-C5, intervals: M3 lower, P5 bounding), d minor (D4-F4-A4, intervals: m3 lower, P5 bounding), and a diminished (A4-C5-Eb5, intervals: m3 lower, d5 bounding)."
+        }
+      ]
+    },
+    {
+      "slideNumber": 14,
+      "id": "jazz-pop-shorthand",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "DEFINING THE TRIAD",
+      "bullets": [
+        "In jazz and popular music, we use a shorthand to describe triad quality",
+        "Root name and quality",
+        "G Major = G",
+        "g minor = G-, G min (or g min)",
+        "G Augmented = G+ (or G #5)",
+        "g diminished = G dim, Go (or g min b5)",
+        "the root named in the chord is also the note played by the bass"
+      ],
+      "notation": [
+        {
+          "id": "s14-jazz-shorthand-examples",
+          "purpose": "G triads in jazz shorthand: G (G4-B4-D5), GMIN (G4-Bb4-D5), G+ (G4-B4-D#5), GDIM (G4-Bb4-Db5).",
+          "clef": "treble",
+          "voices": [
+            { "notes": [{ "keys": ["g/4", "b/4", "d/5"], "duration": "w", "label": "G" }] },
+            { "notes": [{ "keys": ["g/4", "bb/4", "d/5"], "duration": "w", "label": "GMIN" }] },
+            { "notes": [{ "keys": ["g/4", "b/4", "d#/5"], "duration": "w", "label": "G+" }] },
+            { "notes": [{ "keys": ["g/4", "bb/4", "db/5"], "duration": "w", "label": "GDIM" }] }
+          ],
+          "derivationNote": "Four chords on G demonstrating lead sheet labels. G major (G), G minor (GMIN) with Bb, G augmented (G+) with D# (courtesy natural on B), and G diminished (GDIM) with Bb and Db."
+        }
+      ]
+    },
+    {
+      "slideNumber": 15,
+      "id": "figured-bass-intro",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "Triads and figured bass",
+      "bullets": [
+        "Figured bass (or Thoroughbass) refers to a shorthand system to designate the intervals to be played above the bass.",
+        "We will usually assume a four part texture when reading figured bass (Soprano, Alto, Tenor, and Bass)",
+        "Since the intervals above the bass in a triad are a 3rd, a 5th, and an 8va, the full figure for a triad is 8/5/3"
+      ],
+      "notation": [
+        {
+          "id": "s15-figured-bass-examples",
+          "purpose": "Seven root-position triads in a four-part texture, each showing intervals 8/5/3 from the bass note.",
+          "clef": "grand-staff",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/3", "g/3", "e/4", "c/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["f/3", "c/4", "a/4", "f/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["g/3", "d/4", "b/4", "g/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["a/3", "e/4", "c/5", "a/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["b/3", "d/4", "f/4", "b/4"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["c/4", "g/4", "e/5", "c/6"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["g/2", "d/3", "b/3", "g/4"], "duration": "w", "figure": "8/5/3" }
+              ]
+            }
+          ],
+          "derivationNote": "Four-part root-position chords over a given bass line. Chords are transcribed directly from the staves: C major, F major, G major, a minor, b diminished, C major (high), G major (low). Each chord is labeled with its full 8/5/3 figure."
+        }
+      ]
+    },
+    {
+      "slideNumber": 16,
+      "id": "figured-bass-alterations",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "Triads and figured bass",
+      "bullets": [
+        "Notice that the intervals in figured bass are the generic intervals from the bass. The note above the bass comes from the key unless indicated otherwise",
+        "Any alterations of the intervals from the bass will be indicated next to the numbers. Here are the general rules for alterations:",
+        "Any accidental next to a number indicates adding that accidental to that generic interval above the bass",
+        "A number with a + (or strikethrough) should be raised",
+        "A number with a - should be lowered"
+      ],
+      "notation": [
+        {
+          "id": "s16-figured-bass-alterations",
+          "purpose": "Seven chords in G major illustrating figures and alterations (e.g. #3, 5/3).",
+          "clef": "grand-staff",
+          "keySignature": "G",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["e/2", "g/4", "b/4", "e/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["c/3", "g/4", "c/5", "e/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["a/2", "a/4", "c#/5", "e/5"], "duration": "w", "figure": "8/5/#3" },
+                { "keys": ["g/2", "b/4", "d/5"], "duration": "w", "figure": "5/3" },
+                { "keys": ["a/2", "a/4", "c/5", "e/5"], "duration": "w", "figure": "8/5/3" },
+                { "keys": ["b/2", "b/4", "d#/5", "f#/5"], "duration": "w", "figure": "8/5/#3" },
+                { "keys": ["e/2", "e/4", "g/4", "b/4"], "duration": "w", "figure": "8/5/3" }
+              ]
+            }
+          ],
+          "derivationNote": "Key signature of G major (1 sharp). Chords are: e minor, C major, A major (with C# accidental, figure 8/5/#3), G major (3 voices, figure 5/3), a minor, B major (with D# accidental, figure 8/5/#3), e minor. Transcribed verbatim from the slide's staves."
+        }
+      ]
+    },
+    {
+      "slideNumber": 17,
+      "id": "figured-bass-exercise",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "Triads and figured bass",
+      "subtitle": "Shorthand for triads",
+      "bullets": [
+        "8/5/3 triads are indicated by NO numbers in shorthand figured bass",
+        "This means that any bass note without figures is assumed to be an 8/5/3 triad",
+        "For example, in the following figured bass, every chord should be an 8/5/3"
+      ],
+      "notation": [
+        {
+          "id": "s17-figured-bass-exercise",
+          "purpose": "A bass line with common time signature, with no figures underneath, representing a shorthand figured bass exercise.",
+          "clef": "bass",
+          "timeSignature": "4/4",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/3"], "duration": "h" },
+                { "keys": ["g/3"], "duration": "h" },
+                { "keys": ["e/3"], "duration": "h" },
+                { "keys": ["f/3"], "duration": "h" },
+                { "keys": ["d/3"], "duration": "h" },
+                { "keys": ["g/3"], "duration": "h" },
+                { "keys": ["c/3"], "duration": "w" }
+              ]
+            }
+          ],
+          "derivationNote": "Common time (4/4). The bass line consists of: C3 (half), G3 (half) | E3 (half), F3 (half) | D3 (half), G3 (half) | C3 (whole). Treble staff is left blank in the slide's visual layout."
+        }
+      ]
+    },
+    {
+      "slideNumber": 18,
+      "id": "figured-bass-realized",
+      "eyebrow": "INTRODUCTION TO TRIADS",
+      "title": "Triads and figured bass",
+      "subtitle": "shorthand figures",
+      "bullets": [
+        "Here is the same figured bass realized"
+      ],
+      "notation": [
+        {
+          "id": "s18-figured-bass-realized",
+          "purpose": "The realized 4-part chords of the shorthand figured bass exercise.",
+          "clef": "grand-staff",
+          "timeSignature": "4/4",
+          "voices": [
+            {
+              "notes": [
+                { "keys": ["c/3", "e/4", "g/4", "c/5"], "duration": "h" },
+                { "keys": ["g/3", "d/4", "g/4", "b/4"], "duration": "h" },
+                { "keys": ["e/3", "e/4", "g/4", "b/4"], "duration": "h" },
+                { "keys": ["f/3", "f/4", "a/4", "c/5"], "duration": "h" },
+                { "keys": ["d/3", "f/4", "a/4", "d/5"], "duration": "h" },
+                { "keys": ["g/3", "d/4", "g/4", "b/4"], "duration": "h" },
+                { "keys": ["c/3", "e/4", "g/4", "c/5"], "duration": "w" }
+              ]
+            }
+          ],
+          "derivationNote": "The four-part realization of the bass line on slide 17, spelling C major (root), G major (root), e minor (root), F major (root), d minor (root), G major (root), C major (root). Note voicings transcribed directly from the slide staves."
+        }
+      ]
+    }
+  ]
+}
