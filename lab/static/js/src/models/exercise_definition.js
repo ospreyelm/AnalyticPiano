@@ -668,6 +668,18 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
       return this.exercise.mode || (this.exercise.score && this.exercise.score.umto && this.exercise.score.umto.metadata && this.exercise.score.umto.metadata.mode) || null;
     },
     /**
+     * Returns the cached ResolvedMode (output of resolvePipeline) computed once
+     * at parse time. This is the single discriminator authority — callers read
+     * pipeline / interactionMode / stack / predicate mirrors from here instead of
+     * re-deriving from raw `getMode()` / `type` / `staffDistribution` strings.
+     * See `models/resolved_mode.js` and `docs/architecture/pipeline-registry.md`.
+     *
+     * @return {object} frozen ResolvedMode
+     */
+    getResolvedMode: function () {
+      return this._resolved;
+    },
+    /**
      * Returns true if this is a chorale exercise.
      *
      * @return {boolean}
