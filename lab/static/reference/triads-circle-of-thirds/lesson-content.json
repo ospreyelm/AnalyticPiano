@@ -535,7 +535,7 @@
         {
           "id": "s17-figured-bass-exercise",
           "purpose": "A bass line with common time signature, with no figures underneath, representing a shorthand figured bass exercise.",
-          "clef": "grand-staff",
+          "clef": "bass",
           "timeSignature": "4/4",
           "voices": [
             {

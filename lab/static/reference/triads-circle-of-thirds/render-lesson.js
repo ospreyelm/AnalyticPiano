@@ -169,6 +169,106 @@ function renderNotationPlaceholder(n) {
   return wrap;
 }
 
+// Absolute pitch (octave*12 + pitch class) of a VexFlow key, for register
+// comparisons. Middle C = c/4 = 48; used to split grand-staff notes.
+function keyPitch(key) {
+  const m = String(key).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  if (!m) return 0;
+  const base = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[m[1]];
+  const off = { "#": 1, b: -1, n: 0 };
+  let o = 0;
+  for (const c of m[2]) o += off[c] || 0;
+  return parseInt(m[3], 10) * 12 + base + o;
+}
+
+// Build a StaveNote for one chord on one clef, adding accidentals per key.
+// If `keys` is empty, return a rest of the same duration.
+function makeStaveNote(Vex, keys, duration, clef) {
+  const { StaveNote, Accidental } = Vex.Flow;
+  const dur = duration || "w";
+  if (!keys || !keys.length) {
+    const restKey = clef === "bass" ? "d/3" : "d/4";
+    return new StaveNote({ clef, keys: [restKey], duration: dur + "r" });
+  }
+  const sn = new StaveNote({ clef, keys, duration: dur });
+  keys.forEach((k, i) => {
+    const m = k.match(/^([a-g])([#bn]*)\//);
+    const acc = m ? m[2] : "";
+    if (acc) sn.addModifier(new Accidental(acc), i);
+  });
+  return sn;
+}
+
+// Render a grand-staff notation: treble (top) + bass (bottom), each chord
+// split by register (notes >= middle C on treble, below on bass). Figured-
+// bass symbols are written under the bass staff, centered on each chord.
+function drawGrandStaff(target, n) {
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveConnector } = Vex.Flow;
+  const notes = n.voices[0].notes;
+  const N = notes.length;
+  const width = Math.max(380, N * 110);
+  const renderer = new Renderer(target, Renderer.Backends.SVG);
+  renderer.resize(width, 240);
+  const context = renderer.getContext();
+
+  const trebleStave = new Stave(10, 10, width - 20);
+  trebleStave.addClef("treble");
+  if (n.keySignature) trebleStave.addKeySignature(n.keySignature);
+  if (n.timeSignature) trebleStave.addTimeSignature(n.timeSignature);
+  trebleStave.setContext(context).draw();
+
+  const bassStave = new Stave(10, 130, width - 20);
+  bassStave.addClef("bass");
+  if (n.keySignature) bassStave.addKeySignature(n.keySignature);
+  if (n.timeSignature) bassStave.addTimeSignature(n.timeSignature);
+  bassStave.setContext(context).draw();
+
+  // Join the two staves with a brace + left barline so it reads as one staff
+  // system rather than two disconnected staves.
+  new StaveConnector(trebleStave, bassStave).setType("brace").setContext(context).draw();
+  new StaveConnector(trebleStave, bassStave).setType("singleLeft").setContext(context).draw();
+
+  const trebleNotes = [], bassNotes = [];
+  notes.forEach((note) => {
+    const trebleKeys = [], bassKeys = [];
+    (note.keys || []).forEach((k) => {
+      if (keyPitch(k) >= 48) trebleKeys.push(k);
+      else bassKeys.push(k);
+    });
+    trebleNotes.push(makeStaveNote(Vex, trebleKeys, note.duration, "treble"));
+    bassNotes.push(makeStaveNote(Vex, bassKeys, note.duration, "bass"));
+  });
+
+  const beatMap = { w: 4, h: 2, q: 1, 8: 0.5 };
+  const totalBeats = notes.reduce((s, note) => s + (beatMap[note.duration] || 1), 0);
+  const trebleVoice = new Voice({ num_beats: totalBeats || N, beat_value: 4 }).setStrict(false);
+  trebleVoice.addTickables(trebleNotes);
+  const bassVoice = new Voice({ num_beats: totalBeats || N, beat_value: 4 }).setStrict(false);
+  bassVoice.addTickables(bassNotes);
+  new Formatter()
+    .joinVoices([trebleVoice])
+    .joinVoices([bassVoice])
+    .format([trebleVoice, bassVoice], width - 80);
+  trebleVoice.draw(context, trebleStave);
+  bassVoice.draw(context, bassStave);
+
+  // Figured bass: under the bass staff, centered on each chord's bass note.
+  if (notes.some((x) => x.figure)) {
+    context.save();
+    context.setFont("bold 12px Arial, sans-serif");
+    context.setFillStyle("#c0392b");
+    const y = bassStave.getYForLine(4) + 16;
+    bassNotes.forEach((bn, i) => {
+      const fig = notes[i].figure;
+      if (!fig) return;
+      const x = bn.getAbsoluteX();
+      const w = context.measureText(fig).width;
+      context.fillText(fig, x - w / 2, y);
+    });
+    context.restore();
+  }
+}
+
 // Label the ascending interval between two VexFlow keys as a second (M2/m2).
 // Returns null for anything that isn't a stepwise second — only meant for the
 // scale slides, which move by adjacent scale degrees.
@@ -189,6 +289,11 @@ function intervalLabel(lowKey, highKey) {
 }
 
 function drawIllustrativeVexflow(target, n) {
+  // Grand staff: render treble + bass staves, splitting each chord's notes
+  // by register (middle C = c/4 is the boundary — at/above → treble, below
+  // → bass), and write the figured-bass symbol under the bass staff.
+  if (n.clef === "grand-staff") return drawGrandStaff(target, n);
+
   // VexFlow is loaded as a classic UMD script (index.html) that sets
   // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
   // in module scope — reference window.Vex explicitly or import it.
