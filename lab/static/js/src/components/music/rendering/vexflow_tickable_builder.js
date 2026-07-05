@@ -184,7 +184,15 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
       if (entry.onset < cursor) return null;
       if (!emitTransparentRests(entry.onset - cursor)) return null;
 
-      var chunks = HarmonizationRealizationLogic.ticksToDurationChunks(entry.durationTicks);
+      // Overlay noteheads (pending/rejected click previews) use a fixed
+      // placeholder duration that isn't real rhythm — clamp it to the room
+      // left in the measure so a chord on the last beat still renders
+      // instead of silently dropping the whole overlay voice below.
+      var availableTicks = measureTotalTicks - entry.onset;
+      var effectiveDuration = Math.min(entry.durationTicks, availableTicks);
+      if (effectiveDuration <= 0) return null;
+
+      var chunks = HarmonizationRealizationLogic.ticksToDurationChunks(effectiveDuration);
       if (!chunks || !chunks.length) return null;
       var headChunk = chunks[0];
 
