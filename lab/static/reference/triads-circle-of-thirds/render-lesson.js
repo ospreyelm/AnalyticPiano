@@ -192,7 +192,7 @@ function drawIllustrativeVexflow(target, n) {
   // VexFlow is loaded as a classic UMD script (index.html) that sets
   // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
   // in module scope — reference window.Vex explicitly or import it.
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Annotation } = Vex.Flow;
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
   const notes = n.voices[0].notes;
   const width = Math.max(300, notes.length * 90);
   const renderer = new Renderer(target, Renderer.Backends.SVG);
@@ -224,21 +224,12 @@ function drawIllustrativeVexflow(target, n) {
   });
 
   // Scale slides set `showIntervals: true` to label the stepwise interval
-  // between each consecutive note (M2 / m2). The annotation sits above the
-  // note that ENDS the interval, so it reads as "the interval leading into
-  // this note". Computed from pitch classes so it stays correct under any
-  // key signature / accidental spelling.
-  if (n.showIntervals) {
-    for (let i = 1; i < vfNotes.length; i++) {
-      const label = intervalLabel(notes[i - 1].keys[0], notes[i].keys[0]);
-      if (label) {
-        vfNotes[i].addModifier(
-          new Annotation(label).setVerticalJustification(Annotation.VerticalJustify.TOP),
-          0
-        );
-      }
-    }
-  }
+  // between each consecutive note (M2 / m2). Drawn AFTER the voice so we can
+  // read each note's absolute x and place the label horizontally centered
+  // between the two notes it spans (not pinned to the second note). Computed
+  // from pitch classes so it stays correct under any key signature.
+  // (Drawn under the post-draw block below — kept here as a no-op marker so
+  // the flag is visible next to the note loop.)
 
   const totalBeats = notes.reduce((sum, note) => {
     const map = { w: 4, h: 2, q: 1, 8: 0.5 };
@@ -250,6 +241,24 @@ function drawIllustrativeVexflow(target, n) {
   voice.addTickables(vfNotes);
   new Formatter().joinVoices([voice]).format([voice], width - 60);
   voice.draw(context, stave);
+
+  // Interval labels: horizontally centered between the two notes they span
+  // ((x1 + x2) / 2), drawn above the staff. VexFlow's Annotation modifier
+  // pins to one note's x, so we draw raw text on the SVG context instead.
+  if (n.showIntervals) {
+    context.save();
+    context.setFont("bold 11px Arial, sans-serif");
+    context.setFillStyle("#c0392b");
+    const y = stave.getYForLine(0) - 6;
+    for (let i = 1; i < vfNotes.length; i++) {
+      const label = intervalLabel(notes[i - 1].keys[0], notes[i].keys[0]);
+      if (!label) continue;
+      const midX = (vfNotes[i - 1].getAbsoluteX() + vfNotes[i].getAbsoluteX()) / 2;
+      const w = context.measureText(label).width;
+      context.fillText(label, midX - w / 2, y);
+    }
+    context.restore();
+  }
 }
 
 function escapeHtml(str) {
