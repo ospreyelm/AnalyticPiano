@@ -205,7 +205,7 @@ assertEqual("roman I-V-I keeps hints to 3 (orient/key/solfege)", iRoman.hints.le
 
 // --- moreInfoUrl points to the static explanation page ---
 assertEqual("roman moreInfo flag set", iRoman.moreInfo, true);
-assertContains("roman moreInfoUrl points to static explanation page", iRoman.moreInfoUrl, "/static/reference/triads-circle-of-thirds/");
+assertContains("roman moreInfoUrl points to static explanation page", iRoman.moreInfoUrl, "/static/dist/triads-circle-of-thirds/");
 
 // --- Figure step appears when the exercise has a figured-bass suffix ---
 var dRomanFig = romanDef(["I", "I6"]);

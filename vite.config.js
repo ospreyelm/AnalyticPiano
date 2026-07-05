@@ -1,8 +1,33 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
+import fs from "fs";
+
+// Vite emits HTML entries preserving their source path relative to the
+// project root, so the triads-circle-of-thirds entry would land at
+// dist/lab/static/reference/triads-circle-of-thirds/index.html. The asset
+// references inside are absolute (/static/dist/assets/...), so the HTML is
+// location-independent — relocate it to a clean dist/ subdirectory and prune
+// the empty nested tree. Served URL becomes /static/dist/triads-circle-of-thirds/index.html.
+function flattenReferenceHtml() {
+  return {
+    name: "flatten-reference-html",
+    closeBundle() {
+      const distDir = resolve(__dirname, "lab/static/dist");
+      const nested = resolve(distDir, "lab/static/reference/triads-circle-of-thirds/index.html");
+      const flatDir = resolve(distDir, "triads-circle-of-thirds");
+      const flat = resolve(flatDir, "index.html");
+      if (!fs.existsSync(nested)) return;
+      fs.mkdirSync(flatDir, { recursive: true });
+      fs.copyFileSync(nested, flat);
+      // Remove the now-duplicated nested lab/ tree Vite created under dist/.
+      fs.rmSync(resolve(distDir, "lab"), { recursive: true, force: true });
+    },
+  };
+}
 
 export default defineConfig({
   base: "/static/dist/",
+  plugins: [flattenReferenceHtml()],
   resolve: {
     alias: [
       { find: /^app\/config$/, replacement: resolve(__dirname, "lab/static/js/src/config.js") },
@@ -46,7 +71,13 @@ export default defineConfig({
         vexflow_adapter: resolve(__dirname, "lab/static/js/src/components/music/rendering/vexflow_adapter.js"),
         click_note: resolve(__dirname, "lab/static/js/src/components/input/click_note.js"),
         piano: resolve(__dirname, "lab/static/js/src/components/piano.js"),
-        main: resolve(__dirname, "lab/static/js/src/main.js")
+        main: resolve(__dirname, "lab/static/js/src/main.js"),
+        // Reference lesson page. render-lesson.js imports the real VexFlow
+        // engine (`vexflow`, `app/...`) via bare specifiers that only resolve
+        // through the aliases below, so this page MUST be Vite-built — it
+        // cannot be served raw from /static/reference/. The built HTML lands
+        // in lab/static/dist/ and is the canonical URL linked from the hints.
+        triads_circle_of_thirds: resolve(__dirname, "lab/static/reference/triads-circle-of-thirds/index.html")
       }
     }
   },
