@@ -10,6 +10,7 @@ import ExerciseDefinitionLogic from "app/models/exercise_definition_logic";
 import ChordalProblemsLogic from "app/models/chordal_problems_logic";
 import Tonal from "tonal";
 import LabelLogic from "app/models/exercise_definition_label_logic";
+import { resolvePipeline } from "./resolved_mode";
 
 var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");
@@ -89,6 +90,13 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
     }
 
     this.exercise = this.parse(this.settings.definition);
+
+    // Cache the resolved pipeline mode once. Safe to cache: this.exercise and
+    // its type/mode/staffDistribution/analysisType fields are not mutated after
+    // parse (verified — no post-construction assignments). The predicates below
+    // read this._resolved instead of re-deriving from raw strings, so there is
+    // one discriminator authority (resolved_mode.js). See pipeline-registry.md.
+    this._resolved = resolvePipeline(this.exercise);
   };
 
   /**
@@ -665,11 +673,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
      * @return {boolean}
      */
     isChorale: function () {
-      var mode = this.getMode();
-      if (mode) {
-        return mode === "playback" || mode === "analysis_match" || mode === "play-all-voices" || mode === "analysis";
-      }
-      return this.exercise.type === "chorale" || this.exercise.type === "umto_chorale";
+      return this._resolved.isChorale;
     },
     /**
      * Returns true if this is a chorale identification exercise.
@@ -677,13 +681,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
      * @return {boolean}
      */
     isChoraleIdentification: function () {
-      if (this.isSymbolicMeterQuestion()) {
-        return false;
-      }
-      var type = this.exercise.type;
-      var mode = this.getMode();
-      return type === "chorale_identification" ||
-        (type === "umto_chorale" && (mode === "identification" || mode === "chorale_identification"));
+      return this._resolved.isChoraleIdentification;
     },
     /**
      * Returns true if this is a symbolic meter question exercise.
@@ -691,7 +689,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
      * @return {boolean}
      */
     isSymbolicMeterQuestion: function () {
-      return this.exercise.type === "umto_symbolic_meter";
+      return this._resolved.isSymbolicMeter;
     },
     /**
      * Returns true if this is a key signature exercise.
@@ -707,7 +705,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
      * @return {boolean}
      */
     isHarmonization: function () {
-      return this.getMode() === "harmonization";
+      return this._resolved.isHarmonization;
     },
     getHarmonizationTargets: function () {
       return this.exercise.harmonizationTargets || [];
@@ -717,7 +715,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
       return (score && score.umto && score.umto.metadata) || {};
     },
     isAnalysisMatch: function () {
-      return this.getMode() === "analysis_match";
+      return this._resolved.isAnalysisMatch;
     },
     /**
      * Returns true if this is a musicxml exercise.
@@ -732,7 +730,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
      * @return {boolean}
      */
     isIdentification: function () {
-      return this.exercise.type === "identification" || this.exercise.type === "chorale_identification" || this.isSymbolicMeterQuestion();
+      return this._resolved.isIdentification;
     },
     /**
      * Canonical answer-input discriminator. Single source of truth for
