@@ -64,6 +64,32 @@ tones required); run `python manage.py audit_figure_realization_coverage` to see
 figures fall through (≈95% of harmonization targets map to a prototype; the remainder are
 incomplete/altered voicings where all-required is harmless or correct).
 
+## Pitch spelling and octave are load-bearing data
+
+Figured bass, Roman numerals, and every other bass-relative or key-relative
+label depend on correctly identifying the sounding bass and the generic
+(letter-name) interval of each upper voice above it. Both of these require
+**octave**, not just letter+accidental:
+
+- A spelling string without an octave (e.g. `"C"` instead of `"C4"`) is
+  incomplete. Re-parsing it collapses every note in a chord onto the same
+  default octave, which can silently pick the *wrong* note as the bass — every
+  figure and Roman numeral computed from that chord is then wrong, even though
+  the note *names* look fine and the actual sounding pitches were never
+  touched. This is not a hypothetical: it happened in production (see
+  `apps/exercises/services/transposition_service.py` `_transpose_chords`,
+  fixed 2026-07-03) and the wrong output looked plausible enough that it took
+  real investigation, not casual inspection, to catch.
+- Any code that derives, transposes, or re-serializes pitch spelling must
+  carry the octave through end to end (`Pitch.nameWithOctave`, not
+  `Pitch.name`).
+- If real, recorded spelling data is missing or incomplete, **do not** silently
+  re-derive a guessed spelling from bare pitch-class/MIDI (e.g. picking "the"
+  diatonic spelling for a pitch class in a key). A guessed spelling that turns
+  out wrong produces musically incorrect output that is expensive to trace
+  back to its source — prefer raising an error that names the missing data
+  over a fallback that guesses.
+
 ## Agent review rule
 
 For theory-sensitive changes, include or verify a distinguishing example. The

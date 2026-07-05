@@ -75,6 +75,12 @@ begin automatically.
   `docs/FIGURED_BASS.md` in sync.
 - Before modifying features, controllers, shared algorithms, or routing, read
   [docs/redundancy_analysis_report.md](docs/redundancy_analysis_report.md).
+- Pitch spelling must always carry octave (`Pitch.nameWithOctave`, never
+  `Pitch.name`) through any derive/transpose/re-serialize step — losing it
+  can silently pick the wrong bass and corrupt every figure/Roman numeral
+  downstream. Never silently guess a missing spelling from bare pitch-class;
+  raise an error instead. See "Pitch spelling and octave are load-bearing
+  data" in [docs/music-theory-canon.md](docs/music-theory-canon.md).
 
 UMTO references:
 
