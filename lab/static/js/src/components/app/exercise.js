@@ -187,6 +187,17 @@ import KeySigMod from "app/models/key_sig_exercise";
       }
     }
 
+    // Playback/analysis_match chorale exercises have no server-side review
+    // path (unlike identification and harmonization) — restore whatever
+    // progress survived in localStorage from before a reload.
+    if (
+      definition.exerciseId &&
+      models.exerciseContext._isChoraleGraderExercise &&
+      models.exerciseContext._isChoraleGraderExercise()
+    ) {
+      models.exerciseContext.restoreChoraleState(definition.exerciseId);
+    }
+
     models.keySignature = new KeySignature(
       models.exerciseDefinition.getKey(),
       models.exerciseDefinition.getKeySignature()
