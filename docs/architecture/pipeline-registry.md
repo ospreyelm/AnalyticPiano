@@ -202,6 +202,40 @@ Phase 1 adds: `apps/exercises/services/resolved_mode.py` (Python port).
    **DB query: 0 rows.** Not live. Add a parse branch or accept "other"
    deliberately (open question for Phase 1).
 
+## Phase 1.2 audit: staff-distribution axis (recorded 2026-07-05)
+
+`chord.js`, `stave_note_factory.js`, `chordal_umto_staff_distribution.js`,
+`vexflow_render_config.js`, `umto_score_converter.js`, and
+`staff_distribute.js` were audited as the staff-distribution-axis segment of
+Phase 1.2. **No code change made** — grep confirms none of the six hold an
+`ExerciseDefinition` reference, a `definition.exercise.type`/`.mode` read, or
+a `getMode()`/`isChorale()`-style predicate call:
+
+- They consume an already-extracted plain `staffDistribution` string passed
+  in via settings/config (`Chord.settings.staffDistribution`,
+  `StaveNoteFactory`'s `this.chord.settings.staffDistribution`,
+  `vexflow_render_config.js`'s `opts.staffDistribution`/`cfg.meta.staffDistribution`),
+  or via raw UMTO score-authoring metadata (`umto_score_converter.js`'s
+  `meta.staffDistribution`, sourced from the score JSON, not the exercise
+  definition object).
+- `chordal_umto_staff_distribution.js`'s `routeChordMidis(midis,
+  staffDistribution)` is a pure function taking the axis value as a
+  parameter — same shape as `input_method_logic.js` (Phase 1.2's earlier
+  input-method segment): nothing to route inside a pure fields-in function,
+  and its local constants (`KEYBOARD_FAMILY`, threshold values) are
+  staff-distribution-axis constants, not pipeline discriminators.
+- The upstream extraction points (`ExerciseDefinition.getStaffDistribution()`,
+  `definition.staffDistribution` reads in `components/app/exercise.js` and
+  `models/exercise_context.js`) were already covered by earlier Phase 1.2
+  segments where relevant (`exercise_context.js` routed in the
+  model/context segment; the `getStaffDistribution()` accessor itself is a
+  passthrough to `this.exercise.staffDistribution`, not a pipeline
+  discriminator — `staffDistribution` is a distinct axis from `pipeline`,
+  see `resolved.staffStyle` in `resolved_mode.js`, which mirrors but does
+  not replace it).
+
+Conclusion: this segment required no commit. Move to Phase 1.3.
+
 ## Status (2026-07-05)
 
 - Phase 0.3 done: `resolved_mode.js` + test committed (`0a85f0a5`). No production
