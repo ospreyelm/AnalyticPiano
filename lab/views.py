@@ -111,6 +111,16 @@ class PlayView(RequirejsTemplateView):
 
     @method_decorator(ensure_csrf_cookie)
     def get(self, request, *args, **kwargs):
+        # /teacher/play/ hosts the MusicXML import UI whose API endpoints are
+        # @teacher_required. TeacherAccessMiddleware bounces authenticated
+        # non-teachers to /s/, but it deliberately lets anonymous users through
+        # expecting the view to redirect them to login. PlayView had no such
+        # guard, so anonymous users loaded the import UI and the preview ajax
+        # silently 302→HTML fell back to "Failed to preview MusicXML." Redirect
+        # anonymous users to login here; the middleware handles the rest.
+        if request.path.rstrip("/").endswith("/teacher/play") and not request.user.is_authenticated:
+            login_url = getattr(settings, "LOGIN_URL", "/accounts/login/")
+            return redirect(f"{login_url}?next={request.path}")
         return super().get(request, *args, **kwargs)
 
     # def get_context_data(self, course_id=None, **kwargs):
