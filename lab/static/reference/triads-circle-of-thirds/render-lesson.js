@@ -269,6 +269,17 @@ function mkMeasure(num, trebleItems, bassItems, isGrand, clef) {
   });
 }
 
+// Max item count across a measure's staves/voices — used to size measure
+// width (a whole-note-only measure needs far less horizontal room than one
+// full of quarter notes).
+function measureItemCount(meas) {
+  let max = 0;
+  for (const staff of Object.values(meas.staves)) {
+    for (const voice of staff.voices) max = Math.max(max, voice.items.length);
+  }
+  return max;
+}
+
 // --- interval labels (scale slides) ------------------------------------------
 
 // Label the ascending interval between two VexFlow keys as a second (M2/m2).
@@ -349,7 +360,15 @@ function renderNotationWithEngine(target, n) {
   // Figured-bass symbols draw below the bass staff (getBottomY() + 16, up to
   // 3 stacked lines) — extra height keeps them from clipping the canvas edge.
   const height = isGrand ? (targets.length ? 420 : 260) : 170;
-  const width = Math.max(360, numMeasures * 230);
+  // The engine's Formatter stretches each measure to fill its allotted width
+  // regardless of note count, so a measure holding a single whole note gets
+  // the same width as one with 4 quarter notes — wasted space that pushes
+  // later measures off-screen. Narrow the per-measure budget when every
+  // measure here holds at most one event (the common figured-bass-example
+  // case: one whole-note chord per bar).
+  const maxItemsPerMeasure = Math.max(...score.measures.map(measureItemCount));
+  const perMeasureWidth = maxItemsPerMeasure <= 1 ? 105 : 230;
+  const width = Math.max(280, numMeasures * perMeasureWidth);
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
