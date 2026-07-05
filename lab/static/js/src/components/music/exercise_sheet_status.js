@@ -304,7 +304,13 @@ export default  {
       if (!isFiguredBass && !isRoman) {
         return null;
       }
-      var mode = definition.getMode ? definition.getMode() : null;
+      // Mode read routed through ResolvedMode (single authority). Behavior-identical:
+      // resolved.interactionMode === getMode() — both read the same post-parse
+      // exercise.mode || score.umto.metadata.mode || null (see resolved_mode.js
+      // resolveMode vs exercise_definition.js getMode). The literal comparisons
+      // below stay (Phase 1.3 lint territory); only the read path changes.
+      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
+      var mode = resolved ? resolved.interactionMode : null;
       var dyn = null;
       // "playback" covers the teacher-authored "Play + figures" mode
       // (InteractionMode.PLAYBACK + analysisType figured_bass*), which reads
