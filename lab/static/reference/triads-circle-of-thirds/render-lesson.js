@@ -169,11 +169,30 @@ function renderNotationPlaceholder(n) {
   return wrap;
 }
 
+// Label the ascending interval between two VexFlow keys as a second (M2/m2).
+// Returns null for anything that isn't a stepwise second — only meant for the
+// scale slides, which move by adjacent scale degrees.
+const LETTER_PC = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+function intervalLabel(lowKey, highKey) {
+  const a = String(lowKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  const b = String(highKey).match(/^([a-g])([#bn]*)\/(\d+)$/);
+  if (!a || !b) return null;
+  const accOff = { "#": 1, b: -1, n: 0 };
+  const pcA = LETTER_PC[a[1]] + [...a[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
+  const pcB = LETTER_PC[b[1]] + [...b[2]].reduce((s, c) => s + (accOff[c] || 0), 0);
+  const octA = parseInt(a[3], 10), octB = parseInt(b[3], 10);
+  const semis = (octB - octA) * 12 + (pcB - pcA);
+  // Only label diatonic seconds (1 or 2 semitones ascending).
+  if (semis === 2) return "M2";
+  if (semis === 1) return "m2";
+  return null;
+}
+
 function drawIllustrativeVexflow(target, n) {
   // VexFlow is loaded as a classic UMD script (index.html) that sets
   // window.Vex. This file is an ES module, so the bare global `Vex` is NOT
   // in module scope — reference window.Vex explicitly or import it.
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Annotation } = Vex.Flow;
   const notes = n.voices[0].notes;
   const width = Math.max(300, notes.length * 90);
   const renderer = new Renderer(target, Renderer.Backends.SVG);
@@ -203,6 +222,23 @@ function drawIllustrativeVexflow(target, n) {
     });
     return sn;
   });
+
+  // Scale slides set `showIntervals: true` to label the stepwise interval
+  // between each consecutive note (M2 / m2). The annotation sits above the
+  // note that ENDS the interval, so it reads as "the interval leading into
+  // this note". Computed from pitch classes so it stays correct under any
+  // key signature / accidental spelling.
+  if (n.showIntervals) {
+    for (let i = 1; i < vfNotes.length; i++) {
+      const label = intervalLabel(notes[i - 1].keys[0], notes[i].keys[0]);
+      if (label) {
+        vfNotes[i].addModifier(
+          new Annotation(label).setVerticalJustification(Annotation.VerticalJustify.TOP),
+          0
+        );
+      }
+    }
+  }
 
   const totalBeats = notes.reduce((sum, note) => {
     const map = { w: 4, h: 2, q: 1, 8: 0.5 };

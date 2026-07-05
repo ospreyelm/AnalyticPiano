@@ -29,6 +29,7 @@
           "id": "s2-c-major-scale",
           "purpose": "C major scale showing stepwise intervals of major and minor seconds.",
           "clef": "treble",
+          "showIntervals": true,
           "voices": [
             {
               "notes": [
@@ -49,6 +50,7 @@
           "id": "s2-bb-major-scale",
           "purpose": "Bb major scale showing stepwise intervals of major and minor seconds starting from Bb3.",
           "clef": "treble",
+          "showIntervals": true,
           "voices": [
             {
               "notes": [
