@@ -754,13 +754,22 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
     getInputMethod: function () {
       var ex = this.exercise || {};
       var meta = (ex.score && ex.score.umto && ex.score.umto.metadata) || {};
+      // Discriminator reads routed through ResolvedMode (single authority).
+      // Behavior-identical: resolved.interactionMode === getMode() (both read
+      // post-parse exercise.mode || score.umto.metadata.mode || null); Phase 1.1
+      // wired isIdentification()/isChoraleIdentification() to this._resolved, so
+      // resolved.isIdentification / resolved.isChoraleIdentification match the
+      // prior predicate calls exactly. input_method_logic.js itself is unchanged
+      // (pure fields-based resolver; its mode literals are input-method-axis
+      // constants, allowed in its own axis module per plan 1.3).
+      var resolved = this._resolved;
       return InputMethodLogic.resolveInputMethod({
         inputModeFixed: ex.inputModeFixed || null,
         inputMode: ex.inputMode || null,
         metaInputMode: meta.input_mode || null,
-        mode: this.getMode(),
-        isIdentification: !!(this.isIdentification && this.isIdentification()),
-        isChoraleIdentification: !!(this.isChoraleIdentification && this.isChoraleIdentification()),
+        mode: resolved ? resolved.interactionMode : null,
+        isIdentification: !!(resolved && resolved.isIdentification),
+        isChoraleIdentification: !!(resolved && resolved.isChoraleIdentification),
       });
     },
     usesNoteEntry: function () {
