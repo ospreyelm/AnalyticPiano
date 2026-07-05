@@ -49,15 +49,15 @@ var GRADER_KEYS = {
   // This factory maps pipeline "chorale_identification" → "identification"
   // (IdentificationGrader), which matches the *intent* of the predicates
   // (isChoraleIdentification() returns true for mode "chorale_identification")
-  // but DIVERGES from current production grader selection. Current-gen UMTO
-  // data uses mode="identification" (the InteractionMode enum has no
-  // "chorale_identification" member), so this divergence is only live if some
-  // persisted row carries the literal "chorale_identification" mode.
-  // TODO (before Phase 1 wiring): query the DB for
-  //   type="umto_chorale" AND mode="chorale_identification"
-  // If rows exist, decide explicitly whether the factory should follow
-  // production (→ legacy_match / notesMatch) or predicate intent (→
-  // identification). Do not claim full current-behavior parity until resolved.
+  // but DIVERGES from current production grader selection.
+  //
+  // DB query (2026-07-05): 0 rows carry mode="chorale_identification" (any type),
+  // and 0 rows carry type=umto_chorale AND mode="chorale_identification". The
+  // divergence is confirmed NOT LIVE in current data. Current-gen UMTO uses
+  // mode="identification" (the InteractionMode enum has no "chorale_identification"
+  // member). Mapping left as predicate-intent ("identification"); downgrade from
+  // "must resolve before wiring" to "guard against future data." If a future
+  // import writes mode="chorale_identification", revisit this mapping.
   chorale_identification: "identification",
   // Out-of-scope types (symbolic-meter, key-signature, musicxml, analytical,
   // analytical_pcs, umto_identification) resolve to "other" in resolved_mode.js.

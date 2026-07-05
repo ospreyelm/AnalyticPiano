@@ -3,6 +3,7 @@
 var { requireDefault } = require("../../test/require_esm");
 var mod = requireDefault(require("./resolved_mode"));
 var resolvePipeline = mod.resolvePipeline;
+var factoryMod = requireDefault(require("./grader_factory"));
 
 var failed = 0;
 
@@ -67,17 +68,44 @@ function assertField(label, actual, expected) {
 // only falls back to the type axis when mode is FALSY. With a truthy mode="play"
 // (the default fill from exercise_definition.js:893), the mode check runs,
 // "play" is not in CHORALE_MODES, and isChorale() returns FALSE. The exercise
-// then resolves to pipeline "other" + legacy-stave. This may be a latent bug
-// (legacy type=chorale exercises with the "play" default do NOT route as
-// chorale), but resolvePipeline must mirror current behavior exactly —
-// Phase 1.1 guarantees "behavior identical." Investigate separately, do not
-// "fix" it in the resolver without a Phase 0 snapshot proving the desired
-// behavior.
+// then resolves to pipeline "other" + legacy-stave.
+//
+// DB finding (2026-07-05): type=chorale has 0 rows in the live DB, so this exact
+// shape is hypothetical. The LIVE "play"-mode case is type=umto_chorale — see
+// the next test block.
 (function () {
   var r = resolvePipeline({ type: "chorale", mode: "play" });
   assertField("chorale-play-default.isChorale", r.isChorale, false);
   assertField("chorale-play-default.pipeline", r.pipeline, "other");
   assertField("chorale-play-default.stack", r.stack, "legacy-stave");
+})();
+
+// ---------- LIVE "play"-mode case: type=umto_chorale + mode=play (9 DB rows) ----------
+// CHARACTERIZATION TEST — locks current behavior, which is undesirable.
+// DB finding (2026-07-05): 9 persisted exercises carry type=umto_chorale AND
+// mode="play" (out of 79,596 total; 0 type=chorale rows exist). These resolve to
+// pipeline "other" + legacy-stave, NOT "chorale" — almost certainly a latent bug
+// (umto_chorale exercises have score.umto and expect the VexFlow stack + a
+// chorale grader, but the truthy "play" mode bypasses isChorale()'s type
+// fallback). Production follows the same predicates: app/exercise.js falls
+// through to ExerciseGrader/notesMatch, and the render fork goes legacy-stave.
+//
+// This test locks the resolver output so Phase 1 predicate wiring cannot
+// silently change it. Do NOT "fix" here. If we decide these 9 should route as
+// chorale, that is a separate decision requiring: (a) a resolver change, (b) a
+// DB backfill of the 9 rows (set mode="playback" or similar), and (c) a new
+// snapshot proving the desired behavior. Tracked in pipeline-registry.md
+// "Known divergences + open questions".
+(function () {
+  var r = resolvePipeline({ type: "umto_chorale", mode: "play" });
+  assertField("umto_chorale-play.isChorale", r.isChorale, false);
+  assertField("umto_chorale-play.isChoraleIdentification", r.isChoraleIdentification, false);
+  assertField("umto_chorale-play.isHarmonization", r.isHarmonization, false);
+  assertField("umto_chorale-play.pipeline", r.pipeline, "other");
+  assertField("umto_chorale-play.stack", r.stack, "legacy-stave");
+  // Grader factory follows: pipeline "other" → "legacy_match" (ExerciseGrader/notesMatch).
+  var key = factoryMod.resolveGraderKey(r);
+  assertField("umto_chorale-play.graderKey", key, "legacy_match");
 })();
 
 // ---------- chorale: play-all-voices + analysis modes ----------

@@ -175,20 +175,32 @@ Phase 1 adds: `apps/exercises/services/resolved_mode.py` (Python port).
    `IdentificationGrader` (predicate intent), but current production
    `app/exercise.js:119-127` does NOT route this literal to
    `IdentificationGrader`; it falls through to `ExerciseGrader`/`notesMatch`.
-   Current-gen UMTO data uses `mode="identification"` (the `InteractionMode`
-   enum has no `chorale_identification` member), so the divergence is only live
-   if a persisted row carries the literal. **TODO before Phase 1 wiring:** query
-   the DB for `type="umto_chorale" AND mode="chorale_identification"` and decide
-   explicitly whether the factory follows production or predicate intent. See
-   the CAVEAT in `grader_factory.js`.
-2. **`mode="play"` default-fill** — once `parse()` default-fills
-   `exercise.mode = "play"`, `isChorale()` returns false (truthy mode → mode
-   check → "play" not in the chorale mode list; type fallback never runs). A
-   legacy `type=chorale` exercise with the "play" default resolves to pipeline
-   `"other"` + legacy-stave, NOT `"chorale"`. `resolvePipeline` mirrors this
-   faithfully. This may be a latent bug; do not "fix" in the resolver without a
-   Phase 0 snapshot proving the desired behavior. See the NOTE in
-   `resolved_mode.js`.
+   **DB query (2026-07-05): 0 rows carry `mode="chorale_identification"` (any
+   type).** The divergence is confirmed NOT LIVE in current data. Current-gen
+   UMTO uses `mode="identification"` (the `InteractionMode` enum has no
+   `chorale_identification` member). Mapping left as predicate-intent;
+   downgraded from "must resolve before wiring" to "guard against future data."
+   If a future import writes `mode="chorale_identification"`, revisit. See the
+   CAVEAT in `grader_factory.js`.
+2. **`mode="play"` on `umto_chorale`** — once `parse()` default-fills
+   `exercise.mode = "play"` (or a row stores it explicitly), `isChorale()`
+   returns false (truthy mode → mode check → "play" not in the chorale mode
+   list; type fallback never runs). **DB query (2026-07-05): 9 persisted rows
+   carry `type="umto_chorale" AND mode="play"` (out of 79,596 total; 0
+   `type=chorale` rows exist).** These 9 resolve to pipeline `"other"` +
+   legacy-stave, NOT `"chorale"` — almost certainly a latent bug (umto_chorale
+   exercises expect the VexFlow stack + a chorale grader). Production follows
+   the same predicates: `ExerciseGrader`/`notesMatch` + legacy-stave render.
+   `resolvePipeline` mirrors this faithfully. A characterization test in
+   `resolved_mode.test.js` locks the current resolver output for this live
+   case. Do NOT "fix" in the resolver without: (a) a decision that these 9
+   should route as chorale, (b) a DB backfill of the 9 rows, and (c) a new
+   snapshot proving the desired behavior. See the NOTE in `resolved_mode.js`.
+3. **`type="umto_identification"`** (`forms.py:458`, `TYPE_UMTO_IDENTIFICATION`)
+   — teacher-selectable but `exercise_definition.js` parse() has no branch for
+   it and no predicate recognizes it, so `resolvePipeline` returns `"other"`.
+   **DB query: 0 rows.** Not live. Add a parse branch or accept "other"
+   deliberately (open question for Phase 1).
 
 ## Status (2026-07-05)
 
