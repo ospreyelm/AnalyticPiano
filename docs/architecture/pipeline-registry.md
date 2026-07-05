@@ -356,6 +356,12 @@ local variable escapes the match:
   (`harmonylab-pipelines/no-raw-pipeline-discriminator`), allowlist + 3 inline
   exemptions documented above. `npm run lint` clean. **Phase 1 exit criteria
   met.**
+- Phase 2 started: `grader_state.js` extracted (INCORRECT/CORRECT/PARTIAL +
+  `STATE` map) out of `ExerciseGrader`. `ExerciseGrader.STATE` kept as a
+  compatibility alias pointing at the shared object; no behavior change.
+  `ChoraleGrader`/`IdentificationGrader` still define their own identical
+  copies of these constants — consolidating them is a follow-up slice, not
+  done in this commit.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on

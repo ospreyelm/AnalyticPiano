@@ -1,6 +1,7 @@
 import _ from "lodash";
 import Analyze from "app/utils/analyze";
 import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
+import { STATE as GRADER_STATE } from "app/models/grader_state";
 
 /**
    * ExerciseGrader object is responsible for grading a given inputChords for
@@ -16,19 +17,16 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
     ); /* for analysis-based grading */
   };
 
-  var INCORRECT = "incorrect";
-  var CORRECT = "correct";
-  var PARTIAL = "partial";
+  var INCORRECT = GRADER_STATE.INCORRECT;
+  var CORRECT = GRADER_STATE.CORRECT;
+  var PARTIAL = GRADER_STATE.PARTIAL;
 
   /**
    * Defines the possible exercise result states.
+   * Compatibility alias — the source of truth is grader_state.js.
    * @const
    */
-  ExerciseGrader.STATE = {
-    INCORRECT: INCORRECT,
-    CORRECT: CORRECT,
-    PARTIAL: PARTIAL,
-  };
+  ExerciseGrader.STATE = GRADER_STATE;
 
   _.extend(ExerciseGrader.prototype, {
     /**
