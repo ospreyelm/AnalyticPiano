@@ -1,4 +1,5 @@
 import globals from "globals";
+import noCjsInBrowser from "./eslint-rules/no-cjs-in-browser.mjs";
 import noRawPipelineDiscriminator from "./eslint-rules/no-raw-pipeline-discriminator.mjs";
 
 // Flat ESLint config. Primary purpose: catch implicit globals (assignments
@@ -46,6 +47,11 @@ export default [
       reportUnusedDisableDirectives: "off",
     },
     plugins: {
+      harmonylab: {
+        rules: {
+          "no-cjs-in-browser": noCjsInBrowser,
+        },
+      },
       "harmonylab-pipelines": {
         rules: {
           "no-raw-pipeline-discriminator": noRawPipelineDiscriminator,
@@ -54,6 +60,7 @@ export default [
     },
     rules: {
       "no-undef": "error",
+      "harmonylab/no-cjs-in-browser": "error",
       "harmonylab-pipelines/no-raw-pipeline-discriminator": "error",
     },
   },
@@ -64,6 +71,9 @@ export default [
       globals: {
         ...globals.node,
       },
+    },
+    rules: {
+      "harmonylab/no-cjs-in-browser": "off",
     },
   },
 ];
