@@ -1,4 +1,5 @@
 import globals from "globals";
+import noCjsInBrowser from "./eslint-rules/no-cjs-in-browser.mjs";
 
 // Flat ESLint config. Primary purpose: catch implicit globals (assignments
 // to undeclared variables) that the RequireJS/AMD -> Vite migration turned
@@ -35,12 +36,20 @@ export default [
         process: "readonly",
       },
     },
+    plugins: {
+      harmonylab: {
+        rules: {
+          "no-cjs-in-browser": noCjsInBrowser,
+        },
+      },
+    },
     linterOptions: {
       // Leftover eslint-disable comments from a fuller config are harmless here.
       reportUnusedDisableDirectives: "off",
     },
     rules: {
       "no-undef": "error",
+      "harmonylab/no-cjs-in-browser": "error",
     },
   },
   {
@@ -50,6 +59,9 @@ export default [
       globals: {
         ...globals.node,
       },
+    },
+    rules: {
+      "harmonylab/no-cjs-in-browser": "off",
     },
   },
 ];
