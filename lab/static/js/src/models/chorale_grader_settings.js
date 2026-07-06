@@ -9,7 +9,7 @@
  * real ExerciseDefinition instance — a plain object exposing getGrading()/
  * isUnit() is enough.
  *
- * Mirrors app/exercise.js:143-148 exactly, including its mutate-in-place
+ * Mirrors app/exercise.js:145-148 exactly, including its mutate-in-place
  * quirk: ExerciseDefinition.getGrading() returns `this.exercise.grading ||
  * {}` (exercise_definition.js:831-833) — when `exercise.grading` is already
  * set, getGrading() returns that SAME object, and setting

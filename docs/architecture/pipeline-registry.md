@@ -119,7 +119,7 @@ Cross-stack:
 |---|---|---|
 | `lab/static/js/src/models/exercise_grader.js` | god-class (audit done, extraction paused) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. **2026-07-05 usage audit (see "Legacy grader retirement audit" below): none of these methods are exercised by reachable student content today.** Per-type standalone extraction is paused pending a product decision; likely shape is one retained legacy fallback class, not five polished classes — see the audit's recommendation. |
 | `lab/static/js/src/models/chorale_grader.js` | `chorale` | Selected by `app/exercise.js:131` for playback/analysis_match. `GraderFactory.create()` has a designed context contract for it (2026-07-05, `{ definition, constructors }`) but cannot construct the REAL class under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias). Tests inject a fake `constructors.ChoraleGrader`; production would omit `constructors` and fall back to a lazy `require`. Nothing calls `create()` in production yet. |
-| `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:143-147`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
+| `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:145-148`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
 | `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. `GraderFactory.create()` can construct it for both pipelines (2026-07-05, always with `{}`, matching `app/exercise.js:135`), but nothing calls `create()` in production yet. |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
 | `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | New (2026-07-05). Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). Not wired into `app/exercise.js` yet — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias). `GraderFactory.create()` can construct it (2026-07-05), but nothing calls `create()` in production yet. |
@@ -525,7 +525,7 @@ legacy keys specifically):
 - `"chorale"` given a designed context contract (2026-07-05, same day):
   `create(resolvedMode, { definition, constructors })`. New pure helper
   `chorale_grader_settings.js` (`resolveChoraleGraderSettings(definition)`)
-  reproduces `app/exercise.js:143-147`'s `getGrading()` + Unit-1
+  reproduces `app/exercise.js:145-148`'s `getGrading()` + Unit-1
   `octaveIndependent` override exactly, tested standalone under plain
   `node`. `create()`'s `"chorale"` branch requires `context.definition`
   (throws otherwise), derives settings via that helper, then constructs via
@@ -533,7 +533,7 @@ legacy keys specifically):
   falls back to a lazy `require("./chorale_grader")` (the real class,
   correct under webpack/Vite, untested under plain `node`), then calls
   `initFromDefinition(context.definition)` on the result — matching
-  `app/exercise.js:143-150`'s full construction sequence. The `app/` alias
+  `app/exercise.js:145-152`'s full construction sequence. The `app/` alias
   problem itself is NOT solved (no loader, no resolution change, per
   instruction) — the seam only lets `create()`'s OWN logic (settings
   derivation + the `initFromDefinition` call) be tested without ever

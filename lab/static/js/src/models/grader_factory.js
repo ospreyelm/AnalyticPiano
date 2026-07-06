@@ -130,7 +130,7 @@ function resolveGraderKey(resolvedMode) {
  * exactly — that call site never passes constructor settings for this
  * grader, so `context` is intentionally ignored for this key.
  *
- * `"chorale"` reproduces `app/exercise.js:143-150`'s construction exactly:
+ * `"chorale"` reproduces `app/exercise.js:145-152`'s construction exactly:
  *   var gradingSettings = definition.getGrading();
  *   if (definition.isUnit(1)) { gradingSettings.octaveIndependent = true; }
  *   models.exerciseGrader = new ChoraleGrader(gradingSettings);
