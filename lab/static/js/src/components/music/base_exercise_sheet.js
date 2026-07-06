@@ -50,7 +50,24 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
   var NUMBERED_EXERCISE_COUNT = Config.get("general.numberedExerciseCount");
 
   /**
-   * ExerciseSheetComponent
+   * BaseExerciseSheet
+   *
+   * Phase 3 split the former `ExerciseSheetComponent` god-class into this
+   * shared base + six per-pipeline sheet classes (one per student-facing
+   * pipeline: matching, chorale, harmonization, figured_bass, identification,
+   * chorale_identification). `app/exercise.js` selects the concrete sheet via
+   * `SheetFactory` (see `models/sheet_factory.js`); each per-pipeline sheet
+   * owns its render stack by overriding `renderStaves` to call either
+   * `_renderStavesVexFlow` or `_renderStavesLegacy` (defined on the
+   * `ExerciseSheetStaves` mixin) with its pipeline's config — no runtime
+   * resolved-mode fork inside the render path.
+   *
+   * This base owns the shared sheet lifecycle: canvas/renderer setup, event
+   * listeners, the `render()` orchestration, playback wiring, and the
+   * identification overlay mixins (shared by the identification,
+   * figured_bass, and chorale_identification pipelines, self-gated by
+   * `_isIdentificationLikeExercise()`). It is not instantiated directly in
+   * production — only the per-pipeline subclasses are.
    *
    * This object is responsible for knowing how to display plain sheet music
    * notation with the notes that have sounded (saved in the chord bank) and
@@ -63,7 +80,7 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
    * @param {ChordBank} settings.chords Required property.
    * @param {KeySignature} settings.keySignature Required property.
    */
-  var ExerciseSheetComponent = function (settings) {
+  var BaseExerciseSheet = function (settings) {
     this.settings = settings || {};
 
     if ("exerciseContext" in this.settings) {
@@ -93,10 +110,10 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
     _.bindAll(this, ["render", "onChordsUpdate", "onMidiNote", "onClickPristine", "onSubmitIdentification", "onToggleMode", "_onIdentKeyDown"]);
   };
 
-  ExerciseSheetComponent.prototype = new Component();
+  BaseExerciseSheet.prototype = new Component();
 
   _.extend(
-    ExerciseSheetComponent.prototype,
+    BaseExerciseSheet.prototype,
     ExerciseSheetIdentification,
     ExerciseSheetIdentificationInputMode,
     ExerciseSheetIdentificationCanvas,
@@ -335,7 +352,7 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
       return this.parentComponent.highlightConfig;
     },
     /**
-~     * Returns the chords for display.
+     * Returns the chords for display.
      *
      * @return undefined
      */
@@ -376,4 +393,4 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
     },
   });
 
-export default ExerciseSheetComponent;
+export default BaseExerciseSheet;

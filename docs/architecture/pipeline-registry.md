@@ -73,12 +73,20 @@ primitive layer. Not part of the 6-pipeline split.
 | `lab/static/js/src/models/exercise_definition.js` | `isChorale()` (L667), `isChoraleIdentification()` (L679), `isHarmonization()` (L709), `isAnalysisMatch()` (L719), `isIdentification()` (L735), `getMode()` (L659), default-mode fill `"play"` (L893), `getInputMethod()`/`usesNoteEntry()` (L744/756) |
 | `lab/static/js/src/models/input_method_logic.js` | `resolveInputMethod()` — single source of truth for input method. Not a collision. |
 
-## Sheet (Phase 3 split target — currently `shared-base` with one fork)
+## Sheet (Phase 3 split — done 2026-07-06)
 
 | File | Owner | Notes |
 |---|---|---|
-| `lab/static/js/src/components/music/exercise_sheet.js` | `shared-base` | Sheet root; mixes in staves/playback/status/identification. Phase 3 splits into `BaseExerciseSheet` + per-pipeline sheets. |
-| `lab/static/js/src/components/music/exercise_sheet_staves.js` | `shared-base` (fork) | The `isChoraleLike && hasMeasures` fork at L45. Phase 3 deletes it; each pipeline sheet owns its render stack. |
+| `lab/static/js/src/components/music/base_exercise_sheet.js` | `shared-base` | Sheet root (god-class body moved here from the old `exercise_sheet.js` in Phase 3). Mixes in staves/playback/status/identification. `BaseExerciseSheet` owns the two stack methods `_renderStavesVexFlow(exercise_midi_nums, cfg)` and `_renderStavesLegacy(exercise_midi_nums)`; per-pipeline subclasses override `renderStaves` to call the right one with their pipeline's cfg. |
+| `lab/static/js/src/components/music/matching_sheet.js` | `matching` | `_renderStavesLegacy`. |
+| `lab/static/js/src/components/music/figured_bass_sheet.js` | `figured_bass` | `_renderStavesLegacy`. |
+| `lab/static/js/src/components/music/identification_sheet.js` | `identification` | `_renderStavesLegacy` (identification overlay self-gates via `_isIdentificationLikeExercise()` on the base). |
+| `lab/static/js/src/components/music/chorale_sheet.js` | `chorale` | `_renderStavesVexFlow` with `isChorale`/`isAnalysisMatchMode` read from this exercise's own `ResolvedMode` (the two flags that vary within the chorale pipeline); `isHarmonization`/`isChoraleIdentification` are pipeline-identity literals (`false`). |
+| `lab/static/js/src/components/music/harmonization_sheet.js` | `harmonization` | `_renderStavesVexFlow` with `isHarmonization: true` (pipeline-identity literal); no `ResolvedMode` read. |
+| `lab/static/js/src/components/music/chorale_identification_sheet.js` | `chorale_identification` | `_renderStavesVexFlow` with `isChoraleIdentification: true` (pipeline-identity literal); no `ResolvedMode` read. |
+| `lab/static/js/src/components/music/exercise_sheet.js` | — | **Deleted in Phase 3** (was a thin bridge subclass for one slice; replaced by `SheetFactory` + the six per-pipeline sheets). |
+| `lab/static/js/src/models/sheet_factory.js` | — | `resolveSheetKey(resolvedMode)` + `create(resolvedMode, { exerciseContext, keySignature, midiDevice, constructors })`. Mirrors `GraderFactory`'s shape: pure selection + constructor-injection seam (no static sheet imports → requirable under plain `node`). `SHEET_KEYS` maps the 6 pipelines to themselves + `other`→`matching`. Characterized by `sheet_factory.test.js`. |
+| `lab/static/js/src/components/music/exercise_sheet_staves.js` | `shared-base` | The `isChoraleLike && hasMeasures` render-stack fork is **deleted** (Phase 3). The slice-2 dispatcher `renderStaves` bridge is also removed once per-pipeline sheets own their stack. What remains are the two stack methods mixed onto `BaseExerciseSheet`: `_renderStavesVexFlow(exercise_midi_nums, cfg)` and `_renderStavesLegacy(exercise_midi_nums)`, called directly by the per-pipeline sheets. |
 | `lab/static/js/src/components/music/exercise_sheet_playback.js` | `chorale` | Playback component |
 | `lab/static/js/src/components/music/exercise_sheet_status.js` | `shared-base` | Status bus; mode-gated branches L314-318 (Phase 1 routes through `ResolvedMode`) |
 | `lab/static/js/src/components/music/exercise_sheet_identification.js` | `identification` + `chorale_identification` + `figured_bass` | Shared overlay |
@@ -207,6 +215,32 @@ Phase 1 adds: `apps/exercises/services/resolved_mode.py` (Python port).
    it and no predicate recognizes it, so `resolvePipeline` returns `"other"`.
    **DB query: 0 rows.** Not live. Add a parse branch or accept "other"
    deliberately (open question for Phase 1).
+4. **`type="identification"` overlay does not render (recorded 2026-07-06,
+   Phase 3 smoke).** The legacy non-chorale identification pipeline
+   (`type="identification"`, e.g. `PA03UH` ex1 / `EB81WJ`, Unit 5 Triad
+   Quality, `analysisType="chord_quality"`, `inputMode="dropdown"`,
+   `identMode="practice"`) resolves correctly to the `identification`
+   pipeline + legacy-stave stack, but the "?" answer-slot overlay does not
+   mount — the chord renders gray (play-exercise styling) and no dropdown
+   / "?" slot appears. The exercise data is well-formed
+   (`chord[0].answer="major"`, `choices=["major","minor","diminished",
+   "augmented"]`, `introText="Identify the chord quality."`).
+   Runserver log shows `GET /ajax/identification-answers/?exercise_id=
+   EB81WJ` → `200` with body `[]` (empty) — the identification-answers
+   endpoint returns no answer rows for this exercise. **Confirmed
+   pre-existing, NOT a Phase 3 regression:** identical on the deployed
+   production version, and the Phase 3 render path is byte-for-byte
+   identical to `origin/master` (`initComponent`'s
+   `if (this._isIdentificationLikeExercise()) { this.initIdentificationMode(); }`
+   and `_renderStavesLegacy`'s `if (this._isIdentificationLikeExercise())
+   { this.drawIdentificationLabels(); }` are both unchanged — Phase 3 only
+   relocated the god-class body into `BaseExerciseSheet` and made
+   `IdentificationSheet` call `_renderStavesLegacy` directly). This is a
+   separate issue from the documented latent bugs above (resolver routes
+   this exercise correctly); it's an identification-overlay / answers-
+   endpoint problem. **Debugging deferred to after the pipeline-isolation
+   refactor** per the standing rule against incidental bug fixes mid-
+   refactor. Not fixed in Phase 3.
 
 ## Phase 1.2 audit: staff-distribution axis (recorded 2026-07-05)
 
@@ -660,10 +694,148 @@ legacy keys specifically):
   separate, larger, not-yet-scoped redesign.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
-- `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
+- `./run_js_tests.sh` has pre-existing `app/` alias failures reproduced on
   main — NOT caused by this refactor. M1 tests are import-free/relative-only.
-- Phase 3 (sheet split) is a separate project. Phase 4 (stored-string
-  disambiguation) deferred.
+  (Baseline at `789645c2` is 10 failures across 10 files — see the Phase 3
+  entry below for the exact list; the doc's earlier "9" was a pre-PR-A count.)
+- Phase 3 (sheet split) done 2026-07-06 — see "Phase 3" below. Phase 4
+  (stored-string disambiguation) deferred.
+
+### Phase 3: sheet split (2026-07-06)
+
+Split the `exercise_sheet.js` god-class into `BaseExerciseSheet` +
+per-pipeline sheet classes, deleted the `isChoraleLike && hasMeasures`
+render-stack fork, and rewrote sheet instantiation in `app/exercise.js`
+through `SheetFactory` — mirroring `GraderFactory`'s Phase 2 shape (pure
+selection + constructor-injection seam, incremental characterization-first
+slices, no silent behavior changes).
+
+Four slices, each behavior-identical at its boundary (lint clean, build
+exit 0, same 10-file test baseline):
+
+1. **`sheet_factory.js` + test (pure).** `resolveSheetKey(resolvedMode)`
+   returns `SHEET_KEYS[resolvedMode.pipeline] || "matching"` (null/undefined
+   → `"matching"`); `SHEET_KEYS` = the 6 pipelines keyed to themselves +
+   `other`→`matching`. `create(resolvedMode, context)` requires
+   `context.constructors[key]` (throws otherwise) and returns
+   `new Ctor({exerciseContext, keySignature, midiDevice})` — forwards
+   exactly those 3 setting keys, no extraneous. No static sheet imports →
+   requirable under plain `node`. `sheet_factory.test.js` mirrors
+   `grader_factory.test.js`: `expectKey` for all 6 pipelines + `other`,
+   null safety, `SHEET_KEYS` integrity (7 keys), injection seam
+   (makeFakeCtor records `__sheetKey`, ALL_FAKES keyed by sheet key),
+   throw cases (missing/absent/unknown constructor), uniform-shape
+   (forwards exactly 3 setting keys). 0 failures.
+
+2. **`exercise_sheet_staves.js` fork extraction.** Replaced the single
+   `renderStaves` (the `isChoraleLike && hasMeasures` fork) with three
+   methods on the (then-still-single) sheet class:
+   - `renderStaves` — dispatcher bridge: computes `isChoraleLike` from
+     `resolved`, builds the 4-flag cfg (`isHarmonization`,
+     `isChoraleIdentification`, `isAnalysisMatchMode`, `isChorale`) from
+     `resolved`/`_isChoraleIdentificationExercise()`, delegates to
+     `_renderStavesVexFlow` (chorale-like) or `_renderStavesLegacy`.
+   - `_renderStavesVexFlow(exercise_midi_nums, cfg)` — the VexFlow body
+     byte-for-byte, but reads the 4 pipeline flags from `cfg` (caller-
+     supplied) instead of from `resolved`/`_isChoraleIdentificationExercise()`.
+     No `resolved` reads inside. `if (!hasMeasures) return
+     this._renderStavesLegacy(exercise_midi_nums);` fall-through preserved
+     (a chorale-like exercise with no measures renders via legacy — current
+     behavior).
+   - `_renderStavesLegacy(exercise_midi_nums)` — the legacy stave loop
+     verbatim + `if (this._isIdentificationLikeExercise())
+     this.drawIdentificationLabels();`.
+   This slice killed the fork and the internal resolved-mode reads while
+   the sheet was still one class — a behavior-identical intermediate.
+
+3. **`BaseExerciseSheet` + 6 per-pipeline sheets.** Moved the god-class
+   body from `exercise_sheet.js` into `base_exercise_sheet.js` (class
+   renamed `BaseExerciseSheet`; same imports, constructor, prototype =
+   `new Component()` + `_.extend` with all 8 mixins + inline literal).
+   `exercise_sheet.js` became a thin bridge subclass (no override,
+   inherits the dispatching `renderStaves`) so `app/exercise.js` stayed
+   green until slice 4. Added the 6 per-pipeline sheets, each overriding
+   only `renderStaves` to call the right stack method with its pipeline's
+   cfg — and only reading `ResolvedMode` for the two flags that genuinely
+   vary WITHIN the chorale pipeline (`isAnalysisMatchMode`, `isChorale`);
+   every other flag is a pipeline-identity literal. Verified byte-for-byte
+   cfg identity: each per-pipeline sheet's cfg matches what the slice-2
+   dispatcher would compute for that pipeline.
+
+4. **`SheetFactory` wired into `app/exercise.js`; bridge + dispatcher deleted.**
+   Replaced the single unconditional `new ExerciseSheetComponent({...})`
+   instantiation with `createSheet(resolved, {...constructors...})`,
+   passing the six per-pipeline sheet classes via the injection seam.
+   `resolved` comes from `definition.getResolvedMode()` (`definition`
+   already in scope). Deleted the now-unused `exercise_sheet.js` bridge
+   (grep confirmed no remaining importers). Also removed the slice-2
+   dispatcher `renderStaves` from `exercise_sheet_staves.js` — dead once
+   every concrete sheet is a per-pipeline subclass that overrides
+   `renderStaves` directly (see "Dead-code cleanup" below).
+   `SymbolicQuestionSheet` / `KeySigExercise` early-returns stay
+   untouched — out-of-scope "other" types intercepted before
+   `SheetFactory`, current behavior. **No guarded per-branch fallback**
+   (unlike `GraderFactory`'s chorale/identification guards): the sheet
+   site is a single unconditional instantiation with no pre-existing
+   branch conditions to diverge from, and `SheetFactory`'s key map is
+   exhaustive (6 pipelines + `other`→`matching`).
+
+**Design note — conservative VexFlow parametrization.** The VexFlow render
+body stays in `_renderStavesVexFlow` on the base (one shared method), not
+copied into each VexFlow-stack sheet. The per-pipeline sheets own the
+*stack selection* (which method to call) and the *cfg* (which flags are
+on); the body that consumes those flags stays shared. Full parametrization
+(moving the branch bodies themselves into the sheets) was rejected as
+higher-risk duplication without enough "ownership" benefit. The fork is
+gone — it's replaced by per-pipeline classes calling the right stack
+method directly — but the stack bodies remain common code on the base.
+
+**Characterization tests proving no behavior change.** The pure selection
+layer (`sheet_factory.js`) is fully covered by `sheet_factory.test.js`
+under plain `node`. The render-stack methods (`_renderStavesVexFlow`/
+`_renderStavesLegacy`) and the per-pipeline sheet classes are canvas/DOM
+render behavior — mechanical, byte-for-byte relocation of code that can't
+be `require()`d under plain `node` (same `app/`-alias wall as the Phase 2
+graders), so they're verified by lint + build + the user's browser smoke
+(matches PR A's `harmonization_runtime_grader.js` approach for the same
+reason). The cfg each sheet passes is verified by inspection to equal what
+the slice-2 dispatcher computed for that pipeline.
+
+**Self-test.** `npm run lint` clean; `npm run build` exit 0;
+`./run_js_tests.sh` 45 files / 10 failed — same 10-file baseline as
+master `789645c2`, no new failures:
+`click_note_logic`, `chorale_umto_staff_distribution`, `play_save_logic`,
+`vexflow_annotation_renderer`, `vexflow_tickable_builder`,
+`chorale_grader_settings`, `chorale_grader`, `harmonization_realization_logic`,
+`identification_mixin_manifest`, `theory_golden/figured_bass_hints`. (Of
+these, the `app/`-alias failures are the pre-existing ones; the
+`identification_mixin_manifest` failure is a stale EXPECTED list missing
+`_onExternalSubmitClick`/`_syncIdentificationInputDisabled`; the
+`figured_bass_hints` failure is theory-golden hint-prose drift. None
+caused by this refactor; identification mixin files were not touched.)
+
+**Explicitly NOT done in this PR.** No `ExerciseGrader →
+LegacyExerciseGrader` rename (still flagged as the undecided next slice in
+"Phase 2 consolidated status" — "not yet decided which"; needs its own
+explicitly-scoped decision, not a Phase 3 side-quest). No wiring of
+`harmonization`/`legacy_exercise` into `GraderFactory`. No "fixes" to the
+documented latent bugs (`mode="play"` → `"other"`; the
+`play`/`identify`/`figures`/`roman` mode gap; `type="umto_identification"`
+no parse branch) — each requires its own scoped decision per the doc's
+rules. No Phase 4 (stored-string disambiguation) work.
+
+**Dead-code cleanup in this PR.** The slice-2 dispatcher `renderStaves`
+(the bridge that computed cfg from `resolved` and selected the stack
+family) is removed from `exercise_sheet_staves.js` once slice 4 routes
+every concrete sheet through a per-pipeline subclass that overrides
+`renderStaves` directly. Verified dead before removal: every
+`SheetFactory` key (6 pipelines + `other`→`matching`) constructs a
+subclass that overrides `renderStaves`; `SymbolicQuestionSheet`/
+`KeySigExercise` early-return in `app/exercise.js` before `SheetFactory`
+is reached; the only internal caller is `render()`'s `this.renderStaves()`
+which dispatches to the subclass override; no external caller of
+`.renderStaves()` exists. `_renderStavesVexFlow` and `_renderStavesLegacy`
+stay (the subclasses call them).
 
 ### Phase 2 consolidated status (2026-07-05) — read this before starting further grader work
 
