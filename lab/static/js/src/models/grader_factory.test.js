@@ -8,6 +8,8 @@ var GRADER_KEYS = factoryMod.GRADER_KEYS;
 var rmMod = requireDefault(require("./resolved_mode"));
 var resolvePipeline = rmMod.resolvePipeline;
 
+var HarmonizationGrader = require("./harmonization_grader");
+
 var failed = 0;
 
 function assertField(label, actual, expected) {
@@ -103,7 +105,26 @@ assertField("matching === other fallback key", GRADER_KEYS.matching, GRADER_KEYS
 assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
   GRADER_KEYS.harmonization !== GRADER_KEYS.matching, true);
 
-// ---------- create() is a stub that throws (skeleton guard) ----------
+// ---------- create() is wired ONLY for harmonization (2026-07-05) ----------
+(function () {
+  // resolveGraderKey still maps harmonization distinctly (not collapsed into
+  // legacy_exercise, not aliased to chorale/identification).
+  var resolved = resolvePipeline({ type: "umto_chorale", mode: "harmonization" });
+  var key = resolveGraderKey(resolved);
+  assertField("harmonization pipeline resolves distinctly", key, "harmonization");
+  assertField("harmonization key !== legacy_exercise", key !== "legacy_exercise", true);
+  assertField("harmonization key !== chorale", key !== "chorale", true);
+  assertField("harmonization key !== identification", key !== "identification", true);
+
+  // create() returns a real HarmonizationGrader instance for harmonization.
+  var grader = factoryMod.create(resolved, { keySignature: null });
+  assertField("create() returns a HarmonizationGrader instance",
+    grader instanceof HarmonizationGrader, true);
+  assertField("create()'d grader exposes the shared STATE object",
+    grader.STATE, HarmonizationGrader.STATE);
+})();
+
+// ---------- create() still throws for every OTHER key until wired ----------
 (function () {
   var threw = false;
   try {
@@ -111,7 +132,57 @@ assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
   } catch (_e) {
     threw = true;
   }
-  assertField("create() throws until wired", threw, true);
+  assertField("create() throws for legacy_exercise (matching) until wired", threw, true);
+})();
+
+(function () {
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "figured_bass" });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for legacy_exercise (figured_bass) until wired", threw, true);
+})();
+
+(function () {
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "other" });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for legacy_exercise (other) until wired", threw, true);
+})();
+
+(function () {
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "chorale" });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for chorale until wired", threw, true);
+})();
+
+(function () {
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "identification" });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for identification until wired", threw, true);
+})();
+
+(function () {
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "chorale_identification" });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for chorale_identification until wired", threw, true);
 })();
 
 console.log("");

@@ -9,10 +9,12 @@
  * while `ExerciseGrader.analysisMatch` at grader.js:142 is a latent/dead
  * fallback). This factory owns the selection so there is exactly one path.
  *
- * SKELETON ONLY — no production call sites wired yet. `app/exercise.js:119-151`
- * still selects graders inline. `create()` is a documented stub that is NOT
- * exercised by tests; the resolver contract must be reviewed before this factory
- * is wired into production (per user decision 2026-07-05).
+ * SKELETON, PARTIALLY WIRED — no production call sites yet.
+ * `app/exercise.js:119-151` still selects graders inline. `create()` only
+ * constructs a real grader for the `"harmonization"` key (backed by
+ * `HarmonizationGrader`); every other key still throws. The resolver contract
+ * must be reviewed before this factory is wired into production (per user
+ * decision 2026-07-05).
  *
  * Testable surface: `resolveGraderKey(resolvedMode)` → string. Pure, import-free,
  * immune to the `app/` alias resolution wall that blocks full-boot tests.
@@ -97,25 +99,47 @@ function resolveGraderKey(resolvedMode) {
 }
 
 /**
- * Instantiates the grader for a resolved mode. SKELETON — NOT WIRED.
+ * Instantiates the grader for a resolved mode. PARTIALLY WIRED — harmonization
+ * only (2026-07-05).
  *
- * Production wiring deferred until `app/exercise.js`'s inline selection can be
- * reproduced exactly, including the documented `mode="chorale_identification"`
- * divergence and the raw-mode-fallback ("play"/"identify"/"figures"/"roman")
- * caveats. Calling this before wiring throws. The lazy require map is sketched
- * here to document the intended class mapping; it is not executed at module load
- * so this file stays import-free and testable in plain `node`.
+ * Only `"harmonization"` constructs a real grader (`HarmonizationGrader`,
+ * landed and reviewed clean in a prior commit — see
+ * docs/architecture/pipeline-registry.md). Every other key still throws: this
+ * factory is NOT called from `app/exercise.js` yet, and wiring the remaining
+ * keys (`chorale`, `identification`, `legacy_exercise`) is deferred until
+ * `app/exercise.js`'s inline selection can be reproduced exactly, including
+ * the documented `mode="chorale_identification"` divergence and the
+ * raw-mode-fallback ("play"/"identify"/"figures"/"roman") caveats.
+ *
+ * `harmonization_grader.js` is required lazily, inside the branch that needs
+ * it, not at module top level — same discipline the other (still-unwired)
+ * keys will need once they're implemented: `ChoraleGrader`, for example,
+ * imports `app/`-aliased modules that break plain-`node` test execution, so
+ * an eager top-level require of every grader class would reintroduce the
+ * `app/` alias wall this file was built to avoid. `HarmonizationGrader`
+ * itself happens to be alias-free, but the lazy-require pattern is kept
+ * consistent here for when the other branches are filled in.
  *
  * @param {object} resolvedMode - output of resolvePipeline()
  * @param {object} settings - grader constructor settings
  * @returns {object} grader instance
- * @throws {Error} always, until wiring is reviewed and complete
+ * @throws {Error} for any key other than "harmonization", until that key's
+ *   wiring is reviewed and complete
  */
-function create(resolvedMode /* , settings */) {
+function create(resolvedMode, settings) {
+  var key = resolveGraderKey(resolvedMode);
+
+  if (key === "harmonization") {
+    var HarmonizationGrader = require("./harmonization_grader");
+    return new HarmonizationGrader(settings);
+  }
+
   throw new Error(
-    "GraderFactory.create not yet implemented — production wiring requires " +
-      "exact reproduction of app/exercise.js's current branch order. " +
-      "Use resolveGraderKey() for the selection decision until then."
+    "GraderFactory.create not yet implemented for grader key \"" + key + "\" — " +
+      "only \"harmonization\" is wired so far. Production wiring for the " +
+      "remaining keys requires exact reproduction of app/exercise.js's " +
+      "current branch order. Use resolveGraderKey() for the selection " +
+      "decision until then."
   );
 }
 
