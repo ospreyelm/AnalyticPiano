@@ -6,6 +6,8 @@
 
 "use strict";
 
+var { requireDefault } = require("../../test/require_esm");
+
 // ---- Inline the pure functions under test (replicated from the module) ----
 // These are extracted so we can test them without a DOM or RequireJS.
 
@@ -160,7 +162,7 @@ assert("level_up new", b2 && b2.new === "proficient");
 // Test that the module file exists and exports correctly.
 console.log("\nExerciseScoreCard module:");
 try {
-  var mod = require("./exercise_score_card_logic");
+  var mod = requireDefault(require("./exercise_score_card_logic"));
   assert("exports _scorePct", typeof mod._scorePct === "function");
   assert("exports _hadCorrections", typeof mod._hadCorrections === "function");
   assert("exports _tierLabel", typeof mod._tierLabel === "function");

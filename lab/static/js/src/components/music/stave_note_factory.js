@@ -97,6 +97,7 @@ var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
       let vexflow_keys = this.getNoteKeys();
       let full_context = this.chord.settings.full_context || false;
 
+      // eslint-disable-next-line harmonylab-pipelines/no-raw-pipeline-discriminator -- intentional: "chorale" here is DISTRIBUTION_CHORALE (a layout-axis value, forms.py), NOT TYPE_CHORALE (a pipeline type). Staff-distribution axis consumer, audited pure in pipeline-registry.md. No ResolvedMode field removes this layout literal.
       const CHORALE_FORMAT = this.chord.settings.staffDistribution === "chorale";
 
       if (CHORALE_FORMAT && vexflow_keys.length == 2) {

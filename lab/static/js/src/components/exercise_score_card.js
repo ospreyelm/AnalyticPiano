@@ -1,62 +1,16 @@
 import $ from "jquery";
 import confetti from "canvas-confetti";
 import scoreCardTheme from "./exercise_score_card_theme_logic";
+import ScoreCardLogic from "./exercise_score_card_logic.js";
 
-// ---- Pure logic helpers ----
-
-  function _scorePct(numerator, denominator) {
-    if (!denominator || denominator === 0) return null;
-    return Math.round((numerator / denominator) * 100);
-  }
-
-  function _hadCorrections(errorTally) {
-    return typeof errorTally === "number" && errorTally > 0;
-  }
-
-  function _tierLabel(pct, errorTally) {
-    if (pct === null) return "—";
-    if (pct === 100 && _hadCorrections(errorTally)) return "Corrected";
-    if (pct === 100) return "Mastered";
-    if (pct >= 80) return "Proficient";
-    if (pct >= 60) return "Familiar";
-    if (pct >= 40) return "Attempted";
-    return "Needs Practice";
-  }
-
-  function _masteryColor(pct, errorTally) {
-    if (pct === null) return "gray";
-    if (pct === 100 && _hadCorrections(errorTally)) return "blue";
-    if (pct === 100) return "green";
-    if (pct >= 60) return "blue";
-    return "amber";
-  }
-
-  function _segmentColor(level) {
-    var map = { mastered: "green", proficient: "blue", familiar: "amber", attempted: "amber", not_started: "lightgray" };
-    return map[level] || "lightgray";
-  }
-
-  function _primaryCta(pct, masteryChanges, nextSkillName) {
-    if (pct !== null && pct < 60) return "Try Again";
-    var keys = masteryChanges ? Object.keys(masteryChanges) : [];
-    for (var i = 0; i < keys.length; i++) {
-      if (masteryChanges[keys[i]].new === "mastered" && nextSkillName) {
-        return "Start " + nextSkillName + " →";
-      }
-    }
-    return "Next Exercise →";
-  }
-
-  function _bannerState(masteryChanges) {
-    if (!masteryChanges || Object.keys(masteryChanges).length === 0) return null;
-    var keys = Object.keys(masteryChanges);
-    for (var i = 0; i < keys.length; i++) {
-      if (masteryChanges[keys[i]].new === "mastered") {
-        return { type: "mastered", skill: keys[i], old: masteryChanges[keys[i]].old, new: "mastered" };
-      }
-    }
-    return { type: "level_up", skill: keys[0], old: masteryChanges[keys[0]].old, new: masteryChanges[keys[0]].new };
-  }
+// ---- Pure logic helpers mapped from exercise_score_card_logic.js ----
+var _scorePct = ScoreCardLogic._scorePct;
+var _hadCorrections = ScoreCardLogic._hadCorrections;
+var _tierLabel = ScoreCardLogic._tierLabel;
+var _masteryColor = ScoreCardLogic._masteryColor;
+var _segmentColor = ScoreCardLogic._segmentColor;
+var _primaryCta = ScoreCardLogic._primaryCta;
+var _bannerState = ScoreCardLogic._bannerState;
 
   // ---- SVG arc helper ----
   // Draws a circular progress arc using stroke-dashoffset.
