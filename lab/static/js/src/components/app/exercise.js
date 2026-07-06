@@ -24,6 +24,7 @@ import MidiDevice from "app/models/midi_device";
 import ExerciseChordBank from "app/models/exercise_chord_bank";
 import ExerciseDefinition from "app/models/exercise_definition";
 import ExerciseGrader from "app/models/exercise_grader";
+import ChoraleGrader from "app/models/chorale_grader";
 import IdentificationGrader from "app/models/identification_grader";
 import { create as createGrader, resolveGraderKey } from "app/models/grader_factory";
 import ExerciseContext from "app/models/exercise_context";
@@ -126,15 +127,33 @@ import KeySigMod from "app/models/key_sig_exercise";
     // behavior. Only the CONSTRUCTION inside each branch now goes through
     // GraderFactory.create() where doing so is proven safe:
     //
-    //  - chorale branch: fully wired. resolved.isChorale is MODE-gated when
-    //    mode is truthy (CHORALE_MODES check, independent of exercise type),
-    //    so resolveGraderKey(resolved) === "chorale" for every case this
-    //    branch's condition can select — verified empirically against every
-    //    live exercise type. GraderFactory.create()'s "chorale" branch
-    //    already derives the Unit-1 octaveIndependent override (via
+    //  - chorale branch: wired, guarded. resolved.isChorale is MODE-gated
+    //    when mode is truthy (CHORALE_MODES check, independent of exercise
+    //    type), so resolveGraderKey(resolved) === "chorale" for every LIVE
+    //    exercise type — verified empirically. BUT this is not true for the
+    //    full literal domain of `type`: legacy type="chorale_identification"
+    //    (distinct from umto_chorale) + mode="playback"/"analysis_match"
+    //    would satisfy this branch's condition while resolvePipeline()
+    //    resolves it to the "chorale_identification" pipeline instead (that
+    //    predicate is checked before isChorale and doesn't look at mode),
+    //    giving resolveGraderKey → "identification", not "chorale". Calling
+    //    create() unconditionally would then silently construct
+    //    IdentificationGrader under the "Selecting ChoraleGrader" log, and
+    //    critically skip initFromDefinition() entirely (create()'s
+    //    identification branch doesn't call it, and this branch has no
+    //    explicit call either, relying on create()'s chorale branch to do
+    //    it). type="chorale_identification" has 0 rows and is frozen for new
+    //    writes (AGENTS.md non-negotiable rule; see pipeline-registry.md
+    //    "Legacy grader retirement audit"), so this is not live today — but
+    //    guard anyway so an accidental future write fails safe (falls back
+    //    to the exact prior inline construction) instead of silently
+    //    mis-grading. GraderFactory.create()'s "chorale" branch already
+    //    derives the Unit-1 octaveIndependent override (via
     //    chorale_grader_settings.js) and calls initFromDefinition() itself,
-    //    so this branch does NOT call initFromDefinition() again — doing so
-    //    would double-initialize.
+    //    so the factory-path arm below does NOT call initFromDefinition()
+    //    again — doing so would double-initialize. The fallback arm mirrors
+    //    the pre-Phase-2 inline construction exactly, including its own
+    //    explicit initFromDefinition() call.
     //  - identification branch: PARTIALLY wired, guarded. GraderFactory's
     //    pipeline model only recognizes literal type="identification" or
     //    "chorale_identification" as the "identification" pipeline.
@@ -185,9 +204,20 @@ import KeySigMod from "app/models/key_sig_exercise";
       (!interactionMode && resolved.isChorale)
     ) {
       console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
-      models.exerciseGrader = createGrader(resolved, {
-        definition: models.exerciseDefinition,
-      });
+      if (resolveGraderKey(resolved) === "chorale") {
+        models.exerciseGrader = createGrader(resolved, {
+          definition: models.exerciseDefinition,
+        });
+      } else {
+        var gradingSettings = models.exerciseDefinition.getGrading();
+        // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
+        if (models.exerciseDefinition.isUnit(1)) {
+          gradingSettings.octaveIndependent = true;
+        }
+        models.exerciseGrader = new ChoraleGrader(gradingSettings);
+        // Initialize from definition so it has the timeline ready
+        models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
+      }
     } else {
       models.exerciseGrader = new ExerciseGrader({
         keySignature: new KeySignature(

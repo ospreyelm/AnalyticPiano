@@ -118,7 +118,7 @@ Cross-stack:
 | File | Owner | Notes |
 |---|---|---|
 | `lab/static/js/src/models/exercise_grader.js` | god-class (audit done, extraction paused) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. **2026-07-05 usage audit (see "Legacy grader retirement audit" below): none of these methods are exercised by reachable student content today.** Per-type standalone extraction is paused pending a product decision; likely shape is one retained legacy fallback class, not five polished classes — see the audit's recommendation. |
-| `lab/static/js/src/models/chorale_grader.js` | `chorale` | **Live production caller (2026-07-05):** `app/exercise.js`'s chorale branch now constructs via `GraderFactory.create(resolved, { definition })` — fully wired, no fallback needed (verified no type-divergence risk). Cannot be constructed via the test injection seam's fallback path under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias) — but tests inject a fake `constructors.ChoraleGrader` instead, and the real class was confirmed to load and construct correctly in a real browser smoke test (network log shows the actual 126KB file fetched via the lazy `require()`). |
+| `lab/static/js/src/models/chorale_grader.js` | `chorale` | **Live production caller (2026-07-05):** `app/exercise.js`'s chorale branch constructs via `GraderFactory.create(resolved, { definition })` when `resolveGraderKey(resolved) === "chorale"`, else falls back to the exact pre-Phase-2 inline construction — a code-review-added guard against the `type="chorale_identification"` divergence (see "First production caller wired" below; 0 rows today, frozen type, but no live risk was assumed). Cannot be constructed via the test injection seam's fallback path under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias) — but tests inject a fake `constructors.ChoraleGrader` instead, and the real class was confirmed to load and construct correctly in a real browser smoke test (network log shows the actual 126KB file fetched via the lazy `require()`). |
 | `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:145-148`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
 | `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. **Live production caller (2026-07-05, guarded):** `app/exercise.js`'s identification branch calls `GraderFactory.create()` (always with `{}`, matching `app/exercise.js:135`) ONLY when `resolveGraderKey(resolved) === "identification"` — otherwise constructs directly, unchanged. The guard exists because out-of-scope types with `mode="identification"` (`umto_barline_placement`: 26,491 rows, `umto_key_signature`, `umto_symbolic_meter`) resolve to `"legacy_exercise"`, which `create()` throws for; see "First production caller wired" below. |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
@@ -546,14 +546,31 @@ legacy keys specifically):
   three live branches. Branch CONDITIONS are byte-for-byte unchanged (same
   three-way if/else-if/else, same clauses, same order) — only the
   CONSTRUCTION inside each branch changed.
-  - **chorale branch: fully wired.** `resolved.isChorale` is mode-gated
-    (checks `CHORALE_MODES`) whenever mode is truthy, independent of
-    exercise type — verified empirically that `resolveGraderKey()` returns
-    `"chorale"` for every type this branch's condition can select. No
-    divergence risk. `create()`'s chorale branch already calls
-    `initFromDefinition()` internally, so the old explicit call after
-    construction was removed (calling it twice would have been a real
-    behavior change).
+  - **chorale branch: wired, with a guard added on code review.**
+    `resolved.isChorale` is mode-gated (checks `CHORALE_MODES`) whenever
+    mode is truthy, independent of exercise type — verified empirically
+    that `resolveGraderKey()` returns `"chorale"` for every LIVE exercise
+    type this branch's condition can select. That guarantee depends on one
+    invariant, not the full literal domain of `type`: legacy
+    `type="chorale_identification"` (distinct from `umto_chorale`) +
+    `mode="playback"`/`"analysis_match"` would ALSO satisfy this branch's
+    condition, but `resolvePipeline()` checks `isChoraleIdentification`
+    (`type === "chorale_identification"`, no mode check) before `isChorale`,
+    so it resolves to the `"chorale_identification"` pipeline →
+    `"identification"` key, not `"chorale"` — and `create()`'s
+    identification branch doesn't call `initFromDefinition()`, so this
+    would have silently skipped it entirely under the "Selecting
+    ChoraleGrader" log. `type="chorale_identification"` has 0 rows and is
+    frozen for new writes (AGENTS.md non-negotiable rule), so this wasn't
+    live, but a code-review pass on this commit flagged the missing
+    code-level guard (identification's branch had one, chorale's didn't) —
+    fixed by adding the same `resolveGraderKey(resolved) === "chorale"`
+    guard, falling back to the exact pre-Phase-2 inline construction
+    (including its own `initFromDefinition()` call) otherwise. Locked in
+    with a permanent regression test. `create()`'s chorale branch already
+    calls `initFromDefinition()` internally on the factory-path arm, so
+    that arm does NOT call it again (calling it twice would have been a
+    real behavior change).
   - **identification branch: partially wired, with a guard.** Discovered a
     real divergence while wiring: `app/exercise.js`'s raw
     `interactionMode === "identification"` check is type-agnostic, but

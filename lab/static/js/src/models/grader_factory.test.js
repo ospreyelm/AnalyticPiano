@@ -313,6 +313,38 @@ assertField("umto_chorale + mode=identification resolves to identification key (
   resolveGraderKey(resolvePipeline({ type: "umto_chorale", mode: "identification" })),
   "identification");
 
+// ---------- production-wiring guard: legacy type="chorale_identification" + chorale modes ----------
+// Found during code review of the app/exercise.js wiring commit (2026-07-05):
+// app/exercise.js's chorale branch condition (interactionMode === "playback"
+// || interactionMode === "analysis_match" || (!interactionMode &&
+// resolved.isChorale)) does NOT check exercise type. resolved.isChorale IS
+// mode-gated (type-independent) for every LIVE type, so resolveGraderKey
+// resolves to "chorale" for all of them — but the literal legacy type
+// "chorale_identification" (distinct from "umto_chorale") breaks that: its
+// isChoraleIdentification predicate (type === "chorale_identification",
+// with NO mode check) is evaluated before isChorale in resolvePipeline's
+// if/else chain, so it wins regardless of mode. type="chorale_identification"
+// + mode="playback"/"analysis_match" therefore resolves to the
+// "chorale_identification" pipeline -> "identification" key, NOT "chorale".
+// Calling create() unconditionally in the chorale branch would silently
+// construct IdentificationGrader under the "Selecting ChoraleGrader" log
+// and skip initFromDefinition() entirely for this case. Not live today —
+// type="chorale_identification" has 0 rows and is frozen for new writes
+// (AGENTS.md) — but app/exercise.js guards on resolveGraderKey(resolved)
+// === "chorale" before calling create() specifically because of this. This
+// test locks in the divergence so it can't silently regress.
+assertField("chorale_identification type + mode=playback resolves to identification key, NOT chorale",
+  resolveGraderKey(resolvePipeline({ type: "chorale_identification", mode: "playback" })),
+  "identification");
+assertField("chorale_identification type + mode=analysis_match resolves to identification key, NOT chorale",
+  resolveGraderKey(resolvePipeline({ type: "chorale_identification", mode: "analysis_match" })),
+  "identification");
+// Contrast: umto_chorale with the same modes correctly resolves to "chorale"
+// — these are the genuinely in-scope cases app/exercise.js's chorale guard
+// should route through the factory.
+assertField("umto_chorale + mode=playback resolves to chorale key", resolveGraderKey(resolvePipeline({ type: "umto_chorale", mode: "playback" })), "chorale");
+assertField("umto_chorale + mode=analysis_match resolves to chorale key", resolveGraderKey(resolvePipeline({ type: "umto_chorale", mode: "analysis_match" })), "chorale");
+
 console.log("");
 console.log("Ran grader_factory tests; " + failed + " failed.");
 if (failed > 0) {
