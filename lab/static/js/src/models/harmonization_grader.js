@@ -25,16 +25,35 @@
  *     already-extracted harmonization targets and already-extracted
  *     delivered-MIDI arrays. Easiest to unit-test; no ExerciseDefinition/
  *     ChordBank test doubles needed.
- *   - `grade(definition, inputChords)` — production-interface-compatible
- *     adapter matching ExerciseContext's real call site
- *     (`this.grader.grade(this.definition, this.inputChords)`,
- *     exercise_context.js:273). Reproduces ExerciseGrader.grade()'s
- *     definition/inputChords → problems/delivered-notes extraction
- *     (exercise_grader.js:45-47, 130-141) — the shared plumbing every mode's
- *     switch branch relies on, not harmonization-specific theory — then
- *     delegates to `gradeProblems()`. Still NOT wired into
- *     `app/exercise.js` or `GraderFactory.create()` in this commit; this is
- *     a standalone, tested building block for that later slice.
+ *   - `grade(definition, inputChords)` — matches the SIGNATURE of
+ *     ExerciseContext's generic call site (`this.grader.grade(this.definition,
+ *     this.inputChords)`, exercise_context.js:273) and reproduces
+ *     ExerciseGrader.grade()'s definition/inputChords → problems/delivered-
+ *     notes extraction (exercise_grader.js:45-47, 130-141) for the
+ *     harmonization case. IMPORTANT (found on code review, 2026-07-05):
+ *     ExerciseContext.grade() (exercise_context.js:253-274) checks
+ *     `_isHarmonizationExercise()` and, if true, calls
+ *     `computeHarmonizationGraded(activeMidi)` instead — it NEVER reaches
+ *     line 273's `this.grader.grade(...)` call for harmonization exercises.
+ *     `computeHarmonizationGraded` (exercise_context.js:188-232) is a
+ *     separate, already-live, stateful implementation: single target at a
+ *     time via `_harmonizationPointer`, driven by `activeMidi` from a
+ *     held-note tracker (`_harmonizationHeldTracker`,
+ *     `HarmonizationGraderLogic.createHeldNoteTracker`), calling
+ *     `HarmonizationGraderLogic.harmonizationMatch` directly — it only
+ *     reads `this.grader.STATE` constants, never `.grade()`. So
+ *     `ExerciseGrader.grade()`'s harmonization switch case (grader.js:
+ *     154-158), and by extension this `grade(definition, inputChords)`
+ *     adapter matching its call shape, are NOT on any path that production
+ *     actually exercises for harmonization today, even once
+ *     `GraderFactory.create()`/`app/exercise.js` are wired. This method
+ *     remains a faithful, tested characterization of what
+ *     ExerciseGrader.grade() does for harmonization (useful groundwork for
+ *     eventually retiring that dead switch case), but it is NOT a stepping
+ *     stone toward live harmonization wiring by itself — that would require
+ *     reconciling with `computeHarmonizationGraded`'s stateful,
+ *     single-target interface instead, a separate, larger, not-yet-scoped
+ *     redesign.
  *
  * `grade()`'s extraction reproduces ExerciseGrader.grade()'s early-return
  * guard for `resolved.isChorale` (grader.js:84) too, for parity — though in

@@ -631,10 +631,32 @@ legacy keys specifically):
   source by hand-tracing expected values (that file can't be `require()`'d
   under plain `node` for a live A/B run — same `app/`-alias wall as
   `chorale_grader.test.js`). Still deliberately NOT wired into
-  `app/exercise.js` or `GraderFactory.create()` in this commit — this was
-  the blocking mismatch for that wiring, now cleared, but the wiring
-  itself is a separate slice. `exercise_grader.js` and `app/exercise.js`
-  are untouched.
+  `app/exercise.js` or `GraderFactory.create()` in this commit.
+  `exercise_grader.js` and `app/exercise.js` are untouched.
+  **Correction found on code review of this commit (same day):** matching
+  `grade(definition, inputChords)`'s signature to
+  `ExerciseContext.grade()`'s call site does NOT clear a path to live
+  wiring the way the commit first framed it. `ExerciseContext.grade()`
+  (exercise_context.js:253-274) checks `_isHarmonizationExercise()` and, if
+  true, calls `computeHarmonizationGraded(activeMidi)` — it never reaches
+  the `this.grader.grade(this.definition, this.inputChords)` line for
+  harmonization exercises at all. `computeHarmonizationGraded`
+  (exercise_context.js:188-232) is a separate, already-live, stateful
+  implementation (single target at a time via `_harmonizationPointer`,
+  driven by `activeMidi` from a held-note tracker, calling
+  `HarmonizationGraderLogic.harmonizationMatch` directly — it only reads
+  `this.grader.STATE` constants, never `.grade()`). So
+  `ExerciseGrader.grade()`'s harmonization switch case, and this
+  `HarmonizationGrader.grade(definition, inputChords)` adapter matching its
+  shape, are dead code paths for harmonization in production today, and
+  wiring `GraderFactory`/`app/exercise.js` to construct `HarmonizationGrader`
+  would not change harmonization grading at all while
+  `computeHarmonizationGraded` keeps intercepting first. This work remains
+  valid, tested groundwork for eventually retiring
+  `ExerciseGrader`'s harmonization switch case, but is NOT a stepping stone
+  to live harmonization wiring by itself. Reconciling with
+  `computeHarmonizationGraded`'s stateful, single-target interface is a
+  separate, larger, not-yet-scoped redesign.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
