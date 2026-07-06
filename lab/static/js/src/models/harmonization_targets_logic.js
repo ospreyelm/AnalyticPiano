@@ -25,9 +25,11 @@ function getHarmonizationMetadata(definition) {
   ) || {};
 }
 
-module.exports = {
+var exports = {
   getMode: getMode,
   isHarmonization: isHarmonization,
   getHarmonizationTargets: getHarmonizationTargets,
   getHarmonizationMetadata: getHarmonizationMetadata
 };
+
+export default exports;

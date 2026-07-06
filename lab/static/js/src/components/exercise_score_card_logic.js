@@ -59,7 +59,14 @@ function _bannerState(masteryChanges) {
   return { type: "level_up", skill: keys[0], old: masteryChanges[keys[0]].old, new: masteryChanges[keys[0]].new };
 }
 
-// Node.js export (for tests); AMD loader ignores this.
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { _scorePct: _scorePct, _hadCorrections: _hadCorrections, _tierLabel: _tierLabel, _masteryColor: _masteryColor, _segmentColor: _segmentColor, _primaryCta: _primaryCta, _bannerState: _bannerState };
-}
+var exports = {
+  _scorePct: _scorePct,
+  _hadCorrections: _hadCorrections,
+  _tierLabel: _tierLabel,
+  _masteryColor: _masteryColor,
+  _segmentColor: _segmentColor,
+  _primaryCta: _primaryCta,
+  _bannerState: _bannerState
+};
+
+export default exports;
