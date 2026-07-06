@@ -26,11 +26,15 @@ import ExerciseDefinition from "app/models/exercise_definition";
 import ExerciseGrader from "app/models/exercise_grader";
 import ChoraleGrader from "app/models/chorale_grader";
 import IdentificationGrader from "app/models/identification_grader";
+import GraderFactory from "app/models/grader_factory";
 import ExerciseContext from "app/models/exercise_context";
 import ExerciseScoreCard from "app/components/exercise_score_card";
 import KeyboardRangeLogic from "app/models/keyboard_range_logic";
 import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
 import KeySigMod from "app/models/key_sig_exercise";
+
+var createGrader = GraderFactory.create;
+var resolveGraderKey = GraderFactory.resolveGraderKey;
 
 /**
    * AppExerciseComponent class.
@@ -116,31 +120,108 @@ import KeySigMod from "app/models/key_sig_exercise";
     models.inputChords = new ExerciseChordBank({
       staffDistribution: definition.staffDistribution,
     });
-    // Choose grader depending on exercise type/mode
-    var interactionMode = models.exerciseDefinition.getMode();
+    // Choose grader depending on exercise type/mode.
+    // Discriminator reads route through ResolvedMode (single authority in
+    // resolved_mode.js) instead of getMode()/isX() predicates.
+    //
+    // Phase 2 production wiring (2026-07-05): the branch CONDITIONS below are
+    // UNCHANGED from before — same three-way if/else-if/else, same clauses,
+    // same order — so branch SELECTION is provably identical to prior
+    // behavior. Only the CONSTRUCTION inside each branch now goes through
+    // GraderFactory.create() where doing so is proven safe:
+    //
+    //  - chorale branch: wired, guarded. resolved.isChorale is MODE-gated
+    //    when mode is truthy (CHORALE_MODES check, independent of exercise
+    //    type), so resolveGraderKey(resolved) === "chorale" for every LIVE
+    //    exercise type — verified empirically. BUT this is not true for the
+    //    full literal domain of `type`: legacy type="chorale_identification"
+    //    (distinct from umto_chorale) + mode="playback"/"analysis_match"
+    //    would satisfy this branch's condition while resolvePipeline()
+    //    resolves it to the "chorale_identification" pipeline instead (that
+    //    predicate is checked before isChorale and doesn't look at mode),
+    //    giving resolveGraderKey → "identification", not "chorale". Calling
+    //    create() unconditionally would then silently construct
+    //    IdentificationGrader under the "Selecting ChoraleGrader" log, and
+    //    critically skip initFromDefinition() entirely (create()'s
+    //    identification branch doesn't call it, and this branch has no
+    //    explicit call either, relying on create()'s chorale branch to do
+    //    it). type="chorale_identification" has 0 rows and is frozen for new
+    //    writes (AGENTS.md non-negotiable rule; see pipeline-registry.md
+    //    "Legacy grader retirement audit"), so this is not live today — but
+    //    guard anyway so an accidental future write fails safe (falls back
+    //    to the exact prior inline construction) instead of silently
+    //    mis-grading. GraderFactory.create()'s "chorale" branch already
+    //    derives the Unit-1 octaveIndependent override (via
+    //    chorale_grader_settings.js) and calls initFromDefinition() itself,
+    //    so the factory-path arm below does NOT call initFromDefinition()
+    //    again — doing so would double-initialize. The fallback arm mirrors
+    //    the pre-Phase-2 inline construction exactly, including its own
+    //    explicit initFromDefinition() call.
+    //  - identification branch: PARTIALLY wired, guarded. GraderFactory's
+    //    pipeline model only recognizes literal type="identification" or
+    //    "chorale_identification" as the "identification" pipeline.
+    //    resolved.interactionMode === "identification" alone (this branch's
+    //    first raw clause) does NOT imply that — it also currently matches
+    //    exercise types explicitly out of scope for the six-pipeline split
+    //    (umto_barline_placement: 26,491 rows as of the 2026-07-05 audit,
+    //    the single largest exercise-type bucket in the DB; umto_key_signature;
+    //    umto_symbolic_meter — see docs/architecture/pipeline-registry.md
+    //    "Out of scope for the 6-pipeline split"). For those,
+    //    resolveGraderKey(resolved) returns "legacy_exercise", which
+    //    GraderFactory.create() throws for. Calling create() unconditionally
+    //    here would break IdentificationGrader selection for the largest
+    //    live exercise-type bucket. So: call the factory only when its key
+    //    genuinely resolves to "identification"; otherwise construct
+    //    IdentificationGrader directly, exactly as before. GraderFactory's
+    //    identification branch does NOT call initFromDefinition() itself, so
+    //    this branch keeps calling it explicitly either way (matches prior
+    //    behavior in both sub-cases).
+    //  - harmonization: NOT wired. It falls into the `else` branch below,
+    //    same as before. HarmonizationGrader.grade()'s signature
+    //    (problems, deliveredNotesPerProblem) does not match
+    //    ExerciseContext's call site (this.grader.grade(definition,
+    //    inputChords)) — adapting one to the other is its own slice, not
+    //    forced here. ExerciseGrader keeps handling harmonization via its
+    //    internal delegation to HarmonizationGraderLogic, unchanged.
+    //  - legacy_exercise (matching/figured_bass/other): NOT wired, throws in
+    //    the factory. The `else` branch below keeps constructing
+    //    ExerciseGrader directly, unchanged — GraderFactory.create() is
+    //    never called for this case.
+    var resolved = models.exerciseDefinition.getResolvedMode();
+    var interactionMode = resolved.interactionMode;
     if (
       interactionMode === "identification" ||
-      (!interactionMode && 
-        ((models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
-         (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())))
+      (!interactionMode &&
+        (resolved.isIdentification || resolved.isChoraleIdentification))
     ) {
       console.log("[ID] Selecting IdentificationGrader (mode: " + interactionMode + ")");
-      models.exerciseGrader = new IdentificationGrader({});
+      if (resolveGraderKey(resolved) === "identification") {
+        models.exerciseGrader = createGrader(resolved, {});
+      } else {
+        models.exerciseGrader = new IdentificationGrader({});
+      }
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (
-      interactionMode === "playback" || 
+      interactionMode === "playback" ||
       interactionMode === "analysis_match" ||
-      (!interactionMode && models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale())
+      (!interactionMode && resolved.isChorale)
     ) {
       console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
-      var gradingSettings = models.exerciseDefinition.getGrading();
-      // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
-      if (models.exerciseDefinition.isUnit(1)) {
-        gradingSettings.octaveIndependent = true;
+      if (resolveGraderKey(resolved) === "chorale") {
+        models.exerciseGrader = createGrader(resolved, {
+          definition: models.exerciseDefinition,
+          constructors: { ChoraleGrader: ChoraleGrader },
+        });
+      } else {
+        var gradingSettings = models.exerciseDefinition.getGrading();
+        // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
+        if (models.exerciseDefinition.isUnit(1)) {
+          gradingSettings.octaveIndependent = true;
+        }
+        models.exerciseGrader = new ChoraleGrader(gradingSettings);
+        // Initialize from definition so it has the timeline ready
+        models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
       }
-      models.exerciseGrader = new ChoraleGrader(gradingSettings);
-      // Initialize from definition so it has the timeline ready
-      models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else {
       models.exerciseGrader = new ExerciseGrader({
         keySignature: new KeySignature(
@@ -245,8 +326,28 @@ import KeySigMod from "app/models/key_sig_exercise";
       _analysisType === "roman" || _analysisType === "figured_bass" || _analysisType === "figured_bass_unabbreviated"
     );
     // Chorale play exercises are exclusively MIDI — no click-on-staff input.
+    // Second clause routed through ResolvedMode (single authority) instead of
+    // isChorale()/isChoraleIdentification() predicates — resolved.isChorale &&
+    // !resolved.isChoraleIdentification is identical to the prior
+    // _def.isChorale() && !_def.isChoraleIdentification() (Phase 1.1 wired those
+    // predicates to this._resolved). It also subsumes the umto-metadata
+    // mode === "playback" case the prior second clause already caught via isChorale().
+    //
+    // The first clause stays on RAW definition.mode verbatim — NOT routed through
+    // resolved.interactionMode — because parse() OVERRIDES exercise.mode for some
+    // branches: type=identification hardcodes exercise.mode="identification"
+    // (exercise_definition.js:1098) and type=chorale_identification never sets
+    // exercise.mode at all. For those, resolved.interactionMode would NOT be
+    // "playback" even if the raw config carried mode="playback". The hard
+    // Phase 1.2 constraint is no behavior change, so the raw read is preserved.
+    // DB query (2026-07-05): 0 rows carry (type IN identification,
+    // chorale_identification) AND mode="playback" — the divergence is theoretical
+    // only, but we keep the raw clause rather than silently changing the gate.
+    // Full routing of this clause is deferred (would need a raw-mode accessor).
+    var _resolved = _def && _def.getResolvedMode ? _def.getResolvedMode() : null;
+    // eslint-disable-next-line harmonylab-pipelines/no-raw-pipeline-discriminator -- intentional: parse() overrides exercise.mode for type=identification/chorale_identification, so resolved.interactionMode would diverge from the raw config mode. Documented permanent exemption (Phase 1.3).
     var isChoralePlay = definition.mode === "playback" ||
-      (_def && _def.isChorale && _def.isChorale() && !(_def.isChoraleIdentification && _def.isChoraleIdentification()));
+      (_resolved && _resolved.isChorale && !_resolved.isChoraleIdentification);
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });

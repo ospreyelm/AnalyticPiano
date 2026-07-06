@@ -23,6 +23,7 @@ export default  {
       }
       if (definition && (
         (typeof definition.isChoraleIdentification === "function" && definition.isChoraleIdentification()) ||
+        // eslint-disable-next-line harmonylab-pipelines/no-raw-pipeline-discriminator -- permanent exemption (Phase 1.3): routing to resolved.isChorale would widen this gate from type=umto_chorale to legacy type=chorale (behavior change, proven by the Phase 1.2 reviewer pass). Raw umto_chorale guard preserved verbatim; no ResolvedMode field names exactly this type-narrow predicate.
         (definition.exercise && definition.exercise.type === "umto_chorale")
       )) {
         return false;

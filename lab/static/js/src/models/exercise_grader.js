@@ -1,14 +1,46 @@
 import _ from "lodash";
 import Analyze from "app/utils/analyze";
 import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
+import GraderStateModule from "app/models/grader_state";
+
+var GRADER_STATE = GraderStateModule.STATE;
 
 /**
-   * ExerciseGrader object is responsible for grading a given inputChords for
-   * an exercise.
-   *
-   * @param settings {object}
-   * @constructor
-   */
+ * ExerciseGrader — Phase 2 status (2026-07-05): retained legacy
+ * compatibility fallback, not split into per-type classes.
+ *
+ * Per the "Legacy grader retirement audit" and consolidated Phase 2 status
+ * in docs/architecture/pipeline-registry.md: a DB usage audit found zero
+ * live student-reachable rows for the `notesMatch` (matching),
+ * `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch`
+ * (analytical), and `analysisPcsMatch` (analytical_pcs) branches below.
+ * `GraderFactory`'s `legacy_exercise` key maps all of these (plus the
+ * `"other"` out-of-scope catch-all) to this single class rather than
+ * splitting each into its own standalone grader — product direction is to
+ * migrate remaining legacy exercise types to UMTO, not expand legacy
+ * grader architecture. `app/exercise.js`'s `else` branch still constructs
+ * this class directly (not through the factory, which throws for
+ * `legacy_exercise`); do not add a factory path for it without a product
+ * decision.
+ *
+ * The `mode === "harmonization"` switch case below (delegating to
+ * `HarmonizationGraderLogic`) is a DEAD code path in production: live
+ * harmonization grading is owned by
+ * `ExerciseContext.computeHarmonizationGraded()`, a separate stateful
+ * implementation that `ExerciseContext.grade()` routes to before ever
+ * calling `this.grader.grade(...)` for harmonization exercises. Treat this
+ * branch as a retirement candidate, not a live path.
+ * `lab/static/js/src/models/harmonization_grader.js` characterizes this
+ * dead branch (tested, standalone) as groundwork for eventually removing
+ * it — it is not wired anywhere and does not replace
+ * `computeHarmonizationGraded`.
+ *
+ * ExerciseGrader object is responsible for grading a given inputChords for
+ * an exercise.
+ *
+ * @param settings {object}
+ * @constructor
+ */
   var ExerciseGrader = function (settings) {
     this.settings = settings || {};
     this.analyzer = new Analyze(
@@ -16,19 +48,16 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
     ); /* for analysis-based grading */
   };
 
-  var INCORRECT = "incorrect";
-  var CORRECT = "correct";
-  var PARTIAL = "partial";
+  var INCORRECT = GRADER_STATE.INCORRECT;
+  var CORRECT = GRADER_STATE.CORRECT;
+  var PARTIAL = GRADER_STATE.PARTIAL;
 
   /**
    * Defines the possible exercise result states.
+   * Compatibility alias — the source of truth is grader_state.js.
    * @const
    */
-  ExerciseGrader.STATE = {
-    INCORRECT: INCORRECT,
-    CORRECT: CORRECT,
-    PARTIAL: PARTIAL,
-  };
+  ExerciseGrader.STATE = GRADER_STATE;
 
   _.extend(ExerciseGrader.prototype, {
     /**
@@ -47,6 +76,17 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
       var problems = definition.getProblems();
       var items = inputChords.items();
       var chords = _.pluck(items, "chord");
+      // Discriminator reads routed through ResolvedMode (single authority in
+      // resolved_mode.js) where behavior-identical. The switch below stays on
+      // exerciseType (a raw type string, sourced from resolved.exerciseType
+      // instead of definition.exercise.type directly — same value, since
+      // resolved.exerciseType === (exercise.type || null) computed from the
+      // same parsed exercise object) — the switch STRUCTURE and its case
+      // bodies are NOT touched/restructured/extracted in this segment.
+      var resolved = definition && definition.getResolvedMode
+        ? definition.getResolvedMode() : null;
+      var exerciseType = resolved ? resolved.exerciseType
+        : ((definition.exercise && definition.exercise.type) || null);
       var graded = {
         result: null,
         score: 0,
@@ -72,7 +112,7 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
       // Chorale exercises currently don't use chord-based problems.
       // If there are no problems (chorale mode), do not return CORRECT by default.
       // Treat as PARTIAL until the chorale matcher marks completion.
-      if ((typeof definition.isChorale === 'function' && definition.isChorale()) || (problems && problems.length === 0)) {
+      if ((resolved && resolved.isChorale) || (problems && problems.length === 0)) {
         graded.score = score_map[PARTIAL];
         graded.result = PARTIAL;
         graded.activeIndex = 0;
@@ -105,7 +145,7 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
           "analytical_pcs",
           "figured_bass",
           "figured_bass_pcs",
-        ].includes(definition.exercise.type)
+        ].includes(exerciseType)
       ) {
         var analysis_types = Object.keys(definition.exercise.analysis.mode)
           .filter(function (key) {
@@ -130,9 +170,17 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
             actual_notes.splice(dummy_idx, 1);
           }
         }
-        var mode = definition.getMode();
-        console.log("[UMTO-DEBUG] grading exercise. type:", definition.exercise.type, "mode:", mode);
-        switch (definition.exercise.type) {
+        // mode/exerciseType routed through ResolvedMode (resolved.interactionMode
+        // === definition.getMode(); resolved.exerciseType === definition.exercise.type
+        // — both read the same post-parse exercise object, proven equivalent in
+        // prior Phase 1.2 segments). Switch STRUCTURE and case bodies unchanged —
+        // this preserves every latent branch exactly, including umto_chorale+
+        // harmonization, umto_chorale+analysis_match, umto_chorale+"play" (falls to
+        // the notesMatch else-branch), and the legacy analytical/analytical_pcs/
+        // figured_bass/figured_bass_pcs cases.
+        var mode = resolved ? resolved.interactionMode : definition.getMode();
+        console.log("[UMTO-DEBUG] grading exercise. type:", exerciseType, "mode:", mode);
+        switch (exerciseType) {
           case "umto_chorale":
             if (mode === "harmonization") {
               // problems[i] is a harmonization target; actual_notes comes from held-note
