@@ -118,9 +118,9 @@ Cross-stack:
 | File | Owner | Notes |
 |---|---|---|
 | `lab/static/js/src/models/exercise_grader.js` | god-class (audit done, extraction paused) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. **2026-07-05 usage audit (see "Legacy grader retirement audit" below): none of these methods are exercised by reachable student content today.** Per-type standalone extraction is paused pending a product decision; likely shape is one retained legacy fallback class, not five polished classes — see the audit's recommendation. |
-| `lab/static/js/src/models/chorale_grader.js` | `chorale` | Selected by `app/exercise.js:131` for playback/analysis_match. `GraderFactory.create()` has a designed context contract for it (2026-07-05, `{ definition, constructors }`) but cannot construct the REAL class under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias). Tests inject a fake `constructors.ChoraleGrader`; production would omit `constructors` and fall back to a lazy `require`. Nothing calls `create()` in production yet. |
+| `lab/static/js/src/models/chorale_grader.js` | `chorale` | **Live production caller (2026-07-05):** `app/exercise.js`'s chorale branch now constructs via `GraderFactory.create(resolved, { definition })` — fully wired, no fallback needed (verified no type-divergence risk). Cannot be constructed via the test injection seam's fallback path under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias) — but tests inject a fake `constructors.ChoraleGrader` instead, and the real class was confirmed to load and construct correctly in a real browser smoke test (network log shows the actual 126KB file fetched via the lazy `require()`). |
 | `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:145-148`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
-| `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. `GraderFactory.create()` can construct it for both pipelines (2026-07-05, always with `{}`, matching `app/exercise.js:135`), but nothing calls `create()` in production yet. |
+| `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. **Live production caller (2026-07-05, guarded):** `app/exercise.js`'s identification branch calls `GraderFactory.create()` (always with `{}`, matching `app/exercise.js:135`) ONLY when `resolveGraderKey(resolved) === "identification"` — otherwise constructs directly, unchanged. The guard exists because out-of-scope types with `mode="identification"` (`umto_barline_placement`: 26,491 rows, `umto_key_signature`, `umto_symbolic_meter`) resolve to `"legacy_exercise"`, which `create()` throws for; see "First production caller wired" below. |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
 | `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | New (2026-07-05). Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). Not wired into `app/exercise.js` yet — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias). `GraderFactory.create()` can construct it (2026-07-05), but nothing calls `create()` in production yet. |
 
@@ -541,6 +541,66 @@ legacy keys specifically):
   now a per-key-varying shape (documented as a known, temporary
   inconsistency to resolve before wiring a production caller). Still no
   production caller.
+- **First production caller wired (2026-07-05):** `app/exercise.js`'s
+  grader-selection block now calls `GraderFactory.create()` for two of its
+  three live branches. Branch CONDITIONS are byte-for-byte unchanged (same
+  three-way if/else-if/else, same clauses, same order) — only the
+  CONSTRUCTION inside each branch changed.
+  - **chorale branch: fully wired.** `resolved.isChorale` is mode-gated
+    (checks `CHORALE_MODES`) whenever mode is truthy, independent of
+    exercise type — verified empirically that `resolveGraderKey()` returns
+    `"chorale"` for every type this branch's condition can select. No
+    divergence risk. `create()`'s chorale branch already calls
+    `initFromDefinition()` internally, so the old explicit call after
+    construction was removed (calling it twice would have been a real
+    behavior change).
+  - **identification branch: partially wired, with a guard.** Discovered a
+    real divergence while wiring: `app/exercise.js`'s raw
+    `interactionMode === "identification"` check is type-agnostic, but
+    `resolvePipeline()`'s pipeline field only recognizes literal
+    `type="identification"`/`"chorale_identification"` — NOT the
+    `isIdentification` mirror field. Exercise types explicitly out of scope
+    for the six-pipeline split (`umto_barline_placement`: **26,491 rows**,
+    the single largest exercise-type bucket in the entire DB;
+    `umto_key_signature`: 18; `umto_symbolic_meter`: 3) all carry
+    `mode="identification"` for some rows, resolve to pipeline `"other"`,
+    and would make `GraderFactory.create()` throw
+    (`resolveGraderKey → "legacy_exercise"`). Calling `create()`
+    unconditionally in this branch would have broken IdentificationGrader
+    selection for the largest live exercise-type bucket. Fixed by guarding:
+    only call `create()` when `resolveGraderKey(resolved) === "identification"`
+    (covers literal `type="identification"` and `umto_chorale` +
+    `mode="identification"`, i.e. the `chorale_identification` pipeline);
+    otherwise construct `IdentificationGrader` directly, exactly as before.
+    Locked in as a permanent regression test in `grader_factory.test.js`.
+    `create()`'s identification branch does NOT call `initFromDefinition()`
+    itself, so this branch keeps that call explicit in both sub-cases
+    (matches prior behavior either way).
+  - **harmonization: NOT wired**, deliberately. It stays in the `else`
+    branch (`ExerciseGrader`, unchanged). `HarmonizationGrader.grade()`'s
+    signature (`problems, deliveredNotesPerProblem`) doesn't match
+    `ExerciseContext`'s call site (`this.grader.grade(definition,
+    inputChords)`) — adapting one to the other is its own slice, not forced
+    here.
+  - **legacy_exercise: NOT wired.** The `else` branch keeps constructing
+    `ExerciseGrader` directly; `GraderFactory.create()` is never called for
+    this case.
+  - Verification: `npm run lint`, `grader_factory.test.js`,
+    `harmonization_grader.test.js`, `resolved_mode.test.js` all green.
+    Browser smoke test (local dev server + Vite, gstack `browse`):
+    identification exercise (unit 5, type=identification) and chorale
+    playback exercise (unit 9, umto_chorale+playback) both load with zero
+    console errors; network log confirms the real `chorale_grader.js`
+    (126KB) is fetched via the new lazy `require()` path at runtime,
+    proving the CJS-`require()`-inside-an-ESM-served-file pattern actually
+    works in the real browser, not just in tests. Full interactive
+    click-to-grade verification was blocked by a pre-existing,
+    unrelated-to-this-change limitation: exercise sheets show a
+    "click to start audio" gate (`Tone.start()` in `midi_device.js`) whose
+    promise never resolves in headless Chromium, and the identification
+    input UI doesn't mount until that resolves. Confirmed via an A/B test
+    (stashed the wiring change, reloaded, identical stuck state) that this
+    is pre-existing and not caused by this change.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on

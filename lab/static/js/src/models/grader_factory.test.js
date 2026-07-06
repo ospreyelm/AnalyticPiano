@@ -275,6 +275,44 @@ function fakeDefinition(grading, unitNum) {
     grader.initFromDefinitionCalls[0], def);
 })();
 
+// ---------- production-wiring guard: out-of-scope types + mode="identification" ----------
+// Discovered while wiring app/exercise.js (2026-07-05): app/exercise.js's raw
+// `interactionMode === "identification"` check is type-agnostic — it routes
+// to IdentificationGrader for ANY exercise type with mode="identification",
+// including types the six-pipeline split explicitly put out of scope
+// (umto_barline_placement, umto_key_signature, umto_symbolic_meter — see
+// pipeline-registry.md "Out of scope for the 6-pipeline split"). But
+// resolvePipeline()'s pipeline field only recognizes literal
+// type="identification"/"chorale_identification" as the "identification"
+// pipeline; it does NOT consult the `isIdentification` mirror field. So for
+// umto_barline_placement — 26,491 rows as of the 2026-07-05 DB audit, the
+// single largest exercise-type bucket in the whole database — pipeline
+// resolves to "other" and resolveGraderKey returns "legacy_exercise", which
+// create() throws for. app/exercise.js's identification branch MUST guard
+// on resolveGraderKey(resolved) === "identification" before ever calling
+// create() — calling it unconditionally would break IdentificationGrader
+// selection for the largest live exercise-type bucket. This test locks in
+// the divergence so it can't silently regress.
+assertField("umto_barline_placement + mode=identification resolves to legacy_exercise, NOT identification",
+  resolveGraderKey(resolvePipeline({ type: "umto_barline_placement", mode: "identification" })),
+  "legacy_exercise");
+assertField("umto_key_signature + mode=identification resolves to legacy_exercise, NOT identification",
+  resolveGraderKey(resolvePipeline({ type: "umto_key_signature", mode: "identification" })),
+  "legacy_exercise");
+assertField("umto_symbolic_meter + mode=identification resolves to legacy_exercise, NOT identification",
+  resolveGraderKey(resolvePipeline({ type: "umto_symbolic_meter", mode: "identification" })),
+  "legacy_exercise");
+// Contrast: literal type="identification" and type="umto_chorale" (which
+// resolves to the chorale_identification pipeline for this mode) DO
+// correctly resolve to the "identification" key — these are the genuinely
+// in-scope cases app/exercise.js's guard should route through the factory.
+assertField("literal type=identification + mode=identification resolves to identification key",
+  resolveGraderKey(resolvePipeline({ type: "identification", mode: "identification" })),
+  "identification");
+assertField("umto_chorale + mode=identification resolves to identification key (via chorale_identification pipeline)",
+  resolveGraderKey(resolvePipeline({ type: "umto_chorale", mode: "identification" })),
+  "identification");
+
 console.log("");
 console.log("Ran grader_factory tests; " + failed + " failed.");
 if (failed > 0) {
