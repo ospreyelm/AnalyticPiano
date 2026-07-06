@@ -10,7 +10,9 @@ import ExerciseDefinitionLogic from "app/models/exercise_definition_logic";
 import ChordalProblemsLogic from "app/models/chordal_problems_logic";
 import Tonal from "tonal";
 import LabelLogic from "app/models/exercise_definition_label_logic";
-import { resolvePipeline } from "./resolved_mode";
+import ResolvedModeModule from "./resolved_mode";
+
+var resolvePipeline = ResolvedModeModule.resolvePipeline;
 
 var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
   var HIGHLIGHT_SETTINGS = Config.get("general.highlightSettings");

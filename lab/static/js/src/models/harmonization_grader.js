@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * HarmonizationGrader — Phase 2 isolation of the live `mode="harmonization"`
  * grading path out of ExerciseGrader's god-class switch
@@ -74,9 +72,8 @@
  * observable.
  */
 
-var GraderState = require("./grader_state");
-var harmonizationLogicModule = require("./harmonization_grader_logic");
-var HarmonizationGraderLogic = harmonizationLogicModule.default || harmonizationLogicModule;
+import GraderState from "./grader_state.js";
+import HarmonizationGraderLogic from "./harmonization_grader_logic.js";
 
 var STATE = GraderState.STATE;
 var CORRECT = GraderState.CORRECT;
@@ -227,4 +224,4 @@ HarmonizationGrader.prototype.grade = function (definition, inputChords) {
   return this.gradeProblems(problems, deliveredNotesPerProblem);
 };
 
-module.exports = HarmonizationGrader;
+export default HarmonizationGrader;

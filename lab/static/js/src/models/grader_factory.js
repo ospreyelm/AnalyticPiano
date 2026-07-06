@@ -1,6 +1,8 @@
-"use strict";
+import ChoraleGraderSettings from "./chorale_grader_settings.js";
+import HarmonizationGrader from "./harmonization_grader.js";
+import IdentificationGrader from "./identification_grader.js";
 
-var { resolveChoraleGraderSettings } = require("./chorale_grader_settings");
+var resolveChoraleGraderSettings = ChoraleGraderSettings.resolveChoraleGraderSettings;
 
 /**
  * GraderFactory — Phase 2 foundation (M1).
@@ -139,34 +141,31 @@ function resolveGraderKey(resolvedMode) {
  * tested standalone), then `initFromDefinition(context.definition)` is
  * called on the constructed instance, matching production's second step.
  *
- * Test-safe injection seam: `chorale_grader.js` imports an `app/`-aliased
- * module (`app/components/music/score_timeline`), so requiring it throws
- * `ERR_MODULE_NOT_FOUND` under plain `node` — the same wall behind
- * `chorale_grader.test.js`'s pre-existing failure. To keep `create()`
- * testable anyway, the `"chorale"` branch accepts an optional
- * `context.constructors.ChoraleGrader` override: if supplied (as tests do,
- * with a fake stub class), it's used directly and `chorale_grader.js` is
- * NEVER required. If omitted (as real production wiring would leave it),
- * `create()` falls back to a lazy `require("./chorale_grader")` — correct
- * under webpack/Vite bundling (the alias resolves), but that fallback path
- * itself remains untested under plain `node` until the alias issue has an
- * independent resolution. Per user instruction, this file does NOT attempt
- * to solve the `app/` alias problem itself (no loader, no module-resolution
- * change) — the seam only sidesteps it for testing this branch's OWN logic
- * (settings derivation + initFromDefinition call), not for constructing a
- * real `ChoraleGrader` in tests.
+ * Injection seam (ESM repair, 2026-07-06): `chorale_grader.js` imports an
+ * `app/`-aliased module (`app/components/music/score_timeline`), which does
+ * not resolve under plain `node` (no `app/` alias there) — the same wall
+ * behind `chorale_grader.test.js`'s pre-existing failure. Previously this
+ * file sidestepped that with a lazy `require("./chorale_grader")` fallback,
+ * but browser-native ESM (Vite dev serving, no bundler CJS interop) has no
+ * `require` at all, so a lazy `require()` inside browser-executed code is
+ * invalid regardless of bundler behavior at build time. The fix: the
+ * `"chorale"` branch now REQUIRES the caller to inject the constructor via
+ * `context.constructors.ChoraleGrader` — there is no fallback `require()` or
+ * static import of `chorale_grader.js` in this file. `app/exercise.js`
+ * (which already statically imports `ChoraleGrader` for its own pre-Phase-2
+ * fallback construction) passes it through `constructors.ChoraleGrader` at
+ * its `createGrader()` call site. This keeps `grader_factory.js` free of any
+ * `app/`-aliased import — remains fully requirable under plain `node` — and
+ * removes the last `require()` from this file's production code path.
  *
  * `"legacy_exercise"` (matching/figured_bass/other, all dead or
  * dev-fixture-only per the usage audit) is intentionally left unwired — no
  * product decision yet on whether/how to construct the retained
  * `ExerciseGrader` fallback through this factory.
  *
- * Each grader module is required lazily, inside the branch that needs it,
- * not at module top level, so a still-unwired or alias-carrying grader
- * (like `ChoraleGrader`, absent an injected override) can never be pulled in
- * just by loading this file — keeping `grader_factory.js` itself always
- * requirable under plain `node`. `chorale_grader_settings.js` is required at
- * module top level instead, since it has no imports of its own and is safe.
+ * `harmonization_grader.js` and `identification_grader.js` are statically
+ * imported at the top of this file (both have no `app/`-aliased imports of
+ * their own, so this is safe under plain `node`).
  *
  * @param {object} resolvedMode - output of resolvePipeline()
  * @param {object} context - shape depends on the resolved key (see above):
@@ -175,23 +174,22 @@ function resolveGraderKey(resolvedMode) {
  *   "chorale" → `{ definition, constructors }`, where `definition` is
  *     required (an ExerciseDefinition or test double exposing
  *     getGrading()/isUnit()/and, on the constructed grader,
- *     initFromDefinition()) and `constructors.ChoraleGrader` is an optional
- *     class override for tests.
+ *     initFromDefinition()) and `constructors.ChoraleGrader` is REQUIRED
+ *     (the real class in production, a fake stub in tests) — there is no
+ *     fallback construction path.
  * @returns {object} grader instance
- * @throws {Error} for "chorale" without `context.definition`, or for
- *   "legacy_exercise", until wiring is designed, reviewed, and complete
+ * @throws {Error} for "chorale" without `context.definition` or
+ *   `context.constructors.ChoraleGrader`, or for "legacy_exercise", until
+ *   wiring is designed, reviewed, and complete
  */
 function create(resolvedMode, context) {
   var key = resolveGraderKey(resolvedMode);
 
   if (key === "harmonization") {
-    var HarmonizationGrader = require("./harmonization_grader");
     return new HarmonizationGrader(context);
   }
 
   if (key === "identification") {
-    var identificationModule = require("./identification_grader");
-    var IdentificationGrader = identificationModule.default || identificationModule;
     return new IdentificationGrader({});
   }
 
@@ -204,11 +202,19 @@ function create(resolvedMode, context) {
           (context ? "a context without .definition" : "no context") + "."
       );
     }
+    if (!context.constructors || !context.constructors.ChoraleGrader) {
+      throw new Error(
+        "GraderFactory.create requires context.constructors.ChoraleGrader " +
+          "to construct ChoraleGrader — this factory does not import " +
+          "chorale_grader.js itself (it carries an app/-aliased import, " +
+          "and this file must stay free of that alias). Pass the real " +
+          "ChoraleGrader class (already statically imported by the " +
+          "caller) via context.constructors.ChoraleGrader."
+      );
+    }
 
     var gradingSettings = resolveChoraleGraderSettings(context.definition);
-    var ChoraleGraderCtor =
-      (context.constructors && context.constructors.ChoraleGrader) ||
-      require("./chorale_grader");
+    var ChoraleGraderCtor = context.constructors.ChoraleGrader;
     var grader = new ChoraleGraderCtor(gradingSettings);
     grader.initFromDefinition(context.definition);
     return grader;
@@ -223,8 +229,10 @@ function create(resolvedMode, context) {
   );
 }
 
-module.exports = {
+var exports = {
   resolveGraderKey: resolveGraderKey,
   GRADER_KEYS: GRADER_KEYS,
   create: create,
 };
+
+export default exports;

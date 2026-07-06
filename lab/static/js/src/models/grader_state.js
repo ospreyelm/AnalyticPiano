@@ -19,9 +19,11 @@ var STATE = {
   PARTIAL: PARTIAL,
 };
 
-module.exports = {
+var exports = {
   STATE: STATE,
   INCORRECT: INCORRECT,
   CORRECT: CORRECT,
   PARTIAL: PARTIAL,
 };
+
+export default exports;

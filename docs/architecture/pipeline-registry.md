@@ -121,8 +121,9 @@ Cross-stack:
 | `lab/static/js/src/models/chorale_grader.js` | `chorale` | **Live production caller (2026-07-05):** `app/exercise.js`'s chorale branch constructs via `GraderFactory.create(resolved, { definition })` when `resolveGraderKey(resolved) === "chorale"`, else falls back to the exact pre-Phase-2 inline construction — a code-review-added guard against the `type="chorale_identification"` divergence (see "First production caller wired" below; 0 rows today, frozen type, but no live risk was assumed). Cannot be constructed via the test injection seam's fallback path under plain `node` — this file imports `app/components/music/score_timeline` (webpack-only alias) — but tests inject a fake `constructors.ChoraleGrader` instead, and the real class was confirmed to load and construct correctly in a real browser smoke test (network log shows the actual 126KB file fetched via the lazy `require()`). |
 | `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:145-148`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
 | `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. **Live production caller (2026-07-05, guarded):** `app/exercise.js`'s identification branch calls `GraderFactory.create()` (always with `{}`, matching `app/exercise.js:135`) ONLY when `resolveGraderKey(resolved) === "identification"` — otherwise constructs directly, unchanged. The guard exists because out-of-scope types with `mode="identification"` (`umto_barline_placement`: 26,491 rows, `umto_key_signature`, `umto_symbolic_meter`) resolve to `"legacy_exercise"`, which `create()` throws for; see "First production caller wired" below. |
-| `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
-| `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). **Now production-interface compatible (2026-07-05):** `grade(definition, inputChords)` matches `ExerciseContext`'s real call site (`this.grader.grade(this.definition, this.inputChords)`) — reproduces the definition/inputChords → problems/delivered-notes extraction (Set-dedupe, dummy-MIDI-109 strip, `isChorale`/empty-problems early-return guard) then delegates to the pure array-based `gradeProblems(problems, deliveredNotesPerProblem)` (renamed from `grade`, kept for standalone testing). Still NOT wired into `app/exercise.js` or `GraderFactory.create()` — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias) — including characterization tests for the `grade(definition, inputChords)` adapter hand-traced against `exercise_grader.js`'s actual source (that file can't be `require()`'d under plain `node` to run a live A/B comparison — same `app/`-alias wall as `chorale_grader.test.js`). `GraderFactory.create()` can construct the class (2026-07-05), but nothing calls `create()` in production yet. |
+| `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today, and from `harmonization_runtime_grader.js` (the live path, see PR A below) |
+| `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). **Now production-interface compatible (2026-07-05):** `grade(definition, inputChords)` matches `ExerciseContext`'s real call site (`this.grader.grade(this.definition, this.inputChords)`) — reproduces the definition/inputChords → problems/delivered-notes extraction (Set-dedupe, dummy-MIDI-109 strip, `isChorale`/empty-problems early-return guard) then delegates to the pure array-based `gradeProblems(problems, deliveredNotesPerProblem)` (renamed from `grade`, kept for standalone testing). Still NOT wired into `app/exercise.js` or `GraderFactory.create()` — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias) — including characterization tests for the `grade(definition, inputChords)` adapter hand-traced against `exercise_grader.js`'s actual source (that file can't be `require()`'d under plain `node` to run a live A/B comparison — same `app/`-alias wall as `chorale_grader.test.js`). `GraderFactory.create()` can construct the class (2026-07-05), but nothing calls `create()` in production yet. **Not the live path — see PR A below; do not confuse with `harmonization_runtime_grader.js`.** |
+| `lab/static/js/src/models/harmonization_runtime_grader.js` | `harmonization` | **PR A (2026-07-06): the live runtime harmonization grading path**, extracted mechanically from `ExerciseContext.computeHarmonizationGraded(activeMidi)` (the stateful, single-target-at-a-time implementation that actually runs in production — distinct from the `HarmonizationGrader`/`ExerciseGrader.grade()` dead-code path above). Exports `computeHarmonizationGraded(ctx, activeMidi)`: a byte-for-byte relocation of the prior inline method body, with `this.` → `ctx.`. State (`_harmonizationPointer`, `acceptedHarmonizationSonorities`, `_harmonizationRejected`) stays on the `ExerciseContext` instance — 6 external components (`components/music.js`, `components/input/click_note.js`, `exercise_sheet_playback.js`, `exercise_sheet_staves.js`, `exercise_sheet_status.js`, `components/app/exercise.js`) read/write those fields directly — so the module mutates the ctx passed in rather than owning its own state. Uses shared `grader_state.js` STATE instead of `ctx.grader.STATE` (proven behavior-identical: `exercise_grader.js:58` aliases `ExerciseGrader.STATE` to the same shared object). `ExerciseContext.computeHarmonizationGraded` now delegates: `return HarmonizationRuntimeGrader.computeHarmonizationGraded(this, activeMidi)`. No behavior change. Tested in `harmonization_runtime_grader.test.js` (plain `node`): empty/null activeMidi, correct/partial/incorrect per-target transitions, all-done-then-incorrect quirk, measureIndex/onset math, result shape, STATE identity — quirks (partial counts as accepted; all-done-then-incorrect still fires rejected+feedback side effects) locked as-is, not fixed. Browser-smoke-verified: harmonization exercise (Unit 9, playlist `PA03SM`) loads with the new import wired, app mounts (`#staffwrapper` + canvas), zero console/network errors. |
 
 Phase 2 added: `grader_factory.js`, `grader_state.js`, `harmonization_grader.js`
 (harmonization-only isolation wrapper, not yet wired). The originally-planned
@@ -680,17 +681,20 @@ legacy keys specifically):
   `ExerciseGrader` is the retained single legacy-compatibility class (per
   the "Legacy grader retirement audit" above); it is NOT being split into
   per-type classes.
-- **Harmonization is NOT wired, and will not be wired without a separate,
-  explicitly-scoped decision.** Live harmonization grading is owned by
-  `ExerciseContext.computeHarmonizationGraded(activeMidi)` — a stateful,
-  single-target-at-a-time implementation, unrelated to
+- **Harmonization is NOT wired through `GraderFactory`, and will not be
+  wired without a separate, explicitly-scoped decision.** Live harmonization
+  grading is owned by `ExerciseContext.computeHarmonizationGraded(activeMidi)`
+  — a stateful, single-target-at-a-time implementation, unrelated to
   `ExerciseGrader`/`GraderFactory`. `ExerciseGrader`'s `mode==="harmonization"`
   switch case (grader.js:154-158) is a dead code path in production today:
   `ExerciseContext.grade()` diverts to `computeHarmonizationGraded` before
   ever reaching `this.grader.grade(...)` for harmonization exercises (see
   the "Correction found on code review" note above). Treat
   `ExerciseGrader`'s harmonization branch as a retirement candidate, not a
-  live path.
+  live path. **As of PR A (2026-07-06), `computeHarmonizationGraded`'s
+  computation itself has been extracted to `harmonization_runtime_grader.js`
+  — see that file's entry above and "PR A" below — but this is a relocation
+  of the live path, not a wiring of it through `GraderFactory`.**
 - **`HarmonizationGrader` (`harmonization_grader.js`) stays**, but ONLY as
   characterization/retirement groundwork for `ExerciseGrader`'s dead
   harmonization switch case — it is NOT live-path isolation and must not be
@@ -698,7 +702,53 @@ legacy keys specifically):
   path or `app/exercise.js` without first explicitly scoping a reconciliation
   with `computeHarmonizationGraded`'s stateful interface — a separate,
   larger redesign, not a continuation of this Phase 2 grader-split effort.
+  **Do not confuse with `harmonization_runtime_grader.js` (PR A) — that one
+  IS the live path, extracted, not a characterization double.**
 - **Next planned slice:** cleanly name/quarantine the `ExerciseGrader`
   fallback (either keep the class name and document it as the legacy
   compatibility fallback, or a low-risk rename to `LegacyExerciseGrader`)
   — not yet decided which.
+
+### PR A: live harmonization runtime grading extraction (2026-07-06)
+
+Extracted `ExerciseContext.computeHarmonizationGraded(activeMidi)` — the live,
+stateful, single-target-at-a-time harmonization grading path described above —
+out of `ExerciseContext` into a focused module, `harmonization_runtime_grader.js`
+(see its entry in the "Graders" table above for the full contract).
+
+- Purely a relocation: the computation body is byte-for-byte identical (only
+  `this.` → `ctx.` and `this.grader.STATE.X` → shared `grader_state.js`
+  `STATE.X`, proven behavior-identical via `exercise_grader.js:58`'s
+  `ExerciseGrader.STATE = GRADER_STATE` alias). No pointer/accepted/rejected
+  semantics changed; existing quirks (partial-counts-as-accepted,
+  all-done-then-incorrect still firing rejected+feedback) are preserved, not
+  fixed.
+- State (`_harmonizationPointer`, `acceptedHarmonizationSonorities`,
+  `_harmonizationRejected`) deliberately stays on `ExerciseContext`, not the
+  new module — too many external components read/write those fields directly
+  off the context instance for a clean state move to be in scope here.
+- `ExerciseContext.computeHarmonizationGraded` now delegates:
+  `return HarmonizationRuntimeGrader.computeHarmonizationGraded(this, activeMidi)`.
+  `this` (the full context) is passed as `ctx`, so all external readers of
+  those three fields see unchanged behavior.
+- Characterized first: `harmonization_runtime_grader.test.js` locks the prior
+  inline behavior (empty/null activeMidi, correct/partial/incorrect
+  transitions, all-done-then-incorrect quirk, measureIndex/onset math, result
+  shape, STATE identity) before the delegation was wired.
+- Verified: `npm run lint` clean; `harmonization_runtime_grader.test.js`,
+  `harmonization_grader_logic.test.js`, `harmonization_grader.test.js`,
+  `resolved_mode.test.js`, `grader_factory.test.js` all green; independent
+  correctness review confirmed the extraction is faithful on all four axes
+  (import interop, `this`-preservation, no dropped side effects, STATE
+  equivalence) with zero findings; browser smoke (real login, Unit 9
+  harmonization exercise, playlist `PA03SM`) confirmed the page loads with
+  zero console/network errors and the exercise sheet mounts. Interactive
+  click-to-grade verification was blocked by the same pre-existing
+  `Tone.start()` audio-gate limitation documented under "First production
+  caller wired" above (confirmed identical, not caused by this change) — not
+  fixable within this slice.
+- Explicitly NOT done in this PR: no wiring through `GraderFactory`, no
+  reconciliation with `HarmonizationGrader`'s `grade(definition, inputChords)`
+  adapter, no state migration off `ExerciseContext`. This PR is runtime
+  extraction only, per the standing rule against incidental behavior changes
+  while isolating live paths.

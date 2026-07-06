@@ -44,6 +44,8 @@ function resolveChoraleGraderSettings(definition) {
   return gradingSettings;
 }
 
-module.exports = {
+var exports = {
   resolveChoraleGraderSettings: resolveChoraleGraderSettings,
 };
+
+export default exports;

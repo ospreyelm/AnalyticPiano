@@ -136,7 +136,7 @@ function resolvePipeline(exercise) {
   });
 }
 
-module.exports = {
+var exports = {
   resolvePipeline: resolvePipeline,
   resolveMode: resolveMode,
   CHORALE_MODES: CHORALE_MODES,
@@ -144,3 +144,5 @@ module.exports = {
   CHORALE_TYPES: CHORALE_TYPES,
   FIGURED_BASS_TYPES: FIGURED_BASS_TYPES,
 };
+
+export default exports;

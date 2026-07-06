@@ -1,7 +1,9 @@
 import _ from "lodash";
 import Analyze from "app/utils/analyze";
 import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
-import { STATE as GRADER_STATE } from "app/models/grader_state";
+import GraderStateModule from "app/models/grader_state";
+
+var GRADER_STATE = GraderStateModule.STATE;
 
 /**
  * ExerciseGrader — Phase 2 status (2026-07-05): retained legacy

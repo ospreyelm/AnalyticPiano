@@ -15,7 +15,8 @@
  * touches — no jquery/app imports, runnable under plain `node`.
  */
 
-var runtime = require("./harmonization_runtime_grader");
+var { requireDefault } = require("../../test/require_esm");
+var runtime = requireDefault(require("./harmonization_runtime_grader"));
 var computeHarmonizationGraded = runtime.computeHarmonizationGraded;
 var STATE = runtime.STATE;
 

@@ -8,9 +8,8 @@ var GRADER_KEYS = factoryMod.GRADER_KEYS;
 var rmMod = requireDefault(require("./resolved_mode"));
 var resolvePipeline = rmMod.resolvePipeline;
 
-var HarmonizationGrader = require("./harmonization_grader");
-var identificationLogicModule = require("./identification_grader");
-var IdentificationGrader = identificationLogicModule.default || identificationLogicModule;
+var HarmonizationGrader = requireDefault(require("./harmonization_grader"));
+var IdentificationGrader = requireDefault(require("./identification_grader"));
 
 var failed = 0;
 

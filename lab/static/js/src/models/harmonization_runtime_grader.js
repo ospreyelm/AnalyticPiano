@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * HarmonizationRuntimeGrader — live runtime harmonization grading extracted
  * mechanically from `ExerciseContext.computeHarmonizationGraded` (PR A).
@@ -42,9 +40,8 @@
  * module is the live one.
  */
 
-var GraderState = require("./grader_state");
-var harmonizationLogicModule = require("./harmonization_grader_logic");
-var HarmonizationGraderLogic = harmonizationLogicModule.default || harmonizationLogicModule;
+import GraderState from "./grader_state.js";
+import HarmonizationGraderLogic from "./harmonization_grader_logic.js";
 
 var STATE = GraderState.STATE;
 
@@ -114,7 +111,9 @@ function computeHarmonizationGraded(ctx, activeMidi) {
   };
 }
 
-module.exports = {
+var exports = {
   computeHarmonizationGraded: computeHarmonizationGraded,
   STATE: STATE,
 };
+
+export default exports;

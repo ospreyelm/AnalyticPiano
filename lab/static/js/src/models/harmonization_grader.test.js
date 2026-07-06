@@ -1,7 +1,8 @@
 "use strict";
 
-var HarmonizationGrader = require("./harmonization_grader");
-var GraderState = require("./grader_state");
+var { requireDefault } = require("../../test/require_esm");
+var HarmonizationGrader = requireDefault(require("./harmonization_grader"));
+var GraderState = requireDefault(require("./grader_state"));
 
 var failed = 0;
 

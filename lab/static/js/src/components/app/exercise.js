@@ -26,12 +26,15 @@ import ExerciseDefinition from "app/models/exercise_definition";
 import ExerciseGrader from "app/models/exercise_grader";
 import ChoraleGrader from "app/models/chorale_grader";
 import IdentificationGrader from "app/models/identification_grader";
-import { create as createGrader, resolveGraderKey } from "app/models/grader_factory";
+import GraderFactory from "app/models/grader_factory";
 import ExerciseContext from "app/models/exercise_context";
 import ExerciseScoreCard from "app/components/exercise_score_card";
 import KeyboardRangeLogic from "app/models/keyboard_range_logic";
 import KeyboardShortcutsConfig from "app/config/keyboard_shortcuts";
 import KeySigMod from "app/models/key_sig_exercise";
+
+var createGrader = GraderFactory.create;
+var resolveGraderKey = GraderFactory.resolveGraderKey;
 
 /**
    * AppExerciseComponent class.
@@ -207,6 +210,7 @@ import KeySigMod from "app/models/key_sig_exercise";
       if (resolveGraderKey(resolved) === "chorale") {
         models.exerciseGrader = createGrader(resolved, {
           definition: models.exerciseDefinition,
+          constructors: { ChoraleGrader: ChoraleGrader },
         });
       } else {
         var gradingSettings = models.exerciseDefinition.getGrading();
