@@ -35,28 +35,63 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
     /**
      * Renders each individual stave.
      *
+     * Phase 3: this dispatcher is a behavior-identical bridge while
+     * `ExerciseSheetComponent` remains the single sheet class. The next slice
+     * replaces it with per-pipeline sheet classes whose own `renderStaves`
+     * calls the right stack method directly — no resolved-mode fork. The
+     * `isChoraleLike && hasMeasures` fork that lived here is split into
+     * `_renderStavesVexFlow` (VexFlow stack) and `_renderStavesLegacy` (legacy
+     * stave stack); the hasMeasures fall-through is handled inside
+     * `_renderStavesVexFlow`, so the dispatcher only selects the stack family.
+     *
      * @return this
      */
     renderStaves: function (exercise_midi_nums) {
       exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
-      var score = definition.getScore();
       // Discriminator reads routed through ResolvedMode (single authority in
       // resolved_mode.js). Behavior-identical: Phase 1.1 wired isHarmonization()/
       // isChorale()/isChoraleIdentification() to this._resolved, so these mirror
       // fields match the prior predicate calls exactly (same parsed exercise).
       var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      var isHarmonization = !!(resolved && resolved.isHarmonization);
       var isChoraleLike = !!(resolved && (resolved.isChorale || resolved.isChoraleIdentification || resolved.isHarmonization));
-      
+
+      if (isChoraleLike) {
+        return this._renderStavesVexFlow(exercise_midi_nums, {
+          isHarmonization: !!(resolved && resolved.isHarmonization),
+          isChoraleIdentification: !!this._isChoraleIdentificationExercise(),
+          isAnalysisMatchMode: !!(resolved && resolved.isAnalysisMatch),
+          isChorale: !!(resolved && resolved.isChorale),
+        });
+      }
+      return this._renderStavesLegacy(exercise_midi_nums);
+    },
+    /**
+     * VexFlow render stack — used by the chorale, harmonization, and
+     * chorale_identification pipelines. The per-pipeline sheet supplies `cfg`
+     * (which pipeline flags apply); this method does NOT read `resolved` — the
+     * stack selection is owned by the calling sheet, not a runtime
+     * resolved-mode check inside the render path.
+     *
+     * @param {object} cfg - `{ isHarmonization, isChoraleIdentification,
+     *   isAnalysisMatchMode, isChorale }` — all booleans, supplied by the
+     *   per-pipeline sheet (or by the bridge dispatcher above).
+     * @return this
+     */
+    _renderStavesVexFlow: function (exercise_midi_nums, cfg) {
+      exercise_midi_nums = exercise_midi_nums || false;
+      var definition = this.exerciseContext.getDefinition();
+      var score = definition.getScore();
+
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
-      if (isChoraleLike && score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
+      // (VexFlow sheets are chorale-like, so the prior isChoraleLike gate is always true here.)
+      if (score && score.umto && !ChordalProblemsLogic.shouldPreserveChordalMeasures(score)) {
         score = UMTOScoreConverter.convertUMTOToProcessedScore(score.umto);
       }
 
       var hasMeasures = !!(score && score.measures && score.measures.length > 0);
-      
+
       // Ensure score has metadata for VexFlowAdapter
       if (score && hasMeasures) {
         score.metadata = score.metadata || {};
@@ -64,10 +99,20 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
         if (!score.metadata.time) score.metadata.time = "4/4";
       }
 
-      
+      // Flags from the calling sheet (no resolved-mode read inside the render path).
+      var isHarmonization = !!(cfg && cfg.isHarmonization);
+      var isAnalysisMatchMode = !!(cfg && cfg.isAnalysisMatchMode);
+      var isChorale = !!(cfg && cfg.isChorale);
+      var isChoraleIdentification = !!(cfg && cfg.isChoraleIdentification);
+
+      // A chorale-like exercise with no measures renders via the legacy stack —
+      // preserve the prior fork's `else` fall-through.
+      if (!hasMeasures) {
+        return this._renderStavesLegacy(exercise_midi_nums);
+      }
+
       // Use VexFlow adapter for chorale exercises
-      if (isChoraleLike && hasMeasures) {
-        if (score && score.measures && score.measures.length > 0) {
+      if (score && score.measures && score.measures.length > 0) {
           var self = this;
           this._identWindowLayout = {};
           this._identWindowLayoutByOnset = {};
@@ -86,9 +131,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
           var wantsScaleDegrees = !!display.showScaleDegrees;
-          var isAnalysisMatchMode = !!(resolved && resolved.isAnalysisMatch);
           var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
-          var isChoraleIdentification = this._isChoraleIdentificationExercise();
 
 
           // In chorale identification mode the figures/Romans ARE the student's
@@ -123,7 +166,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsAnalysis && resolved && resolved.isChorale && !isAnalysisMatchMode && !isChoraleIdentification) {
+          if (!wantsAnalysis && isChorale && !isAnalysisMatchMode && !isChoraleIdentification) {
             wantsRomans = true;
             wantsAnalysis = true;
           }
@@ -306,10 +349,19 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
           if (this._isIdentificationLikeExercise()) {
             this.drawIdentificationLabels();
           }
-        }
-        return this;
       }
-      
+      return this;
+    },
+    /**
+     * Legacy stave render stack — used by the matching, figured_bass, and
+     * identification pipelines, and as the hasMeasures fall-through for
+     * VexFlow-family sheets whose score has no measures.
+     *
+     * @return this
+     */
+    _renderStavesLegacy: function (exercise_midi_nums) {
+      exercise_midi_nums = exercise_midi_nums || false;
+
       // Legacy rendering for non-chorale exercises
       console.log("[ID] Using Legacy Renderer (FALLBACK)");
       const show_barlines = true;
