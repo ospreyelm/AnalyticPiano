@@ -132,7 +132,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"lab/static/js/src/**/*.js\"",
-    "build": "vite build"
+    "build": "vite build",
+    "test:eslint-rules": "node eslint-rules/no-cjs-in-browser.test.mjs && node eslint-rules/no-raw-pipeline-discriminator.test.mjs",
+    "test:pipeline": "node lab/static/js/src/models/resolved_mode.test.js && node lab/static/js/src/models/grader_factory.test.js && node lab/static/js/src/models/sheet_factory.test.js && node lab/static/js/src/models/harmonization_runtime_grader.test.js && node lab/static/js/src/models/harmonization_grader.test.js && node lab/static/js/src/models/harmonization_grader_logic.test.js && node lab/static/js/src/models/input_method_logic.test.js",
+    "check:pipeline-architecture": "npm run lint && npm run build && npm run test:eslint-rules && npm run test:pipeline"
   },
   "repository": {
     "type": "git",

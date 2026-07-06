@@ -924,3 +924,113 @@ out of `ExerciseContext` into a focused module, `harmonization_runtime_grader.js
   adapter, no state migration off `ExerciseContext`. This PR is runtime
   extraction only, per the standing rule against incidental behavior changes
   while isolating live paths.
+
+## Phase 5: architecture lock (2026-07-06)
+
+Phase 5 locks in the Phase 0–3 pipeline-isolation architecture with
+package scripts, docs, and an agent-facing checklist. **Docs + scripts +
+tests only — no runtime behavior changes.** See
+[docs/architecture/exercise-pipeline-architecture.md](exercise-pipeline-architecture.md)
+for the authoritative short statement and
+[docs/architecture/new-exercise-type-checklist.md](new-exercise-type-checklist.md)
+for the add/modify-pipeline checklist.
+
+### New package scripts (`package.json`)
+
+| Script | Runs |
+|---|---|
+| `test:eslint-rules` | `node eslint-rules/no-cjs-in-browser.test.mjs` + `node eslint-rules/no-raw-pipeline-discriminator.test.mjs` — contract tests for the two custom ESLint rules. |
+| `test:pipeline` | The focused pipeline tests that pass under plain `node` (see list below). |
+| `check:pipeline-architecture` | `npm run lint` → `npm run build` → `npm run test:eslint-rules` → `npm run test:pipeline`. The full local gate. |
+
+### `test:pipeline` contents
+
+All run under plain `node` (no `app/` alias, no Vite, no browser):
+
+- `lab/static/js/src/models/resolved_mode.test.js`
+- `lab/static/js/src/models/grader_factory.test.js`
+- `lab/static/js/src/models/sheet_factory.test.js`
+- `lab/static/js/src/models/harmonization_runtime_grader.test.js`
+- `lab/static/js/src/models/harmonization_grader.test.js`
+- `lab/static/js/src/models/harmonization_grader_logic.test.js`
+- `lab/static/js/src/models/input_method_logic.test.js`
+
+**Excluded, with reason:** `lab/static/js/src/models/chorale_grader_settings.test.js`
+is excluded from `test:pipeline` because it fails under plain `node` — it
+does a bare `var { resolveChoraleGraderSettings } = require("./chorale_grader_settings")`,
+but `chorale_grader_settings.js` uses `export default`, so the named export
+is under `.default` and the destructure yields `undefined`. The passing
+tests use the `requireDefault(require(...))` helper from
+`lab/static/js/test/require_esm.js`; this test does not. This is a
+pre-existing failure on master (part of the documented 10-file
+`run_js_tests.sh` baseline at `789645c2`), NOT caused by Phase 5. The module
+itself is pure and correct (verified: `require("./chorale_grader_settings").default.
+resolveChoraleGraderSettings` is the function); only the test's import shape
+is broken. Fixing the test's import is an incidental edit outside Phase 5's
+scope (docs + scripts + tests only, no test-source fixes). The file is still
+discovered by `run_js_tests.sh`'s full sweep; it is just not in the
+`test:pipeline` focused gate.
+
+### Invariants enforced by ESLint (`npm run lint`)
+
+| Rule | Plugin | Enforces |
+|---|---|---|
+| `no-cjs-in-browser` | `harmonylab` | No CommonJS/RequireJS (`require`/`module.exports`/`define` as module system) in `lab/static/js/src/**`. Browser source is native ESM. Exempt: `**/*.test.js`. |
+| `no-raw-pipeline-discriminator` | `harmonylab-pipelines` | No raw `type`/`mode`/`analysisType`/`staffDistribution` comparisons outside the resolver/factory/axis modules (allowlist + 3 inline exemptions documented above). |
+| `no-undef` | builtin | Catches the implicit globals the RequireJS→Vite migration turned into hard ReferenceErrors under ESM strict mode. |
+
+The two custom rules have permanent contract tests under
+`eslint-rules/*.test.mjs`, run via `test:eslint-rules`.
+
+### Known divergences documented but intentionally not fixed
+
+Recorded in "Known divergences + open questions" above. Phase 5 does not
+touch any of them. Each requires its own scoped decision, DB audit, and
+characterization snapshot before any behavior change:
+
+1. `mode="chorale_identification"` literal on `umto_chorale` (0 rows).
+2. `mode="play"` / `play` / `identify` / `figures` / `roman` on `umto_chorale`
+   → `"other"` not `"chorale"` (9 + 27 dev/factory-seed rows, not live).
+3. `type="umto_identification"` has no parse branch (0 rows).
+4. `type="identification"` overlay does not render (pre-existing
+   identification-answers-endpoint issue, not a pipeline regression).
+
+### Browser smoke matrix required for rendering changes
+
+Any change to a render sheet, the render stacks (`_renderStavesVexFlow` /
+`_renderStavesLegacy`), or `SheetFactory` selection requires a browser
+smoke covering the affected pipeline(s). The render-stack methods and
+per-pipeline sheet classes can't be `require()`d under plain `node` (same
+`app/`-alias wall as the Phase 2 graders), so lint + build + the focused
+`test:pipeline` gate is necessary but not sufficient for rendering changes.
+Covered pipelines to date (from Phase 2/PR A/Phase 3 smoke logs):
+
+| Pipeline | Smoke fixture |
+|---|---|
+| `chorale` (playback) | Unit 9 `umto_chorale` + `playback` (PR #228 / Phase 3) |
+| `identification` | Unit 5 `type=identification` (PR #228) |
+| `harmonization` | Unit 9 `PA03SM` harmonization (PR A) |
+
+`matching`, `figured_bass`, and `chorale_identification` do not yet have
+locked browser-smoke fixtures in the registry; a rendering change to any of
+them must add one. The `type="identification"` overlay non-rendering issue
+(item 4 above) is a known smoke caveat, not a regression to fix here.
+
+### CI status
+
+`.github/workflows/test.yml` is Python-only (pytest + Django runner) and
+`workflow_dispatch`-only (manual; no push/PR trigger). There is **no Node/JS
+CI**. Per the Phase 5 scope decision, no CI workflow was added or modified;
+`npm run check:pipeline-architecture` is the required local gate until Node
+CI is explicitly scoped and added.
+
+### Verification (2026-07-06)
+
+- `npm run lint` — exit 0.
+- `npm run build` — exit 0.
+- `npm run test:eslint-rules` — both rule contract tests pass.
+- `npm run test:pipeline` — all 7 included focused tests pass under plain
+  `node`.
+- `npm run check:pipeline-architecture` — green end-to-end.
+- No runtime source files touched; no stored UMTO strings or schemas
+  changed; no known divergences fixed.
