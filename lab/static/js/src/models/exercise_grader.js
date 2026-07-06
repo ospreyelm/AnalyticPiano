@@ -4,12 +4,41 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
 import { STATE as GRADER_STATE } from "app/models/grader_state";
 
 /**
-   * ExerciseGrader object is responsible for grading a given inputChords for
-   * an exercise.
-   *
-   * @param settings {object}
-   * @constructor
-   */
+ * ExerciseGrader — Phase 2 status (2026-07-05): retained legacy
+ * compatibility fallback, not split into per-type classes.
+ *
+ * Per the "Legacy grader retirement audit" and consolidated Phase 2 status
+ * in docs/architecture/pipeline-registry.md: a DB usage audit found zero
+ * live student-reachable rows for the `notesMatch` (matching),
+ * `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch`
+ * (analytical), and `analysisPcsMatch` (analytical_pcs) branches below.
+ * `GraderFactory`'s `legacy_exercise` key maps all of these (plus the
+ * `"other"` out-of-scope catch-all) to this single class rather than
+ * splitting each into its own standalone grader — product direction is to
+ * migrate remaining legacy exercise types to UMTO, not expand legacy
+ * grader architecture. `app/exercise.js`'s `else` branch still constructs
+ * this class directly (not through the factory, which throws for
+ * `legacy_exercise`); do not add a factory path for it without a product
+ * decision.
+ *
+ * The `mode === "harmonization"` switch case below (delegating to
+ * `HarmonizationGraderLogic`) is a DEAD code path in production: live
+ * harmonization grading is owned by
+ * `ExerciseContext.computeHarmonizationGraded()`, a separate stateful
+ * implementation that `ExerciseContext.grade()` routes to before ever
+ * calling `this.grader.grade(...)` for harmonization exercises. Treat this
+ * branch as a retirement candidate, not a live path.
+ * `lab/static/js/src/models/harmonization_grader.js` characterizes this
+ * dead branch (tested, standalone) as groundwork for eventually removing
+ * it — it is not wired anywhere and does not replace
+ * `computeHarmonizationGraded`.
+ *
+ * ExerciseGrader object is responsible for grading a given inputChords for
+ * an exercise.
+ *
+ * @param settings {object}
+ * @constructor
+ */
   var ExerciseGrader = function (settings) {
     this.settings = settings || {};
     this.analyzer = new Analyze(
