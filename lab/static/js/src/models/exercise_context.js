@@ -11,6 +11,11 @@ import HarmonizationGraderLogic from "app/models/harmonization_grader_logic";
 import VoiceLeadingLogic from "app/models/voice_leading_logic";
 import TimerLogic from "app/models/exercise_context_timer_logic";
 import IdentPageLogic from "app/models/exercise_context_ident_page_logic";
+// PR A: live runtime harmonization grading extracted mechanically from the
+// inline ExerciseContext.computeHarmonizationGraded below. Default-imports the
+// CJS module (esbuild interop, same as `app/models/grader_factory` and
+// `./resolved_mode`); the computation body now lives there, unchanged.
+import HarmonizationRuntimeGrader from "./harmonization_runtime_grader";
 
 var AUTO_ADVANCE = Config.get("general.autoAdvance");
   var AUTO_ADVANCE_DELAY = Config.get("general.autoAdvanceDelay");
@@ -186,50 +191,12 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       }
     },
     computeHarmonizationGraded: function (activeMidi) {
-      var targets = this.definition.getHarmonizationTargets
-        ? this.definition.getHarmonizationTargets() : [];
-      var ptr = this._harmonizationPointer;
-      if (!activeMidi || !activeMidi.length) {
-        return {
-          result: this.grader.STATE.PARTIAL,
-          score: 1,
-          activeIndex: ptr,
-          problems: [],
-        };
-      }
-      var matchResult = HarmonizationGraderLogic.harmonizationMatch(targets[ptr] || {}, activeMidi);
-      if (matchResult.state === "correct" || matchResult.state === "partial") {
-        this._harmonizationRejected = null;
-        this.acceptedHarmonizationSonorities.push({
-          midi: activeMidi.slice(),
-          targetIndex: ptr,
-          ts: Date.now(),
-        });
-        this._harmonizationPointer = ptr + 1;
-      } else if (matchResult.state === "incorrect") {
-        var tgt = targets[ptr] || {};
-        var offsetQb = tgt.offset || 0;
-        var beatsPerMeasure = 4; // quarter-beat denominator; most exercises are 4/4
-        var mIdx = Math.floor(offsetQb / beatsPerMeasure);
-        var onsetWithinMeasure = Math.round((offsetQb - mIdx * beatsPerMeasure) * 1024);
-        this._harmonizationRejected = {
-          midi: activeMidi.slice(),
-          spellings: null, // populated by click_note._commit for click path
-          measureIndex: mIdx,
-          onset: onsetWithinMeasure,
-          reasons: matchResult.reasons,
-          target: tgt,
-        };
-        this._emitHarmonizationIncorrectFeedback(matchResult);
-      }
-      var allDone = this._harmonizationPointer >= targets.length && targets.length > 0;
-      return {
-        result: allDone ? this.grader.STATE.CORRECT
-          : (matchResult.state === "incorrect" ? this.grader.STATE.INCORRECT : this.grader.STATE.PARTIAL),
-        score: allDone ? 0 : (matchResult.state === "incorrect" ? 2 : 1),
-        activeIndex: this._harmonizationPointer,
-        problems: [matchResult],
-      };
+      // PR A: computation relocated verbatim to
+      // harmonization_runtime_grader.js#computeHarmonizationGraded. `this` is
+      // passed as the ctx so the module mutates the same _harmonizationPointer
+      // / acceptedHarmonizationSonorities / _harmonizationRejected fields the
+      // rest of the app reads off this context. No behavior change.
+      return HarmonizationRuntimeGrader.computeHarmonizationGraded(this, activeMidi);
     },
 
     /**
