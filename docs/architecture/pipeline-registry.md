@@ -215,6 +215,32 @@ Phase 1 adds: `apps/exercises/services/resolved_mode.py` (Python port).
    it and no predicate recognizes it, so `resolvePipeline` returns `"other"`.
    **DB query: 0 rows.** Not live. Add a parse branch or accept "other"
    deliberately (open question for Phase 1).
+4. **`type="identification"` overlay does not render (recorded 2026-07-06,
+   Phase 3 smoke).** The legacy non-chorale identification pipeline
+   (`type="identification"`, e.g. `PA03UH` ex1 / `EB81WJ`, Unit 5 Triad
+   Quality, `analysisType="chord_quality"`, `inputMode="dropdown"`,
+   `identMode="practice"`) resolves correctly to the `identification`
+   pipeline + legacy-stave stack, but the "?" answer-slot overlay does not
+   mount — the chord renders gray (play-exercise styling) and no dropdown
+   / "?" slot appears. The exercise data is well-formed
+   (`chord[0].answer="major"`, `choices=["major","minor","diminished",
+   "augmented"]`, `introText="Identify the chord quality."`).
+   Runserver log shows `GET /ajax/identification-answers/?exercise_id=
+   EB81WJ` → `200` with body `[]` (empty) — the identification-answers
+   endpoint returns no answer rows for this exercise. **Confirmed
+   pre-existing, NOT a Phase 3 regression:** identical on the deployed
+   production version, and the Phase 3 render path is byte-for-byte
+   identical to `origin/master` (`initComponent`'s
+   `if (this._isIdentificationLikeExercise()) { this.initIdentificationMode(); }`
+   and `_renderStavesLegacy`'s `if (this._isIdentificationLikeExercise())
+   { this.drawIdentificationLabels(); }` are both unchanged — Phase 3 only
+   relocated the god-class body into `BaseExerciseSheet` and made
+   `IdentificationSheet` call `_renderStavesLegacy` directly). This is a
+   separate issue from the documented latent bugs above (resolver routes
+   this exercise correctly); it's an identification-overlay / answers-
+   endpoint problem. **Debugging deferred to after the pipeline-isolation
+   refactor** per the standing rule against incidental bug fixes mid-
+   refactor. Not fixed in Phase 3.
 
 ## Phase 1.2 audit: staff-distribution axis (recorded 2026-07-05)
 
