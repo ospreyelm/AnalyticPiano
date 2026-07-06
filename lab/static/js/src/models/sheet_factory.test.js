@@ -19,51 +19,55 @@ function assertField(label, actual, expected) {
   }
 }
 
-// Helper: resolve a raw exercise and assert its sheet key in one shot.
-function expectKey(label, exercise, expectedKey) {
+// Helper: resolve a raw exercise, assert its pipeline string AND its sheet key
+// in one shot — end-to-end characterization that resolvePipeline's pipeline
+// feeds resolveSheetKey to the expected sheet. (The pipeline string itself is
+// also characterized in resolved_mode.test.js; asserting it here cross-checks
+// the pipeline→sheetKey mapping rather than asserting a value against itself.)
+function expectKey(label, exercise, expectedPipeline, expectedKey) {
   var r = resolvePipeline(exercise);
-  assertField(label + " [pipeline]", r.pipeline, r.pipeline);
+  assertField(label + " [pipeline]", r.pipeline, expectedPipeline);
   assertField(label + " [sheetKey]", resolveSheetKey(r), expectedKey);
 }
 
 // ---------- matching ----------
-expectKey("matching", { type: "matching" }, "matching");
+expectKey("matching", { type: "matching" }, "matching", "matching");
 
 // ---------- chorale: all four CHORALE_MODES + type fallback ----------
-expectKey("chorale-playback", { type: "umto_chorale", mode: "playback" }, "chorale");
-expectKey("chorale-analysis_match", { type: "umto_chorale", mode: "analysis_match" }, "chorale");
-expectKey("chorale-play-all-voices", { type: "umto_chorale", mode: "play-all-voices" }, "chorale");
-expectKey("chorale-analysis", { type: "umto_chorale", mode: "analysis" }, "chorale");
-expectKey("chorale-legacy-type", { type: "chorale" }, "chorale");
-expectKey("chorale-umto-no-mode", { type: "umto_chorale" }, "chorale");
+expectKey("chorale-playback", { type: "umto_chorale", mode: "playback" }, "chorale", "chorale");
+expectKey("chorale-analysis_match", { type: "umto_chorale", mode: "analysis_match" }, "chorale", "chorale");
+expectKey("chorale-play-all-voices", { type: "umto_chorale", mode: "play-all-voices" }, "chorale", "chorale");
+expectKey("chorale-analysis", { type: "umto_chorale", mode: "analysis" }, "chorale", "chorale");
+expectKey("chorale-legacy-type", { type: "chorale" }, "chorale", "chorale");
+expectKey("chorale-umto-no-mode", { type: "umto_chorale" }, "chorale", "chorale");
 
 // ---------- harmonization ----------
-expectKey("harmonization", { type: "umto_chorale", mode: "harmonization" }, "harmonization");
+expectKey("harmonization", { type: "umto_chorale", mode: "harmonization" }, "harmonization", "harmonization");
 
 // ---------- figured_bass (legacy) ----------
-expectKey("figured_bass", { type: "figured_bass" }, "figured_bass");
-expectKey("figured_bass_pcs", { type: "figured_bass_pcs" }, "figured_bass");
+expectKey("figured_bass", { type: "figured_bass" }, "figured_bass", "figured_bass");
+expectKey("figured_bass_pcs", { type: "figured_bass_pcs" }, "figured_bass", "figured_bass");
 
 // ---------- identification (non-chorale) ----------
-expectKey("identification", { type: "identification" }, "identification");
+expectKey("identification", { type: "identification" }, "identification", "identification");
 
 // ---------- chorale_identification (legacy type + umto_chorale + mode) ----------
-expectKey("chorale_identification-type", { type: "chorale_identification" }, "chorale_identification");
-expectKey("chorale_identification-mode", { type: "umto_chorale", mode: "identification" }, "chorale_identification");
-expectKey("chorale_identification-mode2", { type: "umto_chorale", mode: "chorale_identification" }, "chorale_identification");
+expectKey("chorale_identification-type", { type: "chorale_identification" }, "chorale_identification", "chorale_identification");
+expectKey("chorale_identification-mode", { type: "umto_chorale", mode: "identification" }, "chorale_identification", "chorale_identification");
+expectKey("chorale_identification-mode2", { type: "umto_chorale", mode: "chorale_identification" }, "chorale_identification", "chorale_identification");
 
 // ---------- out-of-scope: "other" pipelines collapse to "matching" ----------
 // Mirrors GraderFactory's collapse of dead/unknown pipelines into one fallback
-// key. Out-of-scope types render through the plain legacy-stave stack with no
-// identification overlay today (ExerciseSheetComponent's legacy-render
-// fall-through), identical to the matching sheet. symbolic-meter + key-signature
-// are intercepted by earlier early-returns in app/exercise.js and never reach
-// this factory, but resolveSheetKey still maps them safely.
-expectKey("symbolic-meter", { type: "umto_symbolic_meter" }, "matching");
-expectKey("musicxml", { type: "musicxml" }, "matching");
-expectKey("analytical", { type: "analytical" }, "matching");
-expectKey("key-signature", { type: "umto_key_signature" }, "matching");
-expectKey("barline-placement", { type: "umto_barline_placement" }, "matching");
+// key. Out-of-scope types resolve to pipeline "other" and render through the
+// plain legacy-stave stack with no identification overlay, identical to the
+// matching sheet. symbolic-meter + key-signature are intercepted by earlier
+// early-returns in app/exercise.js and never reach this factory, but
+// resolveSheetKey still maps them safely.
+expectKey("symbolic-meter", { type: "umto_symbolic_meter" }, "other", "matching");
+expectKey("musicxml", { type: "musicxml" }, "other", "matching");
+expectKey("analytical", { type: "analytical" }, "other", "matching");
+expectKey("key-signature", { type: "umto_key_signature" }, "other", "matching");
+expectKey("barline-placement", { type: "umto_barline_placement" }, "other", "matching");
 
 // ---------- null/undefined safety ----------
 assertField("null resolvedMode", resolveSheetKey(null), "matching");
