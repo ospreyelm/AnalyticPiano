@@ -20,23 +20,39 @@
  * "Legacy grader retirement audit" for the standing rule against incidental
  * behavior changes while isolating live paths.
  *
- * Scope: this wrapper takes already-extracted `problems` (harmonization
- * targets) and already-extracted delivered-MIDI arrays, not a full
- * ExerciseDefinition/ChordBank pair. The definition/inputChords → problems/
- * delivered-notes extraction that ExerciseGrader.grade() does today
- * (exercise_grader.js:45-47, 130-141) is shared plumbing, not harmonization-
- * specific theory, and adapting this wrapper to that exact call signature is
- * deferred to the production-wiring slice (not done here; no app/exercise.js
- * changes, no GraderFactory.create() wiring).
+ * Two call surfaces:
+ *   - `gradeProblems(problems, deliveredNotesPerProblem)` — pure, takes
+ *     already-extracted harmonization targets and already-extracted
+ *     delivered-MIDI arrays. Easiest to unit-test; no ExerciseDefinition/
+ *     ChordBank test doubles needed.
+ *   - `grade(definition, inputChords)` — production-interface-compatible
+ *     adapter matching ExerciseContext's real call site
+ *     (`this.grader.grade(this.definition, this.inputChords)`,
+ *     exercise_context.js:273). Reproduces ExerciseGrader.grade()'s
+ *     definition/inputChords → problems/delivered-notes extraction
+ *     (exercise_grader.js:45-47, 130-141) — the shared plumbing every mode's
+ *     switch branch relies on, not harmonization-specific theory — then
+ *     delegates to `gradeProblems()`. Still NOT wired into
+ *     `app/exercise.js` or `GraderFactory.create()` in this commit; this is
+ *     a standalone, tested building block for that later slice.
  *
- * Note: ExerciseGrader.grade() also has an early-return guard for
- * `resolved.isChorale` (grader.js:84) that this wrapper does not reproduce.
- * That's not an accidental omission — `isChorale` and `mode === "harmonization"`
- * are mutually exclusive by construction: resolved_mode.js's CHORALE_MODES
- * list (the only way `isChorale` can be true when `mode` is truthy) does not
- * contain `"harmonization"`, and this code path only runs when
- * mode === "harmonization" (grader.js:154). So `isChorale` is always false
- * whenever this branch executes; there is nothing for this wrapper to check.
+ * `grade()`'s extraction reproduces ExerciseGrader.grade()'s early-return
+ * guard for `resolved.isChorale` (grader.js:84) too, for parity — though in
+ * practice it's always false whenever this grader is invoked: `isChorale`
+ * and `mode === "harmonization"` are mutually exclusive by construction
+ * (resolved_mode.js's CHORALE_MODES list, the only way `isChorale` can be
+ * true when `mode` is truthy, does not contain `"harmonization"`, and this
+ * grader is only ever selected when mode === "harmonization"). Kept anyway
+ * so this adapter's guard condition matches ExerciseGrader's literally,
+ * rather than silently relying on an invariant enforced elsewhere.
+ *
+ * `grade()` does NOT reproduce reading `chord._unison_idx`
+ * (ExerciseGrader.grade()'s `delivered_unison_idx`, exercise_grader.js:136):
+ * that value is never read by `harmonizationMatch()` or by the aggregate
+ * result assembly for the harmonization case — it's plumbing shared with
+ * other exercise types' switch branches (notesMatch's ASSESS_UNISON_IDX
+ * path) that is dead code for this one. Omitting it changes nothing
+ * observable.
  */
 
 var GraderState = require("./grader_state");
@@ -99,7 +115,7 @@ HarmonizationGrader.prototype.gradeProblem = function (target, deliveredNotes) {
  * @returns {object} { result, score, problems, activeIndex } — same
  *   aggregate shape as ExerciseGrader.grade().
  */
-HarmonizationGrader.prototype.grade = function (problems, deliveredNotesPerProblem) {
+HarmonizationGrader.prototype.gradeProblems = function (problems, deliveredNotesPerProblem) {
   var graded = { result: null, score: 0, problems: [] };
 
   if (!problems || problems.length === 0) {
@@ -128,6 +144,63 @@ HarmonizationGrader.prototype.grade = function (problems, deliveredNotesPerProbl
   graded.activeIndex = activeIndex;
   this._lastGradedProblems = graded.problems;
   return graded;
+};
+
+/**
+ * Extracts one problem's delivered MIDI notes from a ChordBank-shaped
+ * `items()` entry. Mirrors exercise_grader.js:134-140 exactly: dedupe via
+ * Set, then strip the dummy MIDI 109 marker if present. Returns [] if there
+ * is no chord for this problem index (exercise_grader.js:134's `if
+ * (chords[i])` guard).
+ *
+ * @param {object|undefined} item - inputChords.items()[i], or undefined
+ * @returns {array} cleaned MIDI note numbers
+ */
+function extractDeliveredNotes(item) {
+  var chord = item && item.chord;
+  if (!chord) return [];
+  var notes = [...new Set(chord.getNoteNumbers())];
+  var dummyIdx = notes.indexOf(109);
+  if (dummyIdx > -1) {
+    notes.splice(dummyIdx, 1);
+  }
+  return notes;
+}
+
+/**
+ * Grades harmonization problems directly from an ExerciseDefinition and an
+ * ExerciseChordBank — the production interface ExerciseContext actually
+ * calls (`this.grader.grade(this.definition, this.inputChords)`,
+ * exercise_context.js:273). Mirrors ExerciseGrader.grade()'s definition/
+ * inputChords → problems/delivered-notes extraction (exercise_grader.js:
+ * 45-47, 84-89, 130-141) for the harmonization case, then delegates
+ * aggregate scoring to gradeProblems() (unchanged, already tested).
+ *
+ * @param {object} definition - ExerciseDefinition (or compatible test
+ *   double) exposing getProblems() and, optionally, getResolvedMode()
+ * @param {object} inputChords - ExerciseChordBank (or compatible test
+ *   double) exposing items(), each item shaped { chord: { getNoteNumbers()
+ *   } }, positionally aligned with getProblems()'s array by index
+ * @returns {object} { result, score, problems, activeIndex } — same
+ *   aggregate shape as ExerciseGrader.grade().
+ */
+HarmonizationGrader.prototype.grade = function (definition, inputChords) {
+  var problems = definition.getProblems();
+  var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
+
+  if ((resolved && resolved.isChorale) || (problems && problems.length === 0)) {
+    var graded = { result: PARTIAL, score: SCORE_MAP[PARTIAL], problems: [], activeIndex: 0 };
+    this._lastGradedProblems = graded.problems;
+    return graded;
+  }
+
+  var items = inputChords.items();
+  var deliveredNotesPerProblem = [];
+  for (var i = 0, len = problems.length; i < len; i++) {
+    deliveredNotesPerProblem.push(extractDeliveredNotes(items[i]));
+  }
+
+  return this.gradeProblems(problems, deliveredNotesPerProblem);
 };
 
 module.exports = HarmonizationGrader;

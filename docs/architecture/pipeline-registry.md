@@ -122,7 +122,7 @@ Cross-stack:
 | `lab/static/js/src/models/chorale_grader_settings.js` | `chorale` | New (2026-07-05). Pure helper: `resolveChoraleGraderSettings(definition)` mirrors `app/exercise.js:145-148`'s `definition.getGrading()` + Unit-1 `octaveIndependent` override exactly, including the mutate-in-place quirk (`getGrading()` can return the definition's own stored grading object). No `app/` imports — fully testable under plain `node` (`chorale_grader_settings.test.js`), independent of the `chorale_grader.js` alias problem. |
 | `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. **Live production caller (2026-07-05, guarded):** `app/exercise.js`'s identification branch calls `GraderFactory.create()` (always with `{}`, matching `app/exercise.js:135`) ONLY when `resolveGraderKey(resolved) === "identification"` — otherwise constructs directly, unchanged. The guard exists because out-of-scope types with `mode="identification"` (`umto_barline_placement`: 26,491 rows, `umto_key_signature`, `umto_symbolic_meter`) resolve to `"legacy_exercise"`, which `create()` throws for; see "First production caller wired" below. |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
-| `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | New (2026-07-05). Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). Not wired into `app/exercise.js` yet — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias). `GraderFactory.create()` can construct it (2026-07-05), but nothing calls `create()` in production yet. |
+| `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). **Now production-interface compatible (2026-07-05):** `grade(definition, inputChords)` matches `ExerciseContext`'s real call site (`this.grader.grade(this.definition, this.inputChords)`) — reproduces the definition/inputChords → problems/delivered-notes extraction (Set-dedupe, dummy-MIDI-109 strip, `isChorale`/empty-problems early-return guard) then delegates to the pure array-based `gradeProblems(problems, deliveredNotesPerProblem)` (renamed from `grade`, kept for standalone testing). Still NOT wired into `app/exercise.js` or `GraderFactory.create()` — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias) — including characterization tests for the `grade(definition, inputChords)` adapter hand-traced against `exercise_grader.js`'s actual source (that file can't be `require()`'d under plain `node` to run a live A/B comparison — same `app/`-alias wall as `chorale_grader.test.js`). `GraderFactory.create()` can construct the class (2026-07-05), but nothing calls `create()` in production yet. |
 
 Phase 2 added: `grader_factory.js`, `grader_state.js`, `harmonization_grader.js`
 (harmonization-only isolation wrapper, not yet wired). The originally-planned
@@ -618,6 +618,23 @@ legacy keys specifically):
     input UI doesn't mount until that resolves. Confirmed via an A/B test
     (stashed the wiring change, reloaded, identical stuck state) that this
     is pre-existing and not caused by this change.
+- `HarmonizationGrader` made production-interface compatible (2026-07-05):
+  the signature mismatch noted above (`grade(problems,
+  deliveredNotesPerProblem)` vs. `ExerciseContext`'s `grade(definition,
+  inputChords)` call site) is resolved — the array-based method was
+  renamed to `gradeProblems()` (kept, still directly unit-tested) and a new
+  `grade(definition, inputChords)` adapter was added that reproduces
+  `ExerciseGrader.grade()`'s definition/inputChords → problems/delivered-
+  notes extraction (Set-dedupe, dummy-MIDI-109 strip, the `isChorale`/
+  empty-problems early-return guard) before delegating to
+  `gradeProblems()`. Characterized against `exercise_grader.js`'s actual
+  source by hand-tracing expected values (that file can't be `require()`'d
+  under plain `node` for a live A/B run — same `app/`-alias wall as
+  `chorale_grader.test.js`). Still deliberately NOT wired into
+  `app/exercise.js` or `GraderFactory.create()` in this commit — this was
+  the blocking mismatch for that wiring, now cleared, but the wiring
+  itself is a separate slice. `exercise_grader.js` and `app/exercise.js`
+  are untouched.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
