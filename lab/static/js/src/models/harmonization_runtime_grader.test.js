@@ -20,7 +20,7 @@ var runtime = requireDefault(require("./harmonization_runtime_grader"));
 var computeHarmonizationGraded = runtime.computeHarmonizationGraded;
 var STATE = runtime.STATE;
 
-var GraderState = require("./grader_state");
+var GraderState = requireDefault(require("./grader_state"));
 
 var failed = 0;
 
