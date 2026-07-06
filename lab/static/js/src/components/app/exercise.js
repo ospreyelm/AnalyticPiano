@@ -6,7 +6,13 @@ import AppComponent from "app/components/app";
 import EVENTS from "app/components/events";
 import PianoComponent from "app/components/piano";
 import MusicComponent from "app/components/music";
-import ExerciseSheetComponent from "app/components/music/exercise_sheet";
+import SheetFactory from "app/models/sheet_factory";
+import MatchingSheet from "app/components/music/matching_sheet";
+import ChoraleSheet from "app/components/music/chorale_sheet";
+import HarmonizationSheet from "app/components/music/harmonization_sheet";
+import FiguredBassSheet from "app/components/music/figured_bass_sheet";
+import IdentificationSheet from "app/components/music/identification_sheet";
+import ChoraleIdentificationSheet from "app/components/music/chorale_identification_sheet";
 import SymbolicQuestionSheet from "app/components/music/symbolic_question_sheet";
 import MidiComponent from "app/components/midi";
 import NotificationsComponent from "app/components/notifications";
@@ -35,6 +41,8 @@ import KeySigMod from "app/models/key_sig_exercise";
 
 var createGrader = GraderFactory.create;
 var resolveGraderKey = GraderFactory.resolveGraderKey;
+
+var createSheet = SheetFactory.create;
 
 /**
    * AppExerciseComponent class.
@@ -517,10 +525,19 @@ var resolveGraderKey = GraderFactory.resolveGraderKey;
           return;
         }
 
-        var exerciseSheet = new ExerciseSheetComponent({
+        var resolved = definition.getResolvedMode();
+        var exerciseSheet = createSheet(resolved, {
           exerciseContext: this.models.exerciseContext,
           keySignature: this.models.keySignature,
           midiDevice: this.models.midiDevice,
+          constructors: {
+            matching: MatchingSheet,
+            chorale: ChoraleSheet,
+            harmonization: HarmonizationSheet,
+            figured_bass: FiguredBassSheet,
+            identification: IdentificationSheet,
+            chorale_identification: ChoraleIdentificationSheet,
+          },
         });
         this.models.exerciseSheet = exerciseSheet;
         var c = new MusicComponent({
