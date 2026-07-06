@@ -242,17 +242,16 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
     grade: function () {
       var state, graded;
       var nextUrl = this.definition.getNextExercise();
-      // Discriminator reads routed through ResolvedMode (single authority) —
-      // see _isIdentificationExercise/_isHarmonizationExercise above for the
-      // equivalence argument. resolved.isChorale/isIdentification/
-      // isChoraleIdentification match the prior isChorale()/isIdentification()/
-      // isChoraleIdentification() predicate calls exactly.
-      var resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      var isChoraleExercise = !!(resolved && resolved.isChorale);
+      var isChoraleExercise =
+        typeof this.definition.isChorale === "function" &&
+        this.definition.isChorale();
       var isHarmonizationExercise = this._isHarmonizationExercise();
-      var isIdentificationExercise = !!(resolved && resolved.isIdentification);
-      var isChoraleIdentificationExercise = !!(resolved && resolved.isChoraleIdentification);
+      var isIdentificationExercise =
+        typeof this.definition.isIdentification === "function" &&
+        this.definition.isIdentification();
+      var isChoraleIdentificationExercise =
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification();
       var isAnyIdentificationExercise =
         isIdentificationExercise || isChoraleIdentificationExercise;
 
@@ -389,9 +388,7 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
      */
     validateGradingAlignment: function () {
       if (!this.definition.isUMTO || !this.definition.isUMTO() || !this.definition.exercise.grading) return;
-      var resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      if (resolved && resolved.isChorale) return;
+      if (this.definition.isChorale && this.definition.isChorale()) return;
 
       const currentChord = this.inputChords.current();
       const playedPitches = _.sortBy(currentChord.getNoteNumbers());
@@ -598,13 +595,6 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
           error_tally:
             /* -1 means that errors are not reported (can't recall why not) */
             /* Analytical and figured_bass don't track errors; chorale does */
-            // NOT routed through ResolvedMode: this pairing ("analytical" +
-            // "figured_bass") is a reporting-semantics grouping, not a pipeline
-            // discriminator — resolvePipeline maps type=analytical to pipeline
-            // "other" and type=figured_bass to pipeline "figured_bass" (two
-            // different pipeline values), so there is no single resolved field
-            // that mirrors this exact raw-type pair. Left on raw
-            // definition.exercise.type per the no-behavior-change constraint.
             ["analytical", "figured_bass"].includes(
               this.definition.exercise.type
             )
@@ -914,20 +904,19 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
      *
      * @return {boolean}
      */
-    // Pipeline discriminator reads routed through ResolvedMode (single authority
-    // in resolved_mode.js) instead of isIdentification()/isChoraleIdentification()/
-    // isHarmonization() predicate calls. Behavior-identical: Phase 1.1 wired those
-    // predicate bodies to this._resolved on ExerciseDefinition, so resolved.isX
-    // matches the prior predicate calls exactly for a real ExerciseDefinition.
     _isIdentificationExercise: function () {
-      var resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      return !!(resolved && (resolved.isIdentification || resolved.isChoraleIdentification));
+      return (
+        (typeof this.definition.isIdentification === "function" &&
+          this.definition.isIdentification()) ||
+        (typeof this.definition.isChoraleIdentification === "function" &&
+          this.definition.isChoraleIdentification())
+      );
     },
     _isHarmonizationExercise: function () {
-      var resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      return !!(resolved && resolved.isHarmonization);
+      return (
+        typeof this.definition.isHarmonization === "function" &&
+        this.definition.isHarmonization()
+      );
     },
     /**
      * True for chorale exercises played via ChoraleGrader (playback /
@@ -1010,9 +999,9 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
      * @return {number}
      */
     getIdentPageOffset: function () {
-      var _resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      var isChoraleIdent = !!(_resolved && _resolved.isChoraleIdentification);
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
       if (!isChoraleIdent) {
         return IdentPageLogic.computeIdentPageOffset(this._identPage, this._identPageSize, false, [], 0, 0);
       }
@@ -1031,9 +1020,9 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
      */
     getTotalIdentPages: function () {
       var allProblems = this.definition.getProblems() || [];
-      var _resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      var isChoraleIdent = !!(_resolved && _resolved.isChoraleIdentification);
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
       if (!isChoraleIdent) {
         return IdentPageLogic.computeTotalIdentPages(allProblems, false, 0, 0, this._identPageSize);
       }
@@ -1049,9 +1038,9 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
      */
     getVisibleProblems: function () {
       var allProblems = this.definition.getProblems() || [];
-      var _resolved = this.definition && this.definition.getResolvedMode
-        ? this.definition.getResolvedMode() : null;
-      var isChoraleIdent = !!(_resolved && _resolved.isChoraleIdentification);
+      var isChoraleIdent = !!(this.definition &&
+        typeof this.definition.isChoraleIdentification === "function" &&
+        this.definition.isChoraleIdentification());
       if (!isChoraleIdent) {
         return IdentPageLogic.filterVisibleProblems(allProblems, false, this._identPage, this._identPageSize, 0, 0);
       }

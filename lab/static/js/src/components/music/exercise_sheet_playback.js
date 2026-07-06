@@ -98,8 +98,7 @@ export default  {
     onChordsUpdate: function () {
       var definition = this.exerciseContext.getDefinition();
       // Chorale exercises don't use chord bank, so skip this
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      if (resolved && resolved.isChorale) return;
+      if (definition.isChorale()) return;
       
       this.updateStaves();
       this.render();
@@ -147,9 +146,8 @@ export default  {
      */
     onMidiNote: function (state, noteNum) {
       var definition = this.exerciseContext.getDefinition();
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      var isChorale = !!(resolved && resolved.isChorale);
-      var isHarmonization = !!(resolved && resolved.isHarmonization);
+      var isChorale = definition.isChorale && definition.isChorale();
+      var isHarmonization = definition.isHarmonization && definition.isHarmonization();
       if (!isChorale && !isHarmonization) return;
       if (this.exerciseContext && this.exerciseContext._reviewDisplayOnly) return;
 
@@ -270,15 +268,14 @@ export default  {
      */
     onClickPristine: function () {
       var definition = this.exerciseContext.getDefinition();
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
 
       // Reset chorale state if in chorale mode
-      if (resolved && resolved.isChorale) {
+      if (definition.isChorale()) {
         this.initChoraleMode();
       }
 
       // Reset harmonization state
-      if (resolved && resolved.isHarmonization) {
+      if (definition.isHarmonization && definition.isHarmonization()) {
         var ctx = this.exerciseContext;
         if (ctx._harmonizationSettleTimer) {
           clearTimeout(ctx._harmonizationSettleTimer);
