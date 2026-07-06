@@ -3,35 +3,36 @@
 var { resolveChoraleGraderSettings } = require("./chorale_grader_settings");
 
 /**
- * GraderFactory — Phase 2 skeleton (M1).
+ * GraderFactory — Phase 2 foundation (M1).
  *
  * Maps a ResolvedMode to the grader class that scores it. One grader per
  * LIVE pipeline — kills the dual `analysis_match` path (today `umto_chorale` +
- * `mode=analysis_match` is graded by `ChoraleGrader` via app/exercise.js:131,
- * while `ExerciseGrader.analysisMatch` at grader.js:142 is a latent/dead
- * fallback). This factory owns the selection so there is exactly one path.
+ * `mode=analysis_match` is graded by `ChoraleGrader` via app/exercise.js,
+ * while `ExerciseGrader.analysisMatch` is a latent/dead fallback). This
+ * factory owns the selection so there is exactly one path.
  *
- * SKELETON, PARTIALLY WIRED — no production call sites yet.
- * `app/exercise.js:119-151` still selects graders inline. `create()`
- * constructs a real grader for `"harmonization"` (backed by
- * `HarmonizationGrader`) and `"identification"` (backed by the existing
- * `IdentificationGrader` — also serves `chorale_identification`, which maps
- * to the same key). `"chorale"` now has a DESIGNED context contract (backed
- * by the existing `ChoraleGrader` + the new pure helper
- * `chorale_grader_settings.js`) but is still not callable with a real
- * `ChoraleGrader` under plain `node` — see `create()`'s docstring for the
- * injection seam that lets it be tested anyway. `"legacy_exercise"` still
- * throws outright. The resolver contract must be reviewed before this
- * factory is wired into production (per user decision 2026-07-05).
+ * PRODUCTION STATUS (2026-07-05): `"chorale"` and `"identification"` are LIVE
+ * production keys — `app/exercise.js`'s grader-selection block calls
+ * `create()` for both, each guarded by `resolveGraderKey(resolved) ===
+ * "chorale"`/`"identification"` (falling back to the exact pre-Phase-2
+ * inline construction otherwise; see the guard-specific comments in
+ * `app/exercise.js` and docs/architecture/pipeline-registry.md's "Phase 2
+ * consolidated status" for the two type-divergence traps those guards
+ * exist for). `"harmonization"` constructs a real `HarmonizationGrader` but
+ * has NO production caller: live harmonization grading is owned by
+ * `ExerciseContext.computeHarmonizationGraded()`, a separate stateful
+ * implementation `app/exercise.js`'s wiring does not touch — see
+ * `harmonization_grader.js`'s header comment. `"legacy_exercise"` still
+ * throws outright; no product decision yet on wiring the retained
+ * `ExerciseGrader` fallback through this factory.
  *
- * `create()`'s second argument is NOT a uniform shape across keys yet —
+ * `create()`'s second argument is NOT a uniform shape across keys —
  * `"harmonization"` forwards it as-is to the constructor, `"identification"`
  * ignores it, `"chorale"` reads a richer `{ definition, constructors }`
- * context object. This asymmetry is intentional and temporary: each key's
- * real constructor needs fundamentally different inputs today (a flat
- * settings blob vs. a live `ExerciseDefinition` vs. nothing), and forcing a
- * single unified shape before `app/exercise.js` wiring is designed would be
- * guessing. Resolve this before wiring a production caller.
+ * context object. This asymmetry is intentional: each key's real
+ * constructor needs fundamentally different inputs (a flat settings blob
+ * vs. a live `ExerciseDefinition` vs. nothing). Unifying this shape is a
+ * separate, not-yet-scoped decision.
  *
  * Testable surface: `resolveGraderKey(resolvedMode)` → string. Pure, import-free,
  * immune to the `app/` alias resolution wall that blocks full-boot tests.
@@ -48,25 +49,19 @@ var { resolveChoraleGraderSettings } = require("./chorale_grader_settings");
  *                            compatibility fallback (NOT split into
  *                            per-type classes — matching, figured_bass,
  *                            and "other" all map here)
- *   "chorale"             — ChoraleGrader (existing, live)
- *   "harmonization"       — current behavior: ExerciseGrader constructed,
- *                            whose internal switch delegates to
- *                            HarmonizationGraderLogic (existing pure-fn
- *                            module, already extracted, live — 34
- *                            reachable rows). Kept as its own key because
- *                            it is a live pipeline, not a dead one, even
- *                            though today's *implementation* still goes
- *                            through ExerciseGrader as a pass-through.
- *   "identification"      — IdentificationGrader (existing; serves both
- *                            `identification` and `chorale_identification`
- *                            pipelines, matching current behavior)
+ *   "chorale"             — ChoraleGrader, LIVE production caller
+ *   "harmonization"       — HarmonizationGrader can be constructed, but
+ *                            has no production caller; live harmonization
+ *                            grading happens in
+ *                            ExerciseContext.computeHarmonizationGraded(),
+ *                            not through this factory or ExerciseGrader.
+ *   "identification"      — IdentificationGrader, LIVE production caller
+ *                            (serves both `identification` and
+ *                            `chorale_identification` pipelines)
  *
  * No per-type legacy class split (legacy_match_grader.js,
  * legacy_figured_bass_grader.js, analytical_grader.js, analytical_pcs_grader.js)
- * is planned. `create()` remains an unwired stub — wiring `app/exercise.js` to
- * this factory is deferred until it can reproduce the current branch order
- * exactly, including the `mode="chorale_identification"` and raw-mode-fallback
- * caveats below.
+ * is planned.
  */
 
 var GRADER_KEYS = {
@@ -116,21 +111,25 @@ function resolveGraderKey(resolvedMode) {
 }
 
 /**
- * Instantiates the grader for a resolved mode. PARTIALLY WIRED —
- * harmonization, identification, and (test-seam-only) chorale (2026-07-05).
+ * Instantiates the grader for a resolved mode. `"chorale"` and
+ * `"identification"` are LIVE production keys, called from
+ * `app/exercise.js`'s grader-selection block (each guarded by
+ * `resolveGraderKey(resolved) === <key>`, falling back to inline
+ * construction otherwise). `"harmonization"` constructs a real grader but
+ * has no production caller (see the class-level comment at the top of this
+ * file and in `harmonization_grader.js`). `"legacy_exercise"` still throws.
  *
- * `"harmonization"` constructs `HarmonizationGrader` (landed and reviewed
- * clean in a prior commit); `context` is forwarded to it as-is as
- * constructor settings.
+ * `"harmonization"` constructs `HarmonizationGrader`; `context` is
+ * forwarded to it as-is as constructor settings.
  *
  * `"identification"` constructs the existing `IdentificationGrader` — this
  * also covers `chorale_identification`, which maps to the same key (see the
  * CAVEAT on `GRADER_KEYS.chorale_identification` above). Always constructed
- * with `{}`, matching `app/exercise.js:135`'s `new IdentificationGrader({})`
+ * with `{}`, matching `app/exercise.js`'s `new IdentificationGrader({})`
  * exactly — that call site never passes constructor settings for this
  * grader, so `context` is intentionally ignored for this key.
  *
- * `"chorale"` reproduces `app/exercise.js:145-152`'s construction exactly:
+ * `"chorale"` reproduces `app/exercise.js`'s construction exactly:
  *   var gradingSettings = definition.getGrading();
  *   if (definition.isUnit(1)) { gradingSettings.octaveIndependent = true; }
  *   models.exerciseGrader = new ChoraleGrader(gradingSettings);

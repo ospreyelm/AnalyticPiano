@@ -188,12 +188,17 @@ function extractDeliveredNotes(item) {
 
 /**
  * Grades harmonization problems directly from an ExerciseDefinition and an
- * ExerciseChordBank — the production interface ExerciseContext actually
- * calls (`this.grader.grade(this.definition, this.inputChords)`,
- * exercise_context.js:273). Mirrors ExerciseGrader.grade()'s definition/
- * inputChords → problems/delivered-notes extraction (exercise_grader.js:
- * 45-47, 84-89, 130-141) for the harmonization case, then delegates
- * aggregate scoring to gradeProblems() (unchanged, already tested).
+ * ExerciseChordBank, matching the CALL SHAPE of ExerciseContext's generic
+ * grader call site (`this.grader.grade(this.definition, this.inputChords)`,
+ * exercise_context.js:273) — though, per the class-level comment above,
+ * that call site is never actually reached for harmonization exercises in
+ * production (`ExerciseContext.grade()` routes to
+ * `computeHarmonizationGraded()` first). This method mirrors
+ * ExerciseGrader.grade()'s definition/inputChords → problems/delivered-
+ * notes extraction (exercise_grader.js: 45-47, 84-89, 130-141) for the
+ * harmonization case, then delegates aggregate scoring to gradeProblems()
+ * (unchanged, already tested) — characterization of a dead code path, not
+ * a live production entry point.
  *
  * @param {object} definition - ExerciseDefinition (or compatible test
  *   double) exposing getProblems() and, optionally, getResolvedMode()
