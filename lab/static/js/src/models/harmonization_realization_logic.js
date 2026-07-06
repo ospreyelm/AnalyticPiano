@@ -233,15 +233,37 @@ function buildRealization(accepted, targets, score, meter) {
       buildPcSpellingMap(score, absOffsetQb),
       buildTargetPcSpellingMap(target)
     );
-    var spellings = upperMidi.map(function (m) { return spellMidi(m, pcMap); });
-    if (spellings.indexOf(null) !== -1) continue;
+
+    // Not every legally-allowed chord tone has a recorded spelling: the target
+    // only carries the bass and its one requiredUpperPc, and buildPcSpellingMap
+    // deliberately excludes the answer voice being realized. Per
+    // docs/music-theory-canon.md ("Pitch spelling and octave are load-bearing
+    // data"), a missing spelling must not be guessed from bare pitch-class.
+    // Omit just that note (and say why) rather than silently dropping the
+    // whole chord.
+    var spelledMidi = [];
+    var spellings = [];
+    upperMidi.forEach(function (m) {
+      var spelling = spellMidi(m, pcMap);
+      if (!spelling) {
+        console.warn(
+          "[harmonization_realization_logic] no recorded spelling for pc " +
+          pitchClassForMidi(m) + " (midi " + m + ") at target index " + ti +
+          " — omitting this note from the realized chord rather than guessing its spelling."
+        );
+        return;
+      }
+      spelledMidi.push(m);
+      spellings.push(spelling);
+    });
+    if (!spelledMidi.length) continue;
 
     raw.push({
       measureIndex: measureIndex,
       onset: onsetWithinMeasure,
       _absOnsetTicks: absOffsetTicks,
       _targetIndex: ti,
-      midiNotes: upperMidi,
+      midiNotes: spelledMidi,
       spellings: spellings
     });
   }
