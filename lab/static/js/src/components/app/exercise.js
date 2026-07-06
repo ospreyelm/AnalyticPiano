@@ -116,30 +116,21 @@ import KeySigMod from "app/models/key_sig_exercise";
     models.inputChords = new ExerciseChordBank({
       staffDistribution: definition.staffDistribution,
     });
-    // Choose grader depending on exercise type/mode.
-    // Discriminator reads route through ResolvedMode (single authority in
-    // resolved_mode.js) instead of getMode()/isX() predicates. Behavior is
-    // identical to the prior inline selection: the same three grader classes
-    // are instantiated under the same conditions. We deliberately do NOT use
-    // GraderFactory.create() here — its key mapping diverges from current
-    // behavior for mode="chorale_identification" (0 rows) and for
-    // mode="play-all-voices"/"analysis" (factory → chorale, current →
-    // ExerciseGrader). Wiring the factory is Phase 2; Phase 1.2 only reroutes
-    // the read path. See docs/architecture/pipeline-registry.md.
-    var resolved = models.exerciseDefinition.getResolvedMode();
-    var interactionMode = resolved.interactionMode;
+    // Choose grader depending on exercise type/mode
+    var interactionMode = models.exerciseDefinition.getMode();
     if (
       interactionMode === "identification" ||
-      (!interactionMode &&
-        (resolved.isIdentification || resolved.isChoraleIdentification))
+      (!interactionMode && 
+        ((models.exerciseDefinition.isIdentification && models.exerciseDefinition.isIdentification()) ||
+         (models.exerciseDefinition.isChoraleIdentification && models.exerciseDefinition.isChoraleIdentification())))
     ) {
       console.log("[ID] Selecting IdentificationGrader (mode: " + interactionMode + ")");
       models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (
-      interactionMode === "playback" ||
+      interactionMode === "playback" || 
       interactionMode === "analysis_match" ||
-      (!interactionMode && resolved.isChorale)
+      (!interactionMode && models.exerciseDefinition.isChorale && models.exerciseDefinition.isChorale())
     ) {
       console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
       var gradingSettings = models.exerciseDefinition.getGrading();
@@ -254,28 +245,8 @@ import KeySigMod from "app/models/key_sig_exercise";
       _analysisType === "roman" || _analysisType === "figured_bass" || _analysisType === "figured_bass_unabbreviated"
     );
     // Chorale play exercises are exclusively MIDI — no click-on-staff input.
-    // Second clause routed through ResolvedMode (single authority) instead of
-    // isChorale()/isChoraleIdentification() predicates — resolved.isChorale &&
-    // !resolved.isChoraleIdentification is identical to the prior
-    // _def.isChorale() && !_def.isChoraleIdentification() (Phase 1.1 wired those
-    // predicates to this._resolved). It also subsumes the umto-metadata
-    // mode === "playback" case the prior second clause already caught via isChorale().
-    //
-    // The first clause stays on RAW definition.mode verbatim — NOT routed through
-    // resolved.interactionMode — because parse() OVERRIDES exercise.mode for some
-    // branches: type=identification hardcodes exercise.mode="identification"
-    // (exercise_definition.js:1098) and type=chorale_identification never sets
-    // exercise.mode at all. For those, resolved.interactionMode would NOT be
-    // "playback" even if the raw config carried mode="playback". The hard
-    // Phase 1.2 constraint is no behavior change, so the raw read is preserved.
-    // DB query (2026-07-05): 0 rows carry (type IN identification,
-    // chorale_identification) AND mode="playback" — the divergence is theoretical
-    // only, but we keep the raw clause rather than silently changing the gate.
-    // Full routing of this clause is deferred (would need a raw-mode accessor).
-    var _resolved = _def && _def.getResolvedMode ? _def.getResolvedMode() : null;
-    // eslint-disable-next-line harmonylab-pipelines/no-raw-pipeline-discriminator -- intentional: parse() overrides exercise.mode for type=identification/chorale_identification, so resolved.interactionMode would diverge from the raw config mode. Documented permanent exemption (Phase 1.3).
     var isChoralePlay = definition.mode === "playback" ||
-      (_resolved && _resolved.isChorale && !_resolved.isChoraleIdentification);
+      (_def && _def.isChorale && _def.isChorale() && !(_def.isChoraleIdentification && _def.isChoraleIdentification()));
     var methods = [
       function () {
         var c = new FeedbackService({ exerciseContext: this.models.exerciseContext });

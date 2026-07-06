@@ -41,13 +41,8 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
       exercise_midi_nums = exercise_midi_nums || false;
       var definition = this.exerciseContext.getDefinition();
       var score = definition.getScore();
-      // Discriminator reads routed through ResolvedMode (single authority in
-      // resolved_mode.js). Behavior-identical: Phase 1.1 wired isHarmonization()/
-      // isChorale()/isChoraleIdentification() to this._resolved, so these mirror
-      // fields match the prior predicate calls exactly (same parsed exercise).
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      var isHarmonization = !!(resolved && resolved.isHarmonization);
-      var isChoraleLike = !!(resolved && (resolved.isChorale || resolved.isChoraleIdentification || resolved.isHarmonization));
+      var isHarmonization = !!(definition.isHarmonization && definition.isHarmonization());
+      var isChoraleLike = (definition.isChorale() || definition.isChoraleIdentification() || isHarmonization);
       
       // If it's a UMTO chorale, always re-convert to ensure splitting is fresh and uses MeasureEngine.
       // This fixes cases where the database might have a single 'blob' measure.
@@ -86,7 +81,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
           var wantsFigures = !!display.showFigures;
           var wantsChordLabels = !!display.showChordLabels;
           var wantsScaleDegrees = !!display.showScaleDegrees;
-          var isAnalysisMatchMode = !!(resolved && resolved.isAnalysisMatch);
+          var isAnalysisMatchMode = !!(definition.isAnalysisMatch && definition.isAnalysisMatch());
           var wantsNoteNames = !!display.showNoteNames || isAnalysisMatchMode;
           var isChoraleIdentification = this._isChoraleIdentificationExercise();
 
@@ -123,7 +118,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
           // Preserve legacy chorale behavior that force-enables roman numerals,
           // but do not force overlays for chorale_identification.
-          if (!wantsAnalysis && resolved && resolved.isChorale && !isAnalysisMatchMode && !isChoraleIdentification) {
+          if (!wantsAnalysis && definition.isChorale && definition.isChorale() && !isAnalysisMatchMode && !isChoraleIdentification) {
             wantsRomans = true;
             wantsAnalysis = true;
           }

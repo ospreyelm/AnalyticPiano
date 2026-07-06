@@ -120,10 +120,8 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
       this.initStaves();
       this.initListeners();
       var definition = this.exerciseContext.getDefinition();
-      // Chorale-specific init — discriminator routed through ResolvedMode
-      // (behavior-identical: predicates are Phase 1.1-wired to this._resolved).
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      if (resolved && (resolved.isChorale || resolved.isChoraleIdentification)) {
+      // Chorale-specific init
+      if (definition.isChorale() || (definition.isChoraleIdentification && definition.isChoraleIdentification())) {
         this.initChoraleMode();
       }
       if (this._isIdentificationLikeExercise()) {
@@ -189,7 +187,6 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
      */
     initChoraleMode: function () {
       var def = this.exerciseContext.getDefinition();
-      var resolved = def && def.getResolvedMode ? def.getResolvedMode() : null;
       var display = def && def.getDisplay ? def.getDisplay() : {};
       var configuredMaxMeasures = parseInt(display && display.maxMeasures, 10);
       var maxMeasures = configuredMaxMeasures > 0 ? configuredMaxMeasures : 4;
@@ -205,7 +202,7 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
             console.log("[Chorale] Patched exercise.score from UMTO conversion:", converted.measures ? converted.measures.length : 0, "measures");
           }
         }
-        if (resolved && resolved.isChorale && this.exerciseContext.grader && this.exerciseContext.grader.initFromDefinition) {
+        if (def.isChorale && def.isChorale() && this.exerciseContext.grader && this.exerciseContext.grader.initFromDefinition) {
           this.exerciseContext.grader.initFromDefinition(def);
         }
       } catch (e) {
@@ -232,8 +229,7 @@ import ExerciseSheetIdentificationLogic from "./exercise_sheet_identification_lo
 
       // Playback controls — only for chorale exercise types (idempotent)
       var definition = this.exerciseContext.getDefinition();
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      if (resolved && (resolved.isChorale || resolved.isChoraleIdentification)) {
+      if (definition.isChorale() || (definition.isChoraleIdentification && definition.isChoraleIdentification())) {
         var $toolbar = $("#staff-toolbar");
         if ($toolbar.length) {
           var self = this;
