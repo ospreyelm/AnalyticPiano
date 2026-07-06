@@ -61,7 +61,7 @@ assertField("instance.STATE is the shared GraderState.STATE object",
 
 (function () {
   var grader = new HarmonizationGrader();
-  var entry = grader.gradeProblem(target, [48, 52]); // missing required pc 4 (E)
+  var entry = grader.gradeProblem(target, [48, 52]); // missing required pc 9 (A)
   assertField("missing required pc: score is PARTIAL(1)", entry.score, 1);
 })();
 

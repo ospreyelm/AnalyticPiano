@@ -28,6 +28,15 @@
  * specific theory, and adapting this wrapper to that exact call signature is
  * deferred to the production-wiring slice (not done here; no app/exercise.js
  * changes, no GraderFactory.create() wiring).
+ *
+ * Note: ExerciseGrader.grade() also has an early-return guard for
+ * `resolved.isChorale` (grader.js:84) that this wrapper does not reproduce.
+ * That's not an accidental omission — `isChorale` and `mode === "harmonization"`
+ * are mutually exclusive by construction: resolved_mode.js's CHORALE_MODES
+ * list (the only way `isChorale` can be true when `mode` is truthy) does not
+ * contain `"harmonization"`, and this code path only runs when
+ * mode === "harmonization" (grader.js:154). So `isChorale` is always false
+ * whenever this branch executes; there is nothing for this wrapper to check.
  */
 
 var GraderState = require("./grader_state");
