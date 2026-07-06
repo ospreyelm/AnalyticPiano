@@ -33,40 +33,6 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
 
   export default  {
     /**
-     * Renders each individual stave.
-     *
-     * Phase 3: this dispatcher is a behavior-identical bridge while
-     * `ExerciseSheetComponent` remains the single sheet class. The next slice
-     * replaces it with per-pipeline sheet classes whose own `renderStaves`
-     * calls the right stack method directly — no resolved-mode fork. The
-     * `isChoraleLike && hasMeasures` fork that lived here is split into
-     * `_renderStavesVexFlow` (VexFlow stack) and `_renderStavesLegacy` (legacy
-     * stave stack); the hasMeasures fall-through is handled inside
-     * `_renderStavesVexFlow`, so the dispatcher only selects the stack family.
-     *
-     * @return this
-     */
-    renderStaves: function (exercise_midi_nums) {
-      exercise_midi_nums = exercise_midi_nums || false;
-      var definition = this.exerciseContext.getDefinition();
-      // Discriminator reads routed through ResolvedMode (single authority in
-      // resolved_mode.js). Behavior-identical: Phase 1.1 wired isHarmonization()/
-      // isChorale()/isChoraleIdentification() to this._resolved, so these mirror
-      // fields match the prior predicate calls exactly (same parsed exercise).
-      var resolved = definition && definition.getResolvedMode ? definition.getResolvedMode() : null;
-      var isChoraleLike = !!(resolved && (resolved.isChorale || resolved.isChoraleIdentification || resolved.isHarmonization));
-
-      if (isChoraleLike) {
-        return this._renderStavesVexFlow(exercise_midi_nums, {
-          isHarmonization: !!(resolved && resolved.isHarmonization),
-          isChoraleIdentification: !!this._isChoraleIdentificationExercise(),
-          isAnalysisMatchMode: !!(resolved && resolved.isAnalysisMatch),
-          isChorale: !!(resolved && resolved.isChorale),
-        });
-      }
-      return this._renderStavesLegacy(exercise_midi_nums);
-    },
-    /**
      * VexFlow render stack — used by the chorale, harmonization, and
      * chorale_identification pipelines. The per-pipeline sheet supplies `cfg`
      * (which pipeline flags apply); this method does NOT read `resolved` — the
@@ -75,7 +41,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
      *
      * @param {object} cfg - `{ isHarmonization, isChoraleIdentification,
      *   isAnalysisMatchMode, isChorale }` — all booleans, supplied by the
-     *   per-pipeline sheet (or by the bridge dispatcher above).
+     *   per-pipeline sheet that owns this render stack.
      * @return this
      */
     _renderStavesVexFlow: function (exercise_midi_nums, cfg) {
