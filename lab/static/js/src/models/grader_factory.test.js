@@ -9,6 +9,8 @@ var rmMod = requireDefault(require("./resolved_mode"));
 var resolvePipeline = rmMod.resolvePipeline;
 
 var HarmonizationGrader = require("./harmonization_grader");
+var identificationLogicModule = require("./identification_grader");
+var IdentificationGrader = identificationLogicModule.default || identificationLogicModule;
 
 var failed = 0;
 
@@ -124,6 +126,39 @@ assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
     grader.STATE, HarmonizationGrader.STATE);
 })();
 
+// ---------- create() is now ALSO wired for identification (2026-07-05) ----------
+(function () {
+  var resolved = resolvePipeline({ type: "identification" });
+  var key = resolveGraderKey(resolved);
+  assertField("identification pipeline resolves to identification key", key, "identification");
+
+  var grader = factoryMod.create(resolved, { anything: "ignored" });
+  assertField("create() returns an IdentificationGrader instance for identification",
+    grader instanceof IdentificationGrader, true);
+})();
+
+(function () {
+  // chorale_identification maps to the SAME "identification" key (see the
+  // CAVEAT in grader_factory.js), so create() must construct the same class.
+  var resolved = resolvePipeline({ type: "chorale_identification" });
+  var key = resolveGraderKey(resolved);
+  assertField("chorale_identification pipeline resolves to identification key", key, "identification");
+
+  var grader = factoryMod.create(resolved);
+  assertField("create() returns an IdentificationGrader instance for chorale_identification",
+    grader instanceof IdentificationGrader, true);
+})();
+
+(function () {
+  // app/exercise.js:135 always constructs `new IdentificationGrader({})` —
+  // caller-supplied settings are never threaded through for this grader in
+  // production, so create() must ignore them too, not pass them along.
+  var resolved = resolvePipeline({ type: "identification" });
+  var grader = factoryMod.create(resolved, { keySignature: "should be ignored" });
+  assertField("identification grader construction ignores caller settings (matches app/exercise.js:135)",
+    grader.settings && Object.keys(grader.settings).length === 0, true);
+})();
+
 // ---------- create() still throws for every OTHER key until wired ----------
 (function () {
   var threw = false;
@@ -156,33 +191,17 @@ assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
 })();
 
 (function () {
+  // "chorale" still throws — two open design blockers (settings shape +
+  // plain-node testability wall), not yet resolved. Confirm it throws AND
+  // that create() never crashes the test process trying to require
+  // chorale_grader.js speculatively before the guard check.
   var threw = false;
   try {
     factoryMod.create({ pipeline: "chorale" });
   } catch (_e) {
     threw = true;
   }
-  assertField("create() throws for chorale until wired", threw, true);
-})();
-
-(function () {
-  var threw = false;
-  try {
-    factoryMod.create({ pipeline: "identification" });
-  } catch (_e) {
-    threw = true;
-  }
-  assertField("create() throws for identification until wired", threw, true);
-})();
-
-(function () {
-  var threw = false;
-  try {
-    factoryMod.create({ pipeline: "chorale_identification" });
-  } catch (_e) {
-    threw = true;
-  }
-  assertField("create() throws for chorale_identification until wired", threw, true);
+  assertField("create() throws for chorale until wired (design blockers unresolved)", threw, true);
 })();
 
 console.log("");

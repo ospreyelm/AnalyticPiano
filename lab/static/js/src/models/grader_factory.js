@@ -10,11 +10,14 @@
  * fallback). This factory owns the selection so there is exactly one path.
  *
  * SKELETON, PARTIALLY WIRED — no production call sites yet.
- * `app/exercise.js:119-151` still selects graders inline. `create()` only
- * constructs a real grader for the `"harmonization"` key (backed by
- * `HarmonizationGrader`); every other key still throws. The resolver contract
- * must be reviewed before this factory is wired into production (per user
- * decision 2026-07-05).
+ * `app/exercise.js:119-151` still selects graders inline. `create()`
+ * constructs a real grader for `"harmonization"` (backed by
+ * `HarmonizationGrader`) and `"identification"` (backed by the existing
+ * `IdentificationGrader` — also serves `chorale_identification`, which maps
+ * to the same key). `"chorale"` and `"legacy_exercise"` still throw — see
+ * `create()`'s docstring for the two open blockers on `"chorale"`. The
+ * resolver contract must be reviewed before this factory is wired into
+ * production (per user decision 2026-07-05).
  *
  * Testable surface: `resolveGraderKey(resolvedMode)` → string. Pure, import-free,
  * immune to the `app/` alias resolution wall that blocks full-boot tests.
@@ -100,31 +103,54 @@ function resolveGraderKey(resolvedMode) {
 
 /**
  * Instantiates the grader for a resolved mode. PARTIALLY WIRED — harmonization
- * only (2026-07-05).
+ * and identification (2026-07-05).
  *
- * Only `"harmonization"` constructs a real grader (`HarmonizationGrader`,
- * landed and reviewed clean in a prior commit — see
- * docs/architecture/pipeline-registry.md). Every other key still throws: this
- * factory is NOT called from `app/exercise.js` yet, and wiring the remaining
- * keys (`chorale`, `identification`, `legacy_exercise`) is deferred until
- * `app/exercise.js`'s inline selection can be reproduced exactly, including
- * the documented `mode="chorale_identification"` divergence and the
- * raw-mode-fallback ("play"/"identify"/"figures"/"roman") caveats.
+ * `"harmonization"` constructs `HarmonizationGrader` (landed and reviewed
+ * clean in a prior commit). `"identification"` constructs the existing
+ * `IdentificationGrader` — this also covers `chorale_identification`, which
+ * maps to the same key (see the CAVEAT on `GRADER_KEYS.chorale_identification`
+ * above). `IdentificationGrader` is always constructed with `{}`, matching
+ * `app/exercise.js:135`'s `new IdentificationGrader({})` exactly — that call
+ * site never passes constructor settings for this grader, so the caller-
+ * supplied `settings` argument is intentionally ignored for this key rather
+ * than threaded through to something production never uses.
  *
- * `harmonization_grader.js` is required lazily, inside the branch that needs
- * it, not at module top level — same discipline the other (still-unwired)
- * keys will need once they're implemented: `ChoraleGrader`, for example,
- * imports `app/`-aliased modules that break plain-`node` test execution, so
- * an eager top-level require of every grader class would reintroduce the
- * `app/` alias wall this file was built to avoid. `HarmonizationGrader`
- * itself happens to be alias-free, but the lazy-require pattern is kept
- * consistent here for when the other branches are filled in.
+ * `"chorale"` and `"legacy_exercise"` still throw. `"chorale"` has two open
+ * blockers, not yet designed:
+ *   1. Settings shape: `app/exercise.js:143-148` derives
+ *      `definition.getGrading()` plus a conditional Unit-1
+ *      `octaveIndependent` override (`definition.isUnit(1)`) before
+ *      constructing `ChoraleGrader`. `create(resolvedMode, settings)` has no
+ *      access to the live `ExerciseDefinition` needed to derive either of
+ *      those — accepting a caller-pre-computed `gradingSettings` object, or
+ *      widening `create()`'s signature to take the definition itself, are
+ *      both open design choices, not yet made.
+ *   2. Testability: `chorale_grader.js` imports `app/components/music/
+ *      score_timeline` (a webpack-only alias). Requiring it — even lazily,
+ *      only inside a `"chorale"` branch — would work fine under production
+ *      bundling but throws `ERR_MODULE_NOT_FOUND` under plain `node`, the
+ *      same wall that makes `chorale_grader.test.js` itself one of the 9
+ *      known pre-existing `app/`-alias test failures (see "Status" below).
+ *      Any `grader_factory.test.js` assertion that actually calls
+ *      `create()` for the `"chorale"` key would crash the whole test
+ *      process, not just fail one assertion, until that's resolved.
+ * `"legacy_exercise"` (matching/figured_bass/other, all dead or
+ * dev-fixture-only per the usage audit) is intentionally left unwired —
+ * no product decision yet on whether/how to construct the retained
+ * `ExerciseGrader` fallback through this factory.
+ *
+ * Each grader module is required lazily, inside the branch that needs it,
+ * not at module top level, so a still-unwired or alias-carrying grader
+ * (like `ChoraleGrader`) can never be pulled in just by loading this file —
+ * keeping `grader_factory.js` itself always requirable under plain `node`.
  *
  * @param {object} resolvedMode - output of resolvePipeline()
- * @param {object} settings - grader constructor settings
+ * @param {object} settings - grader constructor settings (used for
+ *   "harmonization"; ignored for "identification", which always constructs
+ *   with `{}` to match production)
  * @returns {object} grader instance
- * @throws {Error} for any key other than "harmonization", until that key's
- *   wiring is reviewed and complete
+ * @throws {Error} for "chorale" or "legacy_exercise" keys, until their
+ *   wiring is designed, reviewed, and complete
  */
 function create(resolvedMode, settings) {
   var key = resolveGraderKey(resolvedMode);
@@ -134,12 +160,31 @@ function create(resolvedMode, settings) {
     return new HarmonizationGrader(settings);
   }
 
+  if (key === "identification") {
+    var identificationModule = require("./identification_grader");
+    var IdentificationGrader = identificationModule.default || identificationModule;
+    return new IdentificationGrader({});
+  }
+
+  if (key === "chorale") {
+    throw new Error(
+      "GraderFactory.create not yet implemented for grader key \"chorale\" " +
+        "(ChoraleGrader) — two open design blockers, not yet resolved: " +
+        "(1) correct construction needs definition.getGrading() plus a " +
+        "Unit-1 octaveIndependent override, which create(resolvedMode, " +
+        "settings) cannot derive without the live ExerciseDefinition; " +
+        "(2) chorale_grader.js imports an app/-aliased module, so requiring " +
+        "it breaks plain-node test execution. See this function's docstring " +
+        "and docs/architecture/pipeline-registry.md."
+    );
+  }
+
   throw new Error(
     "GraderFactory.create not yet implemented for grader key \"" + key + "\" — " +
-      "only \"harmonization\" is wired so far. Production wiring for the " +
-      "remaining keys requires exact reproduction of app/exercise.js's " +
-      "current branch order. Use resolveGraderKey() for the selection " +
-      "decision until then."
+      "only \"harmonization\" and \"identification\" are wired so far. " +
+      "Production wiring for the remaining keys requires exact reproduction " +
+      "of app/exercise.js's current branch order. Use resolveGraderKey() " +
+      "for the selection decision until then."
   );
 }
 

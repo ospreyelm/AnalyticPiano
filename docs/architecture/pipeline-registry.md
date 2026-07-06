@@ -119,7 +119,7 @@ Cross-stack:
 |---|---|---|
 | `lab/static/js/src/models/exercise_grader.js` | god-class (audit done, extraction paused) | `notesMatch` (matching), `figuredBassMatch`/`figuredBassPcsMatch` (figured_bass), `analysisMatch` (analytical + latent umto_chorale+analysis_match), `analysisPcsMatch` (analytical_pcs). Switch at L135. **2026-07-05 usage audit (see "Legacy grader retirement audit" below): none of these methods are exercised by reachable student content today.** Per-type standalone extraction is paused pending a product decision; likely shape is one retained legacy fallback class, not five polished classes — see the audit's recommendation. |
 | `lab/static/js/src/models/chorale_grader.js` | `chorale` | Selected by `app/exercise.js:131` for playback/analysis_match |
-| `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode |
+| `lab/static/js/src/models/identification_grader.js` | `identification` + `chorale_identification` | Same class, discriminator on type/mode. `GraderFactory.create()` can construct it for both pipelines (2026-07-05, always with `{}`, matching `app/exercise.js:135`), but nothing calls `create()` in production yet. |
 | `lab/static/js/src/models/harmonization_grader_logic.js` | `harmonization` | Pure-function module; called from `ExerciseGrader.grade()` L138 today |
 | `lab/static/js/src/models/harmonization_grader.js` | `harmonization` | New (2026-07-05). Wraps `HarmonizationGraderLogic.harmonizationMatch` with the per-problem result-shape assembly and aggregate worst-state-wins scoring that `ExerciseGrader.grade()` does inline for the harmonization branch (grader.js:152-166, 210-227). Not wired into `app/exercise.js` yet — production still constructs `ExerciseGrader` for harmonization, which delegates internally to `HarmonizationGraderLogic` exactly as before. Preserves the `count`/`notes`-undefined quirk (harmonizationMatch's return has no such keys) rather than fixing it. Uses the shared `grader_state.js` STATE object directly (no local copy). Tested standalone in `harmonization_grader.test.js` (plain `node`, pure CommonJS, no `app/` alias). `GraderFactory.create()` can construct it (2026-07-05), but nothing calls `create()` in production yet. |
 
@@ -504,6 +504,23 @@ legacy keys specifically):
   "not wired yet" error. No production caller — `app/exercise.js`'s inline
   selection is unchanged; `create()` is exercised only by
   `grader_factory.test.js`.
+- `GraderFactory.create()` extended (2026-07-05, same day) to also construct
+  the existing `IdentificationGrader` for the `"identification"` key —
+  `chorale_identification` maps to the same key, so it's covered too, no
+  extra code needed. Matches `app/exercise.js:135`'s `new
+  IdentificationGrader({})` call exactly (constructor settings are always
+  `{}` in production, so `create()` ignores the caller-supplied `settings`
+  arg for this key rather than threading through something never used).
+  `"chorale"` still throws, with two open, undesigned blockers documented in
+  `create()`'s docstring: (1) `ChoraleGrader` needs `definition.getGrading()`
+  + a Unit-1 `octaveIndependent` override that `create(resolvedMode,
+  settings)` can't derive without the live `ExerciseDefinition`; (2)
+  `chorale_grader.js` imports an `app/`-aliased module, so requiring it
+  breaks plain-`node` test execution — the same wall behind
+  `chorale_grader.test.js`'s pre-existing failure. `"legacy_exercise"` still
+  throws too — no product decision yet on constructing the retained
+  `ExerciseGrader` fallback through this factory. Still no production
+  caller.
 - M1 = Phases 0+1+2 (resolver + grader factory). Full boot-path/render snapshots
   deferred to Phase 3's screenshot harness.
 - `./run_js_tests.sh` has 9 pre-existing `app/` alias failures reproduced on
