@@ -663,3 +663,42 @@ legacy keys specifically):
   main — NOT caused by this refactor. M1 tests are import-free/relative-only.
 - Phase 3 (sheet split) is a separate project. Phase 4 (stored-string
   disambiguation) deferred.
+
+### Phase 2 consolidated status (2026-07-05) — read this before starting further grader work
+
+- **Live, factory-backed:** `chorale` and `identification` (covers
+  `chorale_identification`) grader construction in `app/exercise.js` goes
+  through `GraderFactory.create()`, guarded against the two known type-
+  divergence traps (`type="chorale_identification"` for the chorale branch,
+  out-of-scope UMTO types for the identification branch — both locked in
+  with permanent regression tests). Branch selection conditions are
+  unchanged from pre-Phase-2; only construction was touched.
+- **Legacy/dead/unknown fallback:** `matching`/`figured_bass`/`"other"` all
+  collapse to the `legacy_exercise` factory key, which still throws — no
+  code constructs `ExerciseGrader` through the factory. `app/exercise.js`'s
+  `else` branch keeps constructing `ExerciseGrader` directly, unchanged.
+  `ExerciseGrader` is the retained single legacy-compatibility class (per
+  the "Legacy grader retirement audit" above); it is NOT being split into
+  per-type classes.
+- **Harmonization is NOT wired, and will not be wired without a separate,
+  explicitly-scoped decision.** Live harmonization grading is owned by
+  `ExerciseContext.computeHarmonizationGraded(activeMidi)` — a stateful,
+  single-target-at-a-time implementation, unrelated to
+  `ExerciseGrader`/`GraderFactory`. `ExerciseGrader`'s `mode==="harmonization"`
+  switch case (grader.js:154-158) is a dead code path in production today:
+  `ExerciseContext.grade()` diverts to `computeHarmonizationGraded` before
+  ever reaching `this.grader.grade(...)` for harmonization exercises (see
+  the "Correction found on code review" note above). Treat
+  `ExerciseGrader`'s harmonization branch as a retirement candidate, not a
+  live path.
+- **`HarmonizationGrader` (`harmonization_grader.js`) stays**, but ONLY as
+  characterization/retirement groundwork for `ExerciseGrader`'s dead
+  harmonization switch case — it is NOT live-path isolation and must not be
+  presented as such. Do not wire it into `GraderFactory`'s production call
+  path or `app/exercise.js` without first explicitly scoping a reconciliation
+  with `computeHarmonizationGraded`'s stateful interface — a separate,
+  larger redesign, not a continuation of this Phase 2 grader-split effort.
+- **Next planned slice:** cleanly name/quarantine the `ExerciseGrader`
+  fallback (either keep the class name and document it as the legacy
+  compatibility fallback, or a low-risk rename to `LegacyExerciseGrader`)
+  — not yet decided which.
