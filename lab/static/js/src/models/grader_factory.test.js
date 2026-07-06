@@ -190,18 +190,89 @@ assertField("GRADER_KEYS.harmonization stays distinct from legacy_exercise",
   assertField("create() throws for legacy_exercise (other) until wired", threw, true);
 })();
 
+// ---------- create() "chorale" context contract (2026-07-05) ----------
+// chorale_grader.js imports an app/-aliased module and cannot be required
+// under plain node (confirmed: it's one of the 9 known pre-existing app/
+// alias test failures). These tests NEVER let create() reach its
+// `require("./chorale_grader")` fallback — every case below either throws
+// before that point, or supplies context.constructors.ChoraleGrader so the
+// real module is never touched. If any of these accidentally exercised the
+// real require, this whole test FILE would crash (ERR_MODULE_NOT_FOUND),
+// not just fail one assertion — so a clean full run here is itself part of
+// the proof that the seam works as designed.
+
+function FakeChoraleGrader(settings) {
+  this.settings = settings;
+  this.initFromDefinitionCalls = [];
+}
+FakeChoraleGrader.prototype.initFromDefinition = function (definition) {
+  this.initFromDefinitionCalls.push(definition);
+};
+
+function fakeDefinition(grading, unitNum) {
+  return {
+    getGrading: function () { return grading; },
+    isUnit: function (n) { return n === unitNum; },
+  };
+}
+
 (function () {
-  // "chorale" still throws — two open design blockers (settings shape +
-  // plain-node testability wall), not yet resolved. Confirm it throws AND
-  // that create() never crashes the test process trying to require
-  // chorale_grader.js speculatively before the guard check.
+  // No context at all -> throws before touching resolveChoraleGraderSettings
+  // or any require.
   var threw = false;
   try {
     factoryMod.create({ pipeline: "chorale" });
   } catch (_e) {
     threw = true;
   }
-  assertField("create() throws for chorale until wired (design blockers unresolved)", threw, true);
+  assertField("create() throws for chorale with no context (missing definition)", threw, true);
+})();
+
+(function () {
+  // context present but no .definition -> still throws.
+  var threw = false;
+  try {
+    factoryMod.create({ pipeline: "chorale" }, { constructors: { ChoraleGrader: FakeChoraleGrader } });
+  } catch (_e) {
+    threw = true;
+  }
+  assertField("create() throws for chorale with context missing .definition", threw, true);
+})();
+
+(function () {
+  // Full context, non-Unit-1: gradingSettings passed through unchanged,
+  // initFromDefinition called once with the same definition object.
+  var resolved = resolvePipeline({ type: "umto_chorale", mode: "playback" });
+  var def = fakeDefinition({ octaveIndependent: false, foo: 1 }, 5);
+  var grader = factoryMod.create(resolved, {
+    definition: def,
+    constructors: { ChoraleGrader: FakeChoraleGrader },
+  });
+  assertField("chorale (non-unit-1): returns the injected fake instance",
+    grader instanceof FakeChoraleGrader, true);
+  assertField("chorale (non-unit-1): octaveIndependent left as-is",
+    grader.settings.octaveIndependent, false);
+  assertField("chorale (non-unit-1): other grading fields preserved",
+    grader.settings.foo, 1);
+  assertField("chorale (non-unit-1): initFromDefinition called exactly once",
+    grader.initFromDefinitionCalls.length, 1);
+  assertField("chorale (non-unit-1): initFromDefinition called with the same definition",
+    grader.initFromDefinitionCalls[0], def);
+})();
+
+(function () {
+  // Full context, Unit 1: octaveIndependent forced true (the "Unit 1
+  // Bridge" from app/exercise.js:144-147), same initFromDefinition contract.
+  var resolved = resolvePipeline({ type: "umto_chorale", mode: "playback" });
+  var def = fakeDefinition({ octaveIndependent: false }, 1);
+  var grader = factoryMod.create(resolved, {
+    definition: def,
+    constructors: { ChoraleGrader: FakeChoraleGrader },
+  });
+  assertField("chorale (unit-1): octaveIndependent forced true",
+    grader.settings.octaveIndependent, true);
+  assertField("chorale (unit-1): initFromDefinition called with the same definition",
+    grader.initFromDefinitionCalls[0], def);
 })();
 
 console.log("");

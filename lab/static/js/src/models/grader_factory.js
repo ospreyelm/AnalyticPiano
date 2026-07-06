@@ -1,5 +1,7 @@
 "use strict";
 
+var { resolveChoraleGraderSettings } = require("./chorale_grader_settings");
+
 /**
  * GraderFactory — Phase 2 skeleton (M1).
  *
@@ -14,10 +16,22 @@
  * constructs a real grader for `"harmonization"` (backed by
  * `HarmonizationGrader`) and `"identification"` (backed by the existing
  * `IdentificationGrader` — also serves `chorale_identification`, which maps
- * to the same key). `"chorale"` and `"legacy_exercise"` still throw — see
- * `create()`'s docstring for the two open blockers on `"chorale"`. The
- * resolver contract must be reviewed before this factory is wired into
- * production (per user decision 2026-07-05).
+ * to the same key). `"chorale"` now has a DESIGNED context contract (backed
+ * by the existing `ChoraleGrader` + the new pure helper
+ * `chorale_grader_settings.js`) but is still not callable with a real
+ * `ChoraleGrader` under plain `node` — see `create()`'s docstring for the
+ * injection seam that lets it be tested anyway. `"legacy_exercise"` still
+ * throws outright. The resolver contract must be reviewed before this
+ * factory is wired into production (per user decision 2026-07-05).
+ *
+ * `create()`'s second argument is NOT a uniform shape across keys yet —
+ * `"harmonization"` forwards it as-is to the constructor, `"identification"`
+ * ignores it, `"chorale"` reads a richer `{ definition, constructors }`
+ * context object. This asymmetry is intentional and temporary: each key's
+ * real constructor needs fundamentally different inputs today (a flat
+ * settings blob vs. a live `ExerciseDefinition` vs. nothing), and forcing a
+ * single unified shape before `app/exercise.js` wiring is designed would be
+ * guessing. Resolve this before wiring a production caller.
  *
  * Testable surface: `resolveGraderKey(resolvedMode)` → string. Pure, import-free,
  * immune to the `app/` alias resolution wall that blocks full-boot tests.
@@ -102,62 +116,78 @@ function resolveGraderKey(resolvedMode) {
 }
 
 /**
- * Instantiates the grader for a resolved mode. PARTIALLY WIRED — harmonization
- * and identification (2026-07-05).
+ * Instantiates the grader for a resolved mode. PARTIALLY WIRED —
+ * harmonization, identification, and (test-seam-only) chorale (2026-07-05).
  *
  * `"harmonization"` constructs `HarmonizationGrader` (landed and reviewed
- * clean in a prior commit). `"identification"` constructs the existing
- * `IdentificationGrader` — this also covers `chorale_identification`, which
- * maps to the same key (see the CAVEAT on `GRADER_KEYS.chorale_identification`
- * above). `IdentificationGrader` is always constructed with `{}`, matching
- * `app/exercise.js:135`'s `new IdentificationGrader({})` exactly — that call
- * site never passes constructor settings for this grader, so the caller-
- * supplied `settings` argument is intentionally ignored for this key rather
- * than threaded through to something production never uses.
+ * clean in a prior commit); `context` is forwarded to it as-is as
+ * constructor settings.
  *
- * `"chorale"` and `"legacy_exercise"` still throw. `"chorale"` has two open
- * blockers, not yet designed:
- *   1. Settings shape: `app/exercise.js:143-148` derives
- *      `definition.getGrading()` plus a conditional Unit-1
- *      `octaveIndependent` override (`definition.isUnit(1)`) before
- *      constructing `ChoraleGrader`. `create(resolvedMode, settings)` has no
- *      access to the live `ExerciseDefinition` needed to derive either of
- *      those — accepting a caller-pre-computed `gradingSettings` object, or
- *      widening `create()`'s signature to take the definition itself, are
- *      both open design choices, not yet made.
- *   2. Testability: `chorale_grader.js` imports `app/components/music/
- *      score_timeline` (a webpack-only alias). Requiring it — even lazily,
- *      only inside a `"chorale"` branch — would work fine under production
- *      bundling but throws `ERR_MODULE_NOT_FOUND` under plain `node`, the
- *      same wall that makes `chorale_grader.test.js` itself one of the 9
- *      known pre-existing `app/`-alias test failures (see "Status" below).
- *      Any `grader_factory.test.js` assertion that actually calls
- *      `create()` for the `"chorale"` key would crash the whole test
- *      process, not just fail one assertion, until that's resolved.
+ * `"identification"` constructs the existing `IdentificationGrader` — this
+ * also covers `chorale_identification`, which maps to the same key (see the
+ * CAVEAT on `GRADER_KEYS.chorale_identification` above). Always constructed
+ * with `{}`, matching `app/exercise.js:135`'s `new IdentificationGrader({})`
+ * exactly — that call site never passes constructor settings for this
+ * grader, so `context` is intentionally ignored for this key.
+ *
+ * `"chorale"` reproduces `app/exercise.js:143-150`'s construction exactly:
+ *   var gradingSettings = definition.getGrading();
+ *   if (definition.isUnit(1)) { gradingSettings.octaveIndependent = true; }
+ *   models.exerciseGrader = new ChoraleGrader(gradingSettings);
+ *   models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
+ * via `context.definition` (required — throws if missing) fed through the
+ * pure `resolveChoraleGraderSettings()` helper (`chorale_grader_settings.js`,
+ * tested standalone), then `initFromDefinition(context.definition)` is
+ * called on the constructed instance, matching production's second step.
+ *
+ * Test-safe injection seam: `chorale_grader.js` imports an `app/`-aliased
+ * module (`app/components/music/score_timeline`), so requiring it throws
+ * `ERR_MODULE_NOT_FOUND` under plain `node` — the same wall behind
+ * `chorale_grader.test.js`'s pre-existing failure. To keep `create()`
+ * testable anyway, the `"chorale"` branch accepts an optional
+ * `context.constructors.ChoraleGrader` override: if supplied (as tests do,
+ * with a fake stub class), it's used directly and `chorale_grader.js` is
+ * NEVER required. If omitted (as real production wiring would leave it),
+ * `create()` falls back to a lazy `require("./chorale_grader")` — correct
+ * under webpack/Vite bundling (the alias resolves), but that fallback path
+ * itself remains untested under plain `node` until the alias issue has an
+ * independent resolution. Per user instruction, this file does NOT attempt
+ * to solve the `app/` alias problem itself (no loader, no module-resolution
+ * change) — the seam only sidesteps it for testing this branch's OWN logic
+ * (settings derivation + initFromDefinition call), not for constructing a
+ * real `ChoraleGrader` in tests.
+ *
  * `"legacy_exercise"` (matching/figured_bass/other, all dead or
- * dev-fixture-only per the usage audit) is intentionally left unwired —
- * no product decision yet on whether/how to construct the retained
+ * dev-fixture-only per the usage audit) is intentionally left unwired — no
+ * product decision yet on whether/how to construct the retained
  * `ExerciseGrader` fallback through this factory.
  *
  * Each grader module is required lazily, inside the branch that needs it,
  * not at module top level, so a still-unwired or alias-carrying grader
- * (like `ChoraleGrader`) can never be pulled in just by loading this file —
- * keeping `grader_factory.js` itself always requirable under plain `node`.
+ * (like `ChoraleGrader`, absent an injected override) can never be pulled in
+ * just by loading this file — keeping `grader_factory.js` itself always
+ * requirable under plain `node`. `chorale_grader_settings.js` is required at
+ * module top level instead, since it has no imports of its own and is safe.
  *
  * @param {object} resolvedMode - output of resolvePipeline()
- * @param {object} settings - grader constructor settings (used for
- *   "harmonization"; ignored for "identification", which always constructs
- *   with `{}` to match production)
+ * @param {object} context - shape depends on the resolved key (see above):
+ *   "harmonization" → forwarded as-is as constructor settings;
+ *   "identification" → ignored;
+ *   "chorale" → `{ definition, constructors }`, where `definition` is
+ *     required (an ExerciseDefinition or test double exposing
+ *     getGrading()/isUnit()/and, on the constructed grader,
+ *     initFromDefinition()) and `constructors.ChoraleGrader` is an optional
+ *     class override for tests.
  * @returns {object} grader instance
- * @throws {Error} for "chorale" or "legacy_exercise" keys, until their
- *   wiring is designed, reviewed, and complete
+ * @throws {Error} for "chorale" without `context.definition`, or for
+ *   "legacy_exercise", until wiring is designed, reviewed, and complete
  */
-function create(resolvedMode, settings) {
+function create(resolvedMode, context) {
   var key = resolveGraderKey(resolvedMode);
 
   if (key === "harmonization") {
     var HarmonizationGrader = require("./harmonization_grader");
-    return new HarmonizationGrader(settings);
+    return new HarmonizationGrader(context);
   }
 
   if (key === "identification") {
@@ -167,24 +197,30 @@ function create(resolvedMode, settings) {
   }
 
   if (key === "chorale") {
-    throw new Error(
-      "GraderFactory.create not yet implemented for grader key \"chorale\" " +
-        "(ChoraleGrader) — two open design blockers, not yet resolved: " +
-        "(1) correct construction needs definition.getGrading() plus a " +
-        "Unit-1 octaveIndependent override, which create(resolvedMode, " +
-        "settings) cannot derive without the live ExerciseDefinition; " +
-        "(2) chorale_grader.js imports an app/-aliased module, so requiring " +
-        "it breaks plain-node test execution. See this function's docstring " +
-        "and docs/architecture/pipeline-registry.md."
-    );
+    if (!context || !context.definition) {
+      throw new Error(
+        "GraderFactory.create requires context.definition to construct " +
+          "ChoraleGrader (needed for resolveChoraleGraderSettings() and " +
+          "initFromDefinition()). Received: " +
+          (context ? "a context without .definition" : "no context") + "."
+      );
+    }
+
+    var gradingSettings = resolveChoraleGraderSettings(context.definition);
+    var ChoraleGraderCtor =
+      (context.constructors && context.constructors.ChoraleGrader) ||
+      require("./chorale_grader");
+    var grader = new ChoraleGraderCtor(gradingSettings);
+    grader.initFromDefinition(context.definition);
+    return grader;
   }
 
   throw new Error(
     "GraderFactory.create not yet implemented for grader key \"" + key + "\" — " +
-      "only \"harmonization\" and \"identification\" are wired so far. " +
-      "Production wiring for the remaining keys requires exact reproduction " +
-      "of app/exercise.js's current branch order. Use resolveGraderKey() " +
-      "for the selection decision until then."
+      "only \"harmonization\", \"identification\", and \"chorale\" are wired " +
+      "so far. Production wiring for the remaining keys requires exact " +
+      "reproduction of app/exercise.js's current branch order. Use " +
+      "resolveGraderKey() for the selection decision until then."
   );
 }
 
