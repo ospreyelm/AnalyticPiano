@@ -103,11 +103,9 @@ function assertField(label, actual, expected) {
   assertField("umto_chorale-play.isHarmonization", r.isHarmonization, false);
   assertField("umto_chorale-play.pipeline", r.pipeline, "other");
   assertField("umto_chorale-play.stack", r.stack, "legacy-stave");
-  // Grader factory follows: pipeline "other" → "legacy_exercise" (ExerciseGrader/
-  // notesMatch, the single retained legacy fallback key as of the 2026-07-05
-  // grader-usage audit — see pipeline-registry.md).
+  // Grader factory follows: pipeline "other" → "legacy_match" (ExerciseGrader/notesMatch).
   var key = factoryMod.resolveGraderKey(r);
-  assertField("umto_chorale-play.graderKey", key, "legacy_exercise");
+  assertField("umto_chorale-play.graderKey", key, "legacy_match");
 })();
 
 // ---------- chorale: play-all-voices + analysis modes ----------
