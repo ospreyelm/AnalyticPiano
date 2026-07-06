@@ -26,7 +26,6 @@ import ExerciseDefinition from "app/models/exercise_definition";
 import ExerciseGrader from "app/models/exercise_grader";
 import ChoraleGrader from "app/models/chorale_grader";
 import IdentificationGrader from "app/models/identification_grader";
-import { create as createGrader, resolveGraderKey } from "app/models/grader_factory";
 import ExerciseContext from "app/models/exercise_context";
 import ExerciseScoreCard from "app/components/exercise_score_card";
 import KeyboardRangeLogic from "app/models/keyboard_range_logic";
@@ -119,71 +118,14 @@ import KeySigMod from "app/models/key_sig_exercise";
     });
     // Choose grader depending on exercise type/mode.
     // Discriminator reads route through ResolvedMode (single authority in
-    // resolved_mode.js) instead of getMode()/isX() predicates.
-    //
-    // Phase 2 production wiring (2026-07-05): the branch CONDITIONS below are
-    // UNCHANGED from before — same three-way if/else-if/else, same clauses,
-    // same order — so branch SELECTION is provably identical to prior
-    // behavior. Only the CONSTRUCTION inside each branch now goes through
-    // GraderFactory.create() where doing so is proven safe:
-    //
-    //  - chorale branch: wired, guarded. resolved.isChorale is MODE-gated
-    //    when mode is truthy (CHORALE_MODES check, independent of exercise
-    //    type), so resolveGraderKey(resolved) === "chorale" for every LIVE
-    //    exercise type — verified empirically. BUT this is not true for the
-    //    full literal domain of `type`: legacy type="chorale_identification"
-    //    (distinct from umto_chorale) + mode="playback"/"analysis_match"
-    //    would satisfy this branch's condition while resolvePipeline()
-    //    resolves it to the "chorale_identification" pipeline instead (that
-    //    predicate is checked before isChorale and doesn't look at mode),
-    //    giving resolveGraderKey → "identification", not "chorale". Calling
-    //    create() unconditionally would then silently construct
-    //    IdentificationGrader under the "Selecting ChoraleGrader" log, and
-    //    critically skip initFromDefinition() entirely (create()'s
-    //    identification branch doesn't call it, and this branch has no
-    //    explicit call either, relying on create()'s chorale branch to do
-    //    it). type="chorale_identification" has 0 rows and is frozen for new
-    //    writes (AGENTS.md non-negotiable rule; see pipeline-registry.md
-    //    "Legacy grader retirement audit"), so this is not live today — but
-    //    guard anyway so an accidental future write fails safe (falls back
-    //    to the exact prior inline construction) instead of silently
-    //    mis-grading. GraderFactory.create()'s "chorale" branch already
-    //    derives the Unit-1 octaveIndependent override (via
-    //    chorale_grader_settings.js) and calls initFromDefinition() itself,
-    //    so the factory-path arm below does NOT call initFromDefinition()
-    //    again — doing so would double-initialize. The fallback arm mirrors
-    //    the pre-Phase-2 inline construction exactly, including its own
-    //    explicit initFromDefinition() call.
-    //  - identification branch: PARTIALLY wired, guarded. GraderFactory's
-    //    pipeline model only recognizes literal type="identification" or
-    //    "chorale_identification" as the "identification" pipeline.
-    //    resolved.interactionMode === "identification" alone (this branch's
-    //    first raw clause) does NOT imply that — it also currently matches
-    //    exercise types explicitly out of scope for the six-pipeline split
-    //    (umto_barline_placement: 26,491 rows as of the 2026-07-05 audit,
-    //    the single largest exercise-type bucket in the DB; umto_key_signature;
-    //    umto_symbolic_meter — see docs/architecture/pipeline-registry.md
-    //    "Out of scope for the 6-pipeline split"). For those,
-    //    resolveGraderKey(resolved) returns "legacy_exercise", which
-    //    GraderFactory.create() throws for. Calling create() unconditionally
-    //    here would break IdentificationGrader selection for the largest
-    //    live exercise-type bucket. So: call the factory only when its key
-    //    genuinely resolves to "identification"; otherwise construct
-    //    IdentificationGrader directly, exactly as before. GraderFactory's
-    //    identification branch does NOT call initFromDefinition() itself, so
-    //    this branch keeps calling it explicitly either way (matches prior
-    //    behavior in both sub-cases).
-    //  - harmonization: NOT wired. It falls into the `else` branch below,
-    //    same as before. HarmonizationGrader.grade()'s signature
-    //    (problems, deliveredNotesPerProblem) does not match
-    //    ExerciseContext's call site (this.grader.grade(definition,
-    //    inputChords)) — adapting one to the other is its own slice, not
-    //    forced here. ExerciseGrader keeps handling harmonization via its
-    //    internal delegation to HarmonizationGraderLogic, unchanged.
-    //  - legacy_exercise (matching/figured_bass/other): NOT wired, throws in
-    //    the factory. The `else` branch below keeps constructing
-    //    ExerciseGrader directly, unchanged — GraderFactory.create() is
-    //    never called for this case.
+    // resolved_mode.js) instead of getMode()/isX() predicates. Behavior is
+    // identical to the prior inline selection: the same three grader classes
+    // are instantiated under the same conditions. We deliberately do NOT use
+    // GraderFactory.create() here — its key mapping diverges from current
+    // behavior for mode="chorale_identification" (0 rows) and for
+    // mode="play-all-voices"/"analysis" (factory → chorale, current →
+    // ExerciseGrader). Wiring the factory is Phase 2; Phase 1.2 only reroutes
+    // the read path. See docs/architecture/pipeline-registry.md.
     var resolved = models.exerciseDefinition.getResolvedMode();
     var interactionMode = resolved.interactionMode;
     if (
@@ -192,11 +134,7 @@ import KeySigMod from "app/models/key_sig_exercise";
         (resolved.isIdentification || resolved.isChoraleIdentification))
     ) {
       console.log("[ID] Selecting IdentificationGrader (mode: " + interactionMode + ")");
-      if (resolveGraderKey(resolved) === "identification") {
-        models.exerciseGrader = createGrader(resolved, {});
-      } else {
-        models.exerciseGrader = new IdentificationGrader({});
-      }
+      models.exerciseGrader = new IdentificationGrader({});
       models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else if (
       interactionMode === "playback" ||
@@ -204,20 +142,14 @@ import KeySigMod from "app/models/key_sig_exercise";
       (!interactionMode && resolved.isChorale)
     ) {
       console.log("[ID] Selecting ChoraleGrader (mode: " + interactionMode + ")");
-      if (resolveGraderKey(resolved) === "chorale") {
-        models.exerciseGrader = createGrader(resolved, {
-          definition: models.exerciseDefinition,
-        });
-      } else {
-        var gradingSettings = models.exerciseDefinition.getGrading();
-        // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
-        if (models.exerciseDefinition.isUnit(1)) {
-          gradingSettings.octaveIndependent = true;
-        }
-        models.exerciseGrader = new ChoraleGrader(gradingSettings);
-        // Initialize from definition so it has the timeline ready
-        models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
+      var gradingSettings = models.exerciseDefinition.getGrading();
+      // Unit 1 Bridge: Make grading octave-agnostic for Note Identification
+      if (models.exerciseDefinition.isUnit(1)) {
+        gradingSettings.octaveIndependent = true;
       }
+      models.exerciseGrader = new ChoraleGrader(gradingSettings);
+      // Initialize from definition so it has the timeline ready
+      models.exerciseGrader.initFromDefinition(models.exerciseDefinition);
     } else {
       models.exerciseGrader = new ExerciseGrader({
         keySignature: new KeySignature(
