@@ -15,7 +15,7 @@ Owner tags:
 |---|---|
 | `matching` | Legacy exact-match pipeline (`type=matching`) |
 | `chorale` | Chorale family: playback / analysis_match / play-all-voices / analysis, or `type=chorale`/`umto_chorale` without ident/harm mode |
-| `harmonization` | `mode=harmonization` on `umto_chorale` |
+| `harmonization` | `mode=harmonization` on `umto_chorale`. Covers both the default chord-entry shape and the planned `input_style="per_voice"` SATB voice-completion variant (see the dated section near the end of this doc) — same pipeline, same grader, no new mode/type. |
 | `figured_bass` | Legacy `type=figured_bass` / `figured_bass_pcs` |
 | `identification` | Legacy non-chorale `type=identification` |
 | `chorale_identification` | `type=chorale_identification`, or `umto_chorale` with `mode=identification`/`chorale_identification` |
@@ -1034,3 +1034,39 @@ CI is explicitly scoped and added.
 - `npm run check:pipeline-architecture` — green end-to-end.
 - No runtime source files touched; no stored UMTO strings or schemas
   changed; no known divergences fixed.
+
+## `input_style` variant on the `harmonization` pipeline (SATB per-voice completion, planned — 2026-07-06 plan, not yet implemented)
+
+A second `input_style` value, `"per_voice"`, is planned for `mode="harmonization"`
+exercises (see
+[`docs/plans/2026-07-06-001-feat-satb-voice-completion-harmonization-plan.md`](../plans/2026-07-06-001-feat-satb-voice-completion-harmonization-plan.md)).
+This is **not a new pipeline**: it stays under the existing `harmonization`
+owner tag, `resolvePipeline()` continues to return `"harmonization"`
+unchanged, and grading is the same unmodified
+`ExerciseContext.gradeHarmonizationMidiSet` → `harmonization_runtime_grader.js`
+→ `harmonizationMatch` path documented above in "Graders". The variant
+differs only in source shape — a full SATB `score_kind="voices"` UMTO with
+three of the four voices locked and one voice missing, versus the default
+bass-locked chord-entry shape — and is discriminated by an explicit
+`input_style` flag on `score.umto.metadata`, not by `locked_voices` count,
+a new `mode`, or a new `type`.
+
+**Milestone-1 constraints** (recorded here so a future reader does not have
+to re-derive them from code):
+
+- Bass is always among the locked voices; bass is never the missing voice.
+- Exactly one voice is missing per exercise (soprano, alto, or tenor).
+- Eligible sources are homophonic — the missing voice has exactly one attack
+  per bass onset, 1:1 with the bass-onset grid; no ties, rests, or passing
+  tones. An ineligible source must fail generation loudly, not degrade
+  silently.
+- Click-based note entry only, via the existing generic locked-voice +
+  `capRemaining` mechanism in `click_note.js` / `click_note_logic.js`;
+  physical/on-screen piano input for this variant is out of scope for
+  milestone 1.
+- No voice-leading, register, or voice-crossing grading — correctness is
+  harmonic (chord-tone) only, matching this pipeline's existing grading
+  semantics.
+
+See `docs/exercise_types.md`'s `harmonization` section for the student-facing
+description of this variant.
