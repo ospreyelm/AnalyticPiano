@@ -1,7 +1,7 @@
 ---
 title: "feat: SATB per-voice harmonization completion (milestone 1)"
 type: feat
-status: active
+status: completed
 date: 2026-07-06
 ---
 
