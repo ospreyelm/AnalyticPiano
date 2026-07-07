@@ -480,6 +480,22 @@ import ScoreTimeline from "app/components/music/score_timeline";
         that._validateSavePanel(false);
       });
 
+      // Keep the key-set presets in sync with the live key/mode picker so a
+      // teacher can correct an import (e.g. app thinks C major, piece is A
+      // minor) and still get mode-matching transpositions.
+      if (this.keySignature) {
+        if (this._onKeySignatureChangeForSavePanel) {
+          this.keySignature.unbind("change", this._onKeySignatureChangeForSavePanel);
+        }
+        this._onKeySignatureChangeForSavePanel = function () {
+          var preset = $("#play-save-key-set-preset").val();
+          if (preset && preset !== "custom") {
+            that._applyKeySetPreset(preset);
+          }
+        };
+        this.keySignature.bind("change", this._onKeySignatureChangeForSavePanel);
+      }
+
       $("#play-save-submit").off("click.playsave").on("click.playsave", function () {
         var jsonData = that._pendingSaveJsonData || that._getCurrentSaveJsonData();
         if (!jsonData) {
@@ -779,12 +795,20 @@ import ScoreTimeline from "app/components/music/score_timeline";
     },
 
     _applyKeySetPreset: function (preset) {
-      var presets = {
-        common: "C, G, D, F, Bb, Eb",
-        sharp: "C, G, D, A, E, B",
-        flat: "C, F, Bb, Eb, Ab, Db",
-        all: "C, G, D, A, E, B, F#, Db, Ab, Eb, Bb, F",
-      };
+      var isMinor = this.keySignature && this.keySignature.isMinorKey();
+      var presets = isMinor
+        ? {
+            common: "Am, Em, Bm, Dm, Gm, Cm",
+            sharp: "Am, Em, Bm, F#m, C#m, G#m",
+            flat: "Am, Dm, Gm, Cm, Fm, Bbm",
+            all: "Am, Em, Bm, F#m, C#m, G#m, D#m, Bbm, Fm, Cm, Gm, Dm",
+          }
+        : {
+            common: "C, G, D, F, Bb, Eb",
+            sharp: "C, G, D, A, E, B",
+            flat: "C, F, Bb, Eb, Ab, Db",
+            all: "C, G, D, A, E, B, F#, Db, Ab, Eb, Bb, F",
+          };
       if (preset && preset !== "custom" && presets[preset]) {
         $("#play-save-key-set").val(presets[preset]);
       }
