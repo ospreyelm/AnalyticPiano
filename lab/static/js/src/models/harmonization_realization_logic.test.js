@@ -149,6 +149,7 @@ assertEqual("buildRealization: single target, bass dropped, S/A/T spelled",
       { step: "E", alter: 0, octave: 4 },
       { step: "G", alter: 0, octave: 4 }
     ],
+    staff: "treble",
     durationTicks: 4096
   }]);
 
@@ -267,6 +268,7 @@ assertEqual("buildRealization: target note names spell accepted chord tones miss
       { step: "F", alter: 1, octave: 4 },
       { step: "C", alter: 0, octave: 5 }
     ],
+    staff: "treble",
     durationTicks: 512
   }]);
 
@@ -282,6 +284,122 @@ assertEqual("buildRealization: skips entry when no upper voices remain",
 
 assertEqual("buildRealization: returns [] for empty accepted",
   logic.buildRealization([], targets, {}, meter), []);
+
+// staffForTarget: SATB voice -> staff mapping (treble: S/A, bass: T/B),
+// matching vexflow_staff_voice_builder.js's SATB_MAP. Only routes to bass
+// when exactly one voice is missing and it's T or B — the chordal
+// configuration (only bass locked, S/A/T all "missing" as one blob) must
+// keep defaulting to treble.
+assertEqual("staffForTarget: missing soprano only -> treble",
+  logic.staffForTarget({ lockedVoices: { B: {}, A: {}, T: {} } }), "treble");
+assertEqual("staffForTarget: missing alto only -> treble",
+  logic.staffForTarget({ lockedVoices: { B: {}, S: {}, T: {} } }), "treble");
+assertEqual("staffForTarget: missing tenor only -> bass",
+  logic.staffForTarget({ lockedVoices: { B: {}, S: {}, A: {} } }), "bass");
+assertEqual("staffForTarget: only bass locked (chordal) -> treble",
+  logic.staffForTarget({ lockedVoices: { B: {} } }), "treble");
+
+// Per-voice-completion configurations (U5 / plan R6, R9): three of four SATB
+// voices locked, one missing. dropLockedVoiceInstances must strip ALL locked
+// pitches (not just bass), and the overlay must land on the missing voice's
+// staff. A C-major sonority is reused across the three configurations:
+// B=48/C3, T=55/G3, A=64/E4, S=72/C5.
+var perVoiceMeter = { numerator: 4, denominator: 4 };
+
+ScoreTimelineStub.events = [];
+var missingSopranoTargets = [{
+  offset: 0,
+  lockedVoices: {
+    B: { midi: 48, pc: 0, spelling: "C" },
+    A: { midi: 64, pc: 4, spelling: "E" },
+    T: { midi: 55, pc: 7, spelling: "G" }
+  }
+}];
+assertEqual("buildRealization: missing soprano, correct answer -> overlay is soprano only, treble, no leaked notes",
+  logic.buildRealization(
+    [{ midi: [48, 55, 64, 72], targetIndex: 0, ts: 1 }],
+    missingSopranoTargets, {}, perVoiceMeter),
+  [{
+    measureIndex: 0,
+    onset: 0,
+    midiNotes: [72],
+    spellings: [{ step: "C", alter: 0, octave: 5 }],
+    staff: "treble",
+    durationTicks: 4096
+  }]);
+
+ScoreTimelineStub.events = [];
+var missingAltoTargets = [{
+  offset: 0,
+  lockedVoices: {
+    B: { midi: 48, pc: 0, spelling: "C" },
+    S: { midi: 72, pc: 0, spelling: "C" },
+    T: { midi: 55, pc: 7, spelling: "G" }
+  },
+  requiredNoteNames: ["E"]
+}];
+assertEqual("buildRealization: missing alto, correct answer -> overlay is alto only, treble, no leaked notes",
+  logic.buildRealization(
+    [{ midi: [48, 55, 64, 72], targetIndex: 0, ts: 1 }],
+    missingAltoTargets, {}, perVoiceMeter),
+  [{
+    measureIndex: 0,
+    onset: 0,
+    midiNotes: [64],
+    spellings: [{ step: "E", alter: 0, octave: 4 }],
+    staff: "treble",
+    durationTicks: 4096
+  }]);
+
+ScoreTimelineStub.events = [];
+var missingTenorTargets = [{
+  offset: 0,
+  lockedVoices: {
+    B: { midi: 48, pc: 0, spelling: "C" },
+    S: { midi: 72, pc: 0, spelling: "C" },
+    A: { midi: 64, pc: 4, spelling: "E" }
+  },
+  requiredNoteNames: ["G"]
+}];
+assertEqual("buildRealization: missing tenor, correct answer -> overlay is tenor only, on BASS staff (not treble), no leaked notes",
+  logic.buildRealization(
+    [{ midi: [48, 55, 64, 72], targetIndex: 0, ts: 1 }],
+    missingTenorTargets, {}, perVoiceMeter),
+  [{
+    measureIndex: 0,
+    onset: 0,
+    midiNotes: [55],
+    spellings: [{ step: "G", alter: 0, octave: 3 }],
+    staff: "bass",
+    durationTicks: 4096
+  }]);
+
+// Regression: the existing bass-only-locked (chordal) configuration must
+// keep producing the full S/A/T upper chord on the treble staff, exactly as
+// before this fix — dropLockedVoiceInstances/staffForTarget generalize the
+// mechanism but must not change behavior when bass is the only locked voice.
+ScoreTimelineStub.events = [
+  { onset: 0, duration: 4096, midi: 60, step: "C", alter: 0, staff: "treble", voiceIndex: 0, measureIndex: 0, itemIndex: 0, headIndex: 0 },
+  { onset: 0, duration: 4096, midi: 64, step: "E", alter: 0, staff: "treble", voiceIndex: 1, measureIndex: 0, itemIndex: 0, headIndex: 0 },
+  { onset: 0, duration: 4096, midi: 67, step: "G", alter: 0, staff: "bass",   voiceIndex: 0, measureIndex: 0, itemIndex: 0, headIndex: 0 },
+  { onset: 0, duration: 4096, midi: 36, step: "C", alter: 0, staff: "bass",   voiceIndex: 1, measureIndex: 0, itemIndex: 0, headIndex: 0 }
+];
+assertEqual("regression: bass-only-locked exercise accepted overlay unchanged (full upper chord, treble staff)",
+  logic.buildRealization(
+    [{ midi: [36, 60, 64, 67], targetIndex: 0, ts: 1 }],
+    targets, {}, meter),
+  [{
+    measureIndex: 0,
+    onset: 0,
+    midiNotes: [60, 64, 67],
+    spellings: [
+      { step: "C", alter: 0, octave: 4 },
+      { step: "E", alter: 0, octave: 4 },
+      { step: "G", alter: 0, octave: 4 }
+    ],
+    staff: "treble",
+    durationTicks: 4096
+  }]);
 
 if (failed > 0) {
   console.log("\n" + failed + " test(s) FAILED");
