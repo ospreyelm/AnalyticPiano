@@ -65,6 +65,7 @@ export default  {
           return { step: n.step, alter: n.alter, octave: n.octave };
         }),
         staff: HarmonizationRealizationLogic.staffForTarget(this._activeHarmonizationTarget()),
+        stemDirection: HarmonizationRealizationLogic.stemDirectionForTarget(this._activeHarmonizationTarget()),
       }];
     },
 
@@ -81,6 +82,7 @@ export default  {
         midiNotes: midiNotes,
         spellings: (rejected.spellings && rejected.spellings.length) ? rejected.spellings : null,
         staff: HarmonizationRealizationLogic.staffForTarget(this._activeHarmonizationTarget()),
+        stemDirection: HarmonizationRealizationLogic.stemDirectionForTarget(this._activeHarmonizationTarget()),
       }];
     },
 

@@ -219,16 +219,34 @@ function dropLockedVoiceInstances(midiArr, target) {
 // preserving existing behavior exactly.
 var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
 var ALL_SATB_VOICES = SATB_MAP.treble.concat(SATB_MAP.bass);
+// Outer voices of each staff (soprano on treble, tenor on bass) stem up;
+// inner voices (alto, bass) stem down — standard SATB engraving convention.
+var UP_STEM_VOICES = [SATB_MAP.treble[0], SATB_MAP.bass[0]];
 
-function staffForTarget(target) {
+function missingVoiceForTarget(target) {
   var lockedVoices = (target && target.lockedVoices) || {};
   var missing = ALL_SATB_VOICES.filter(function (voiceId) {
     return !Object.prototype.hasOwnProperty.call(lockedVoices, voiceId);
   });
-  if (missing.length === 1 && SATB_MAP.bass.indexOf(missing[0]) !== -1) {
+  return missing.length === 1 ? missing[0] : null;
+}
+
+function staffForTarget(target) {
+  var missing = missingVoiceForTarget(target);
+  if (missing && SATB_MAP.bass.indexOf(missing) !== -1) {
     return "bass";
   }
   return "treble";
+}
+
+// Stem direction for the answer-overlay note, per SATB convention. Falls
+// back to up (1) when there isn't exactly one missing voice (the current
+// chord-entry configuration, where the overlay represents multiple upper
+// voices as one blob) — preserves existing behavior exactly for that case.
+function stemDirectionForTarget(target) {
+  var missing = missingVoiceForTarget(target);
+  if (!missing) return 1;
+  return UP_STEM_VOICES.indexOf(missing) !== -1 ? 1 : -1;
 }
 
 function buildRealization(accepted, targets, score, meter) {
@@ -265,6 +283,7 @@ function buildRealization(accepted, targets, score, meter) {
     if (!upperMidi.length) continue;
     upperMidi = upperMidi.slice().sort(function (a, b) { return a - b; });
     var staff = staffForTarget(target);
+    var stemDirection = stemDirectionForTarget(target);
 
     var pcMap = mergePcSpellingMaps(
       buildPcSpellingMap(score, absOffsetQb),
@@ -302,7 +321,8 @@ function buildRealization(accepted, targets, score, meter) {
       _targetIndex: ti,
       midiNotes: spelledMidi,
       spellings: spellings,
-      staff: staff
+      staff: staff,
+      stemDirection: stemDirection
     });
   }
 
@@ -341,6 +361,7 @@ var exports = {
   buildPcSpellingMap: buildPcSpellingMap,
   buildRealization: buildRealization,
   staffForTarget: staffForTarget,
+  stemDirectionForTarget: stemDirectionForTarget,
   SATB_MAP: SATB_MAP,
   __setScoreTimeline: __setScoreTimeline
 };

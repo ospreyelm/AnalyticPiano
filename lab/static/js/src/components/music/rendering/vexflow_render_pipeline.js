@@ -72,8 +72,12 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
       var entries = groups[clef];
       if (!entries.length) return;
 
+      // All entries in a group share one target's missing voice (this
+      // milestone allows exactly one missing voice per exercise), so the
+      // first entry's stemDirection applies to the whole overlay voice.
+      var stemDirection = entries[0].stemDirection;
       var overlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-        entries, measureTicks, win.time, keySigAlters, colorOverride, clef
+        entries, measureTicks, win.time, keySigAlters, colorOverride, clef, stemDirection
       );
       if (overlay) {
         destByClef[clef].push(overlay);

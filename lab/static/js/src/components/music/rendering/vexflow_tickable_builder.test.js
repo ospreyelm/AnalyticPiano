@@ -146,6 +146,35 @@ function testBuildHarmonizationOverlayVoiceRoutesToBassClef() {
 
 testBuildHarmonizationOverlayVoiceRoutesToBassClef();
 
+function testBuildHarmonizationOverlayVoiceDefaultsToStemUp() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [72], spellings: null }
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "treble"
+  );
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(noteTickable.getStemDirection(), 1, "omitting stemDirection should preserve existing default (up)");
+}
+
+testBuildHarmonizationOverlayVoiceDefaultsToStemUp();
+
+function testBuildHarmonizationOverlayVoiceAppliesDownStemForAltoOrBass() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [64], spellings: null } // an alto answer note
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "treble", -1
+  );
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(
+    noteTickable.getStemDirection(), -1,
+    "alto/bass answer notes must stem down, not the hardcoded-up default that caused the reported alto/bass stem-direction bug"
+  );
+}
+
+testBuildHarmonizationOverlayVoiceAppliesDownStemForAltoOrBass();
+
 function testBuildHarmonizationOverlayVoiceDefaultsToTrebleClef() {
   var entries = [
     { onset: 0, durationTicks: 2048, midiNotes: [72], spellings: null }

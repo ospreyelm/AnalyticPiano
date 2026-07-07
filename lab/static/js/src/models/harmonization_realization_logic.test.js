@@ -150,6 +150,7 @@ assertEqual("buildRealization: single target, bass dropped, S/A/T spelled",
       { step: "G", alter: 0, octave: 4 }
     ],
     staff: "treble",
+    stemDirection: 1,
     durationTicks: 4096
   }]);
 
@@ -269,6 +270,7 @@ assertEqual("buildRealization: target note names spell accepted chord tones miss
       { step: "C", alter: 0, octave: 5 }
     ],
     staff: "treble",
+    stemDirection: 1,
     durationTicks: 512
   }]);
 
@@ -325,6 +327,7 @@ assertEqual("buildRealization: missing soprano, correct answer -> overlay is sop
     midiNotes: [72],
     spellings: [{ step: "C", alter: 0, octave: 5 }],
     staff: "treble",
+    stemDirection: 1,
     durationTicks: 4096
   }]);
 
@@ -348,6 +351,7 @@ assertEqual("buildRealization: missing alto, correct answer -> overlay is alto o
     midiNotes: [64],
     spellings: [{ step: "E", alter: 0, octave: 4 }],
     staff: "treble",
+    stemDirection: -1,
     durationTicks: 4096
   }]);
 
@@ -371,6 +375,7 @@ assertEqual("buildRealization: missing tenor, correct answer -> overlay is tenor
     midiNotes: [55],
     spellings: [{ step: "G", alter: 0, octave: 3 }],
     staff: "bass",
+    stemDirection: 1,
     durationTicks: 4096
   }]);
 
@@ -398,8 +403,22 @@ assertEqual("regression: bass-only-locked exercise accepted overlay unchanged (f
       { step: "G", alter: 0, octave: 4 }
     ],
     staff: "treble",
+    stemDirection: 1,
     durationTicks: 4096
   }]);
+
+// stemDirectionForTarget: SATB voice -> stem convention (S/T up, A/B down).
+// Regression for the "alto/bass answer note always stems up" bug: the
+// overlay-rendering fix generalized clef/staff routing but originally left
+// stem direction hardcoded to up regardless of which voice was missing.
+assertEqual("stemDirectionForTarget: missing soprano -> up",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {}, A: {}, T: {} } }), 1);
+assertEqual("stemDirectionForTarget: missing alto -> down",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {}, S: {}, T: {} } }), -1);
+assertEqual("stemDirectionForTarget: missing tenor -> up",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {}, S: {}, A: {} } }), 1);
+assertEqual("stemDirectionForTarget: only bass locked (chordal) -> up (unchanged default)",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {} } }), 1);
 
 if (failed > 0) {
   console.log("\n" + failed + " test(s) FAILED");

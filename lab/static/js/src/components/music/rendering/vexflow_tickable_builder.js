@@ -161,9 +161,13 @@ var REST_KEY_BY_CLEF = {
     return voice;
   }
 
-  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride, clef) {
+  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride, clef, stemDirection) {
     if (!entriesInMeasure || !entriesInMeasure.length || !HarmonizationRealizationLogic) return null;
     clef = clef || "treble";
+    // Defaults to up (1) — matches the pre-existing chord-entry configuration,
+    // where the overlay represents multiple upper voices as one blob and has
+    // no single SATB stem convention to follow.
+    stemDirection = stemDirection || 1;
     var sorted = entriesInMeasure.slice().sort(function (a, b) { return a.onset - b.onset; });
     var tickables = [];
     var cursor = 0;
@@ -246,7 +250,7 @@ var REST_KEY_BY_CLEF = {
         auto_stem: false
       });
       if (headChunk.dots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
-      note.setStemDirection(1);
+      note.setStemDirection(stemDirection);
 
       for (var ki2 = 0; ki2 < resolvedSpellings.length; ki2 += 1) {
         var sp2 = resolvedSpellings[ki2];
@@ -283,7 +287,7 @@ var REST_KEY_BY_CLEF = {
     try {
       voice.beams = Vex.Flow.Beam.generateBeams(notesOnly, {
         beam_rests: false,
-        stem_direction: 1,
+        stem_direction: stemDirection,
       });
     } catch (e) {
       voice.beams = [];
