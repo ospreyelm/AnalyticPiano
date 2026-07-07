@@ -393,6 +393,7 @@ def exercise_detail_view(request, exercise_id):
             "meter": meta.get("meter", ""),
             "mode": meta.get("mode", ""),
             "score_kind": meta.get("score_kind", ""),
+            "input_style": meta.get("input_style", ""),
             "analysis_review_status": meta.get("analysis_review_status", "none"),
             "complexity_score": meta.get("complexity_score", 1),
         }
