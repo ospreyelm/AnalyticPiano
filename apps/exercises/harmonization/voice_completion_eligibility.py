@@ -43,7 +43,7 @@ def validate_voice_completion_eligibility(umto: dict[str, Any]) -> str:
 
     voices = umto.get("voices", {})
     bass_events = voices.get("B", [])
-    bass_onsets = targets._voice_attack_offsets(bass_events)
+    bass_onsets = targets.voice_attack_offsets(bass_events)
     if not bass_onsets:
         raise VoiceCompletionEligibilityError(
             "Bass voice has no note attacks -- cannot derive a target grid."
@@ -51,7 +51,7 @@ def validate_voice_completion_eligibility(umto: dict[str, Any]) -> str:
 
     for offset in bass_onsets:
         for voice_id in locked_voices:
-            payload = targets._locked_voice_payload(umto, voice_id, offset)
+            payload = targets.locked_voice_payload(umto, voice_id, offset)
             if payload is None:
                 raise VoiceCompletionEligibilityError(
                     f"Locked voice {voice_id} has a rest at bass onset {offset} "
@@ -59,7 +59,7 @@ def validate_voice_completion_eligibility(umto: dict[str, Any]) -> str:
                 )
 
     missing_events = voices.get(missing_voice, [])
-    missing_attack_offsets = targets._voice_attack_offsets(
+    missing_attack_offsets = targets.voice_attack_offsets(
         missing_events, exclude_tied_stops=True
     )
 

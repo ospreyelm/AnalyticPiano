@@ -93,7 +93,7 @@ for older rows without the key.
 
 **Source:** Derived from any UMTO chorale exercise, or generated directly from standard Clausulae cadences. Targets are pre-computed from the exercise's `analysis` slices (bass + figured bass from each UMTO analysis slice). NCT (non-chord-tone) slices are skipped for chorale-derived material.
 
-**`input_style: "per_voice"` (SATB voice-completion variant, planned — not yet implemented):** A second `input_style` for this same `harmonization` mode/pipeline — not a new exercise type, mode, or grader. The source is a full SATB `score_kind="voices"` UMTO (not the bass-plus-figures `chordal` shape above); three of the four voices are locked/given and the student completes the one missing voice by clicking notes on the staff. Grading reuses the existing chord-onset analysis-match path (`ExerciseContext.gradeHarmonizationMidiSet` → `harmonization_runtime_grader.js` → `harmonizationMatch`) unmodified — see "Grading" above.
+**`input_style: "per_voice"` (SATB voice-completion variant):** A second `input_style` for this same `harmonization` mode/pipeline — not a new exercise type, mode, or grader. The source is a full SATB `score_kind="voices"` UMTO (not the bass-plus-figures `chordal` shape above); three of the four voices are locked/given and the student completes the one missing voice by clicking notes on the staff. Grading reuses the existing chord-onset analysis-match path (`ExerciseContext.gradeHarmonizationMidiSet` → `harmonization_runtime_grader.js` → `harmonizationMatch`) unmodified — see "Grading" above.
 
 Milestone-1 constraints (so they don't need to be re-derived from code):
 - Bass is always among the locked voices — bass is never the missing voice.
@@ -337,7 +337,7 @@ Currently wired for score-based identification exercises (`chorale_identificatio
 | `analytical_pcs` | MIDI | `ExerciseGrader.analysisPcsMatch` | No | |
 | `figured_bass` | MIDI | `ExerciseGrader.figuredBassMatch` | No | |
 | `figured_bass_pcs` | MIDI | `ExerciseGrader.figuredBassPcsMatch` | No | |
-| `harmonization` | MIDI (Click for planned `input_style: per_voice` SATB variant) | `HarmonizationGrader` | No | Slice-by-slice FB realization, locked voices |
+| `harmonization` | MIDI (Click for `input_style: per_voice` SATB variant) | `HarmonizationGrader` | No | Slice-by-slice FB realization, locked voices |
 | `chorale` | MIDI | `ChoraleGrader` | No | Score-based, onset windows |
 | `umto_chorale` (playback) | MIDI | `ChoraleGrader` | No | UMTO scale exercises; hand_mode selector planned |
 | `umto_chorale` (chordal, Play-authored) | MIDI | `ChoraleGrader` | No | Click-first Play authoring; per-chord palette durations + explicit barlines; free (`meter:null`) or metered (validated); Save = `reviewed` |

@@ -1035,9 +1035,9 @@ CI is explicitly scoped and added.
 - No runtime source files touched; no stored UMTO strings or schemas
   changed; no known divergences fixed.
 
-## `input_style` variant on the `harmonization` pipeline (SATB per-voice completion, planned — 2026-07-06 plan, not yet implemented)
+## `input_style` variant on the `harmonization` pipeline (SATB per-voice completion, 2026-07-06 plan)
 
-A second `input_style` value, `"per_voice"`, is planned for `mode="harmonization"`
+A second `input_style` value, `"per_voice"`, exists for `mode="harmonization"`
 exercises (see
 [`docs/plans/2026-07-06-001-feat-satb-voice-completion-harmonization-plan.md`](../plans/2026-07-06-001-feat-satb-voice-completion-harmonization-plan.md)).
 This is **not a new pipeline**: it stays under the existing `harmonization`

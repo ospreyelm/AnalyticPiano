@@ -111,3 +111,15 @@ def test_multiple_missing_voices_raises_distinct_reason():
 
     with pytest.raises(VoiceCompletionEligibilityError, match="Expected exactly one missing voice"):
         validate_voice_completion_eligibility(umto)
+
+
+def test_bass_with_no_attacks_raises():
+    voices = _base_voices()
+    voices["B"] = [_rest(1.0), _rest(1.0)]
+    umto = {
+        "metadata": {"locked_voices": ["B", "A", "T"]},
+        "voices": voices,
+    }
+
+    with pytest.raises(VoiceCompletionEligibilityError, match="no note attacks"):
+        validate_voice_completion_eligibility(umto)
