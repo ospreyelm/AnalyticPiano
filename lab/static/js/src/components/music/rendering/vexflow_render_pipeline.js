@@ -43,6 +43,61 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
     if (sx + sw > loopState.layoutSystemXRight) loopState.layoutSystemXRight = sx + sw;
   }
 
+  // Splits harmonization overlay entries into treble/bass groups by their
+  // `.staff` field (defaulting to "treble" for entries that don't carry
+  // one — pending/rejected click previews and any other legacy caller).
+  // The overlay note for the missing voice must land on the same staff as
+  // that voice's given notes (S/A -> treble, T/B -> bass); pushing every
+  // overlay onto trebleVoices unconditionally is only correct when the
+  // missing voice is always in the treble group.
+  function splitOverlayEntriesByStaff(entries) {
+    var treble = [];
+    var bass = [];
+    entries.forEach(function (e) {
+      if (e && e.staff === "bass") {
+        bass.push(e);
+      } else {
+        treble.push(e);
+      }
+    });
+    return { treble: treble, bass: bass };
+  }
+
+  function pushHarmonizationOverlay(entriesInMeasure, layout, measIdx, win, keySigAlters, colorOverride, trebleVoices, bassVoices) {
+    var groups = splitOverlayEntriesByStaff(entriesInMeasure);
+    var measureTicks = layout.measureDurations[measIdx] || layout.fullMeasureTicks;
+
+    if (groups.treble.length) {
+      var trebleOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
+        groups.treble, measureTicks, win.time, keySigAlters, colorOverride, "treble"
+      );
+      if (trebleOverlay) {
+        trebleVoices.push(trebleOverlay);
+      } else {
+        console.warn(
+          "[VexFlowAdapter] harmonization overlay tick mismatch (treble) in measure",
+          win.startMeasure + measIdx,
+          "- skipping overlay for this measure"
+        );
+      }
+    }
+
+    if (groups.bass.length) {
+      var bassOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
+        groups.bass, measureTicks, win.time, keySigAlters, colorOverride, "bass"
+      );
+      if (bassOverlay) {
+        bassVoices.push(bassOverlay);
+      } else {
+        console.warn(
+          "[VexFlowAdapter] harmonization overlay tick mismatch (bass) in measure",
+          win.startMeasure + measIdx,
+          "- skipping overlay for this measure"
+        );
+      }
+    }
+  }
+
   // Stage 4: draw every measure in the window — staves, voices, harmonization
   // overlays, barlines, beam/format pass, and (delegated) analysis
   // annotations — then emit the accumulated staff-layout callback.
@@ -127,21 +182,7 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
           return e.measureIndex === absoluteMeasureIndex;
         });
         if (entriesInMeasure.length) {
-          var overlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-            entriesInMeasure,
-            layout.measureDurations[measIdx] || layout.fullMeasureTicks,
-            win.time,
-            cfg.keySignatureAlterations
-          );
-          if (overlay) {
-            trebleVoices.push(overlay);
-          } else {
-            console.warn(
-              "[VexFlowAdapter] harmonization overlay tick mismatch in measure",
-              absoluteMeasureIndex,
-              "- skipping overlay for this measure"
-            );
-          }
+          pushHarmonizationOverlay(entriesInMeasure, layout, measIdx, win, cfg.keySignatureAlterations, undefined, trebleVoices, bassVoices);
         }
       }
 
@@ -150,16 +191,7 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
           return e.measureIndex === absoluteMeasureIndex;
         });
         if (pendingInMeasure.length) {
-          var pendingOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-            pendingInMeasure,
-            layout.measureDurations[measIdx] || layout.fullMeasureTicks,
-            win.time,
-            cfg.keySignatureAlterations,
-            "#5b8def"
-          );
-          if (pendingOverlay) {
-            trebleVoices.push(pendingOverlay);
-          }
+          pushHarmonizationOverlay(pendingInMeasure, layout, measIdx, win, cfg.keySignatureAlterations, "#5b8def", trebleVoices, bassVoices);
         }
       }
 
@@ -168,16 +200,7 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
           return e.measureIndex === absoluteMeasureIndex;
         });
         if (rejectedInMeasure.length) {
-          var rejectedOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-            rejectedInMeasure,
-            layout.measureDurations[measIdx] || layout.fullMeasureTicks,
-            win.time,
-            cfg.keySignatureAlterations,
-            "#cc2200"
-          );
-          if (rejectedOverlay) {
-            trebleVoices.push(rejectedOverlay);
-          }
+          pushHarmonizationOverlay(rejectedInMeasure, layout, measIdx, win, cfg.keySignatureAlterations, "#cc2200", trebleVoices, bassVoices);
         }
       }
 

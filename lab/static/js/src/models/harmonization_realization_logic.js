@@ -166,33 +166,66 @@ function measureTickTotal(meter) {
   return num * (4096 / den);
 }
 
-function dropOneBassInstance(midiArr, target) {
-  var lockedBass = target && target.lockedVoices && target.lockedVoices.B;
-  var bassMidi = lockedBass && lockedBass.midi;
-  var bassPc = lockedBass && lockedBass.pc;
-  var dropped = false;
+// Strips one pitch instance per locked voice from a merged commit snapshot
+// (buildCommitSnapshot's locked-voice pitches + the student's entered
+// pitch(es)), leaving only the student-entered answer. Generalizes the old
+// bass-only stripping to an arbitrary locked-voice set — correct for both
+// the current single-bass-locked chord-entry configuration (one voice
+// stripped) and the per-voice-completion variant (three voices stripped:
+// bass plus whichever two of S/A/T are given). Mirrors the locked-voice
+// exclusion `click_note.js#_commit` already applies on the rejected-state
+// path ("must not appear in the ... overlay").
+function dropLockedVoiceInstances(midiArr, target) {
+  var lockedVoices = (target && target.lockedVoices) || {};
+  var remaining = midiArr.slice();
 
-  if (typeof bassMidi === "number") {
-    return midiArr.filter(function (m) {
-      if (!dropped && m === bassMidi) {
-        dropped = true;
-        return false;
-      }
-      return true;
-    });
+  Object.keys(lockedVoices).forEach(function (voiceId) {
+    var locked = lockedVoices[voiceId];
+    var lockedMidi = locked && locked.midi;
+    var lockedPc = locked && locked.pc;
+    var dropped = false;
+
+    if (typeof lockedMidi === "number") {
+      remaining = remaining.filter(function (m) {
+        if (!dropped && m === lockedMidi) {
+          dropped = true;
+          return false;
+        }
+        return true;
+      });
+    } else if (typeof lockedPc === "number") {
+      remaining = remaining.filter(function (m) {
+        if (!dropped && pitchClassForMidi(m) === lockedPc) {
+          dropped = true;
+          return false;
+        }
+        return true;
+      });
+    }
+  });
+
+  return remaining;
+}
+
+// SATB voice-id -> staff mapping, matching vexflow_staff_voice_builder.js's
+// SATB_MAP (treble: S/A, bass: T/B). Determines which staff the accepted-
+// answer overlay belongs on. When exactly one SATB voice is missing from
+// target.lockedVoices (the per-voice-completion configurations), the
+// overlay renders on that voice's staff. Otherwise (the current chord-entry
+// configuration, where only bass is locked and S/A/T are all missing as one
+// blob) it defaults to treble, preserving existing behavior exactly.
+var ALL_SATB_VOICES = ["S", "A", "T", "B"];
+var BASS_STAFF_VOICES = { T: true, B: true };
+
+function staffForTarget(target) {
+  var lockedVoices = (target && target.lockedVoices) || {};
+  var missing = ALL_SATB_VOICES.filter(function (voiceId) {
+    return !Object.prototype.hasOwnProperty.call(lockedVoices, voiceId);
+  });
+  if (missing.length === 1 && BASS_STAFF_VOICES[missing[0]]) {
+    return "bass";
   }
-
-  if (typeof bassPc === "number") {
-    return midiArr.filter(function (m) {
-      if (!dropped && pitchClassForMidi(m) === bassPc) {
-        dropped = true;
-        return false;
-      }
-      return true;
-    });
-  }
-
-  return midiArr.slice();
+  return "treble";
 }
 
 function buildRealization(accepted, targets, score, meter) {
@@ -225,9 +258,10 @@ function buildRealization(accepted, targets, score, meter) {
     var measureIndex = Math.floor(absOffsetTicks / measureTotal);
     var onsetWithinMeasure = absOffsetTicks - (measureIndex * measureTotal);
 
-    var upperMidi = dropOneBassInstance(byIndex[ti].midi || [], target);
+    var upperMidi = dropLockedVoiceInstances(byIndex[ti].midi || [], target);
     if (!upperMidi.length) continue;
     upperMidi = upperMidi.slice().sort(function (a, b) { return a - b; });
+    var staff = staffForTarget(target);
 
     var pcMap = mergePcSpellingMaps(
       buildPcSpellingMap(score, absOffsetQb),
@@ -264,7 +298,8 @@ function buildRealization(accepted, targets, score, meter) {
       _absOnsetTicks: absOffsetTicks,
       _targetIndex: ti,
       midiNotes: spelledMidi,
-      spellings: spellings
+      spellings: spellings,
+      staff: staff
     });
   }
 
@@ -302,6 +337,7 @@ var exports = {
   spellMidi: spellMidi,
   buildPcSpellingMap: buildPcSpellingMap,
   buildRealization: buildRealization,
+  staffForTarget: staffForTarget,
   __setScoreTimeline: __setScoreTimeline
 };
 

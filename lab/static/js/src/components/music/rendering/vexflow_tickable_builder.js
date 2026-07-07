@@ -160,16 +160,22 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     return voice;
   }
 
-  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride) {
+  var OVERLAY_REST_KEY_BY_CLEF = {
+    treble: "b/4",
+    bass: "d/3",
+  };
+
+  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride, clef) {
     if (!entriesInMeasure || !entriesInMeasure.length || !HarmonizationRealizationLogic) return null;
+    clef = clef || "treble";
     var sorted = entriesInMeasure.slice().sort(function (a, b) { return a.onset - b.onset; });
     var tickables = [];
     var cursor = 0;
 
     function makeTransparentRest(chunk) {
       var rest = new Vex.Flow.StaveNote({
-        clef: "treble",
-        keys: ["b/4"],
+        clef: clef,
+        keys: [OVERLAY_REST_KEY_BY_CLEF[clef] || "b/4"],
         duration: chunk.type + "r",
         dots: chunk.dots
       });
@@ -237,7 +243,7 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
       });
 
       var note = new Vex.Flow.StaveNote({
-        clef: "treble",
+        clef: clef,
         keys: keys,
         duration: headChunk.type,
         dots: headChunk.dots,
