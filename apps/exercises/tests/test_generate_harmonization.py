@@ -162,3 +162,46 @@ class GenerateHarmonizationCommandTests(TestCase):
         target = created.data["harmonizationTargets"][0]
         assert target["displayFigure"] == "6"
         assert target["figures"] == ["6", "3"]   # from raw_figured_bass "6/3"
+
+    def test_input_style_per_voice_creates_eligible_exercise(self):
+        call_command(
+            "generate_harmonization",
+            source=self.source.id,
+            author="admin@example.com",
+            locked_voices="B,A,T",
+            min_voices=3,
+            max_voices=4,
+            input_style="per_voice",
+        )
+        created = self._created().get()
+        umto = created.data["score"]["umto"]
+        assert umto["metadata"]["input_style"] == "per_voice"
+        assert "input_style:per_voice" in created.skill_tags
+        assert created.data["harmonizationTargets"]
+
+    def test_default_input_style_omits_flag_and_tag(self):
+        call_command(
+            "generate_harmonization",
+            source=self.source.id,
+            author="admin@example.com",
+            locked_voices="B",
+            min_voices=3,
+            max_voices=4,
+        )
+        created = self._created().get()
+        umto = created.data["score"]["umto"]
+        assert "input_style" not in umto["metadata"]
+        assert not any(tag.startswith("input_style:") for tag in created.skill_tags)
+
+    def test_input_style_per_voice_rejects_ineligible_source(self):
+        with pytest.raises(CommandError, match="Bass must be in locked_voices"):
+            call_command(
+                "generate_harmonization",
+                source=self.source.id,
+                author="admin@example.com",
+                locked_voices="S,A,T",
+                min_voices=3,
+                max_voices=4,
+                input_style="per_voice",
+            )
+        assert self._created().count() == 0
