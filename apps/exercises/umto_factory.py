@@ -1181,21 +1181,38 @@ def save_umto_chord_id_exercise(
     description: str,
     author,
     chord_key: str,
-    midi_notes: list,
-    answer: str,
-    choices: list,
+    midi_notes: list = None,
+    answer: str = None,
+    choices: list = None,
+    chords: list = None,
     skill_tags: list,
     complexity: int,
     is_public: bool = True,
     overwrite: bool = False,
 ) -> "Exercise":
-    """Save a single root-position chord quality identification exercise.
+    """Save a root-position chord quality identification exercise.
+
+    The exercise can contain either a single chord (via midi_notes/answer/choices)
+    or a worksheet of multiple chords (via chords). When chords is supplied it
+    takes precedence and each entry must be a dict with:
+        notes: list of MIDI integers
+        answer: quality display label (e.g. "major", "dominant 7")
+        choices: ordered list of answer choices shown to the student
 
     chord_key: HarmonyLab key string (e.g. "jG_") used for staff rendering/accidental display.
-    midi_notes: sorted list of MIDI integers for the chord.
-    answer: quality display label (e.g. "major", "dominant 7").
-    choices: ordered list of answer choices shown to the student.
     """
+    if chords is None:
+        if midi_notes is None or answer is None or choices is None:
+            raise ValueError("save_umto_chord_id_exercise requires either chords or midi_notes+answer+choices")
+        chords = [
+            {
+                "notes": sorted(midi_notes),
+                "answer": answer,
+                "choices": choices,
+                "rhythmValue": "w",
+            }
+        ]
+
     umto = UMTO(
         metadata=Metadata(
             exercise_id="TEMP",
@@ -1228,11 +1245,12 @@ def save_umto_chord_id_exercise(
         "reviewText": "Well done!",
         "chord": [
             {
-                "notes": sorted(midi_notes),
-                "answer": answer,
-                "choices": choices,
-                "rhythmValue": "w",
+                "notes": sorted(c["notes"]),
+                "answer": c["answer"],
+                "choices": c["choices"],
+                "rhythmValue": c.get("rhythmValue", "w"),
             }
+            for c in chords
         ],
         "score": {
             "meta": {
