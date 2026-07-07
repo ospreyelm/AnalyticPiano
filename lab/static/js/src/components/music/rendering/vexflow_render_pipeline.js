@@ -66,36 +66,25 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
   function pushHarmonizationOverlay(entriesInMeasure, layout, measIdx, win, keySigAlters, colorOverride, trebleVoices, bassVoices) {
     var groups = splitOverlayEntriesByStaff(entriesInMeasure);
     var measureTicks = layout.measureDurations[measIdx] || layout.fullMeasureTicks;
+    var destByClef = { treble: trebleVoices, bass: bassVoices };
 
-    if (groups.treble.length) {
-      var trebleOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-        groups.treble, measureTicks, win.time, keySigAlters, colorOverride, "treble"
+    ["treble", "bass"].forEach(function (clef) {
+      var entries = groups[clef];
+      if (!entries.length) return;
+
+      var overlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
+        entries, measureTicks, win.time, keySigAlters, colorOverride, clef
       );
-      if (trebleOverlay) {
-        trebleVoices.push(trebleOverlay);
+      if (overlay) {
+        destByClef[clef].push(overlay);
       } else {
         console.warn(
-          "[VexFlowAdapter] harmonization overlay tick mismatch (treble) in measure",
+          "[VexFlowAdapter] harmonization overlay tick mismatch (" + clef + ") in measure",
           win.startMeasure + measIdx,
           "- skipping overlay for this measure"
         );
       }
-    }
-
-    if (groups.bass.length) {
-      var bassOverlay = VexflowTickableBuilder.buildHarmonizationOverlayVoice(
-        groups.bass, measureTicks, win.time, keySigAlters, colorOverride, "bass"
-      );
-      if (bassOverlay) {
-        bassVoices.push(bassOverlay);
-      } else {
-        console.warn(
-          "[VexFlowAdapter] harmonization overlay tick mismatch (bass) in measure",
-          win.startMeasure + measIdx,
-          "- skipping overlay for this measure"
-        );
-      }
-    }
+    });
   }
 
   // Stage 4: draw every measure in the window — staves, voices, harmonization

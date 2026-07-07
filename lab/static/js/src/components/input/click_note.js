@@ -343,10 +343,7 @@ var ClickNoteInputComponent = function (settings) {
 
     _activeTarget: function () {
       var ctx = this.exerciseContext;
-      if (!ctx || !ctx.getDefinition) return null;
-      var def = ctx.getDefinition();
-      var targets = def && def.getHarmonizationTargets ? def.getHarmonizationTargets() : [];
-      return targets[ctx._harmonizationPointer || 0] || null;
+      return ctx && ctx.getActiveHarmonizationTarget ? ctx.getActiveHarmonizationTarget() : null;
     },
 
     _commit: function () {

@@ -31,16 +31,14 @@ import ExerciseInstructions from "app/config/exercise_instructions";
 import FbHints from "app/config/figured_bass_hints";
 
 export default  {
-    // Same target lookup click_note.js#_activeTarget uses: the harmonization
-    // target currently being entered (index = count already accepted).
-    // Used to route the pending/rejected click-preview overlays to the
-    // correct staff, same as the accepted-answer overlay.
+    // Same target lookup click_note.js#_activeTarget uses (both delegate to
+    // ExerciseContext#getActiveHarmonizationTarget): the harmonization target
+    // currently being entered (index = count already accepted). Used to
+    // route the pending/rejected click-preview overlays to the correct
+    // staff, same as the accepted-answer overlay.
     _activeHarmonizationTarget: function () {
       var ctx = this.exerciseContext;
-      if (!ctx || !ctx.getDefinition) return null;
-      var def = ctx.getDefinition();
-      var targets = def && def.getHarmonizationTargets ? def.getHarmonizationTargets() : [];
-      return targets[ctx._harmonizationPointer || 0] || null;
+      return ctx && ctx.getActiveHarmonizationTarget ? ctx.getActiveHarmonizationTarget() : null;
     },
 
     _buildHarmonizationPending: function () {

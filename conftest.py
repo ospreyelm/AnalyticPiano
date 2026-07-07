@@ -9,6 +9,6 @@ def pytest_configure():
     try:
         setup_test_environment()
     except RuntimeError:
-        # Already set up by another app's conftest.py in this same pytest
-        # session (e.g. running apps/exercises and apps/teacher together).
+        # Already set up by another discovered conftest.py in this same
+        # pytest session (harmless -- Django's test environment is global).
         pass

@@ -175,6 +175,17 @@ function measureTickTotal(meter) {
 // bass plus whichever two of S/A/T are given). Mirrors the locked-voice
 // exclusion `click_note.js#_commit` already applies on the rejected-state
 // path ("must not appear in the ... overlay").
+function dropFirstMatch(arr, predicate) {
+  var dropped = false;
+  return arr.filter(function (item) {
+    if (!dropped && predicate(item)) {
+      dropped = true;
+      return false;
+    }
+    return true;
+  });
+}
+
 function dropLockedVoiceInstances(midiArr, target) {
   var lockedVoices = (target && target.lockedVoices) || {};
   var remaining = midiArr.slice();
@@ -183,23 +194,14 @@ function dropLockedVoiceInstances(midiArr, target) {
     var locked = lockedVoices[voiceId];
     var lockedMidi = locked && locked.midi;
     var lockedPc = locked && locked.pc;
-    var dropped = false;
 
     if (typeof lockedMidi === "number") {
-      remaining = remaining.filter(function (m) {
-        if (!dropped && m === lockedMidi) {
-          dropped = true;
-          return false;
-        }
-        return true;
+      remaining = dropFirstMatch(remaining, function (m) {
+        return m === lockedMidi;
       });
     } else if (typeof lockedPc === "number") {
-      remaining = remaining.filter(function (m) {
-        if (!dropped && pitchClassForMidi(m) === lockedPc) {
-          dropped = true;
-          return false;
-        }
-        return true;
+      remaining = dropFirstMatch(remaining, function (m) {
+        return pitchClassForMidi(m) === lockedPc;
       });
     }
   });
@@ -207,22 +209,23 @@ function dropLockedVoiceInstances(midiArr, target) {
   return remaining;
 }
 
-// SATB voice-id -> staff mapping, matching vexflow_staff_voice_builder.js's
-// SATB_MAP (treble: S/A, bass: T/B). Determines which staff the accepted-
-// answer overlay belongs on. When exactly one SATB voice is missing from
-// target.lockedVoices (the per-voice-completion configurations), the
-// overlay renders on that voice's staff. Otherwise (the current chord-entry
-// configuration, where only bass is locked and S/A/T are all missing as one
-// blob) it defaults to treble, preserving existing behavior exactly.
-var ALL_SATB_VOICES = ["S", "A", "T", "B"];
-var BASS_STAFF_VOICES = { T: true, B: true };
+// SATB voice-id -> staff mapping (treble: S/A, bass: T/B). Single source of
+// truth shared with vexflow_staff_voice_builder.js, which imports this
+// module for it. Determines which staff the accepted-answer overlay belongs
+// on. When exactly one SATB voice is missing from target.lockedVoices (the
+// per-voice-completion configurations), the overlay renders on that voice's
+// staff. Otherwise (the current chord-entry configuration, where only bass
+// is locked and S/A/T are all missing as one blob) it defaults to treble,
+// preserving existing behavior exactly.
+var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
+var ALL_SATB_VOICES = SATB_MAP.treble.concat(SATB_MAP.bass);
 
 function staffForTarget(target) {
   var lockedVoices = (target && target.lockedVoices) || {};
   var missing = ALL_SATB_VOICES.filter(function (voiceId) {
     return !Object.prototype.hasOwnProperty.call(lockedVoices, voiceId);
   });
-  if (missing.length === 1 && BASS_STAFF_VOICES[missing[0]]) {
+  if (missing.length === 1 && SATB_MAP.bass.indexOf(missing[0]) !== -1) {
     return "bass";
   }
   return "treble";
@@ -338,6 +341,7 @@ var exports = {
   buildPcSpellingMap: buildPcSpellingMap,
   buildRealization: buildRealization,
   staffForTarget: staffForTarget,
+  SATB_MAP: SATB_MAP,
   __setScoreTimeline: __setScoreTimeline
 };
 

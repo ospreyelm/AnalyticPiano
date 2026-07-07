@@ -2,6 +2,13 @@ import Vex from "vexflow";
 import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 import HarmonizationRealizationLogic from "app/models/harmonization_realization_logic";
 
+var REST_KEY_BY_CLEF = {
+  treble: "b/4",
+  bass: "d/3",
+  alto: "c/4",
+  tenor: "e/3",
+};
+
 // barAlterations: mutable {step+octave -> alter} tracking within one measure.
   // Pass a shared object across all itemToTickable calls in the same measure+staff
   // so that G# earlier in the bar causes G♮ later to render an explicit natural.
@@ -17,13 +24,7 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     if (item.kind === "rest") {
       var dur = VexflowAdapterLogic.durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
-      var restKeyByClef = {
-        treble: "b/4",
-        bass: "d/3",
-        alto: "c/4",
-        tenor: "e/3",
-      };
-      var restKey = restKeyByClef[clef] || "b/4";
+      var restKey = REST_KEY_BY_CLEF[clef] || "b/4";
       // Shift rests away from the opposing voice to avoid collisions.
       if (clef === "treble" && voiceSlot === "S") restKey = "d/5";  // soprano: above staff
       if (clef === "treble" && voiceSlot === "A") restKey = "g/4";  // alto: below middle line
@@ -160,11 +161,6 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     return voice;
   }
 
-  var OVERLAY_REST_KEY_BY_CLEF = {
-    treble: "b/4",
-    bass: "d/3",
-  };
-
   function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride, clef) {
     if (!entriesInMeasure || !entriesInMeasure.length || !HarmonizationRealizationLogic) return null;
     clef = clef || "treble";
@@ -175,7 +171,7 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     function makeTransparentRest(chunk) {
       var rest = new Vex.Flow.StaveNote({
         clef: clef,
-        keys: [OVERLAY_REST_KEY_BY_CLEF[clef] || "b/4"],
+        keys: [REST_KEY_BY_CLEF[clef] || "b/4"],
         duration: chunk.type + "r",
         dots: chunk.dots
       });

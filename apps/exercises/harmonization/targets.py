@@ -140,11 +140,22 @@ def _voice_attacks_at_offset(events: list[dict[str, Any]], offset: float) -> boo
     return False
 
 
-def _voice_attack_offsets(events: list[dict[str, Any]]) -> list[float]:
+def _voice_attack_offsets(
+    events: list[dict[str, Any]], exclude_tied_stops: bool = False
+) -> list[float]:
+    """Offsets where a note event begins.
+
+    A tied-continuation event has kind == "note" (it is a real pitched
+    event), so exclude_tied_stops=True is needed by callers that care about
+    fresh attacks specifically -- is_tied_stop marks a continuation, not a
+    new attack a performer/student would play.
+    """
     offsets = []
     t = 0.0
     for event in events:
-        if event.get("kind") == "note":
+        if event.get("kind") == "note" and not (
+            exclude_tied_stops and event.get("is_tied_stop")
+        ):
             offsets.append(round(t, 5))
         t += float(event.get("duration") or 0)
     return offsets

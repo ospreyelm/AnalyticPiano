@@ -59,7 +59,9 @@ def validate_voice_completion_eligibility(umto: dict[str, Any]) -> str:
                 )
 
     missing_events = voices.get(missing_voice, [])
-    missing_attack_offsets = _fresh_attack_offsets(missing_events)
+    missing_attack_offsets = targets._voice_attack_offsets(
+        missing_events, exclude_tied_stops=True
+    )
 
     if missing_attack_offsets != bass_onsets:
         extra = sorted(set(missing_attack_offsets) - set(bass_onsets))
@@ -77,19 +79,3 @@ def validate_voice_completion_eligibility(umto: dict[str, Any]) -> str:
         )
 
     return missing_voice
-
-
-def _fresh_attack_offsets(events: list[dict[str, Any]]) -> list[float]:
-    """Like targets._voice_attack_offsets, but excludes tied-continuation notes.
-
-    A tied-continuation event has kind == "note" (it is a real pitched event),
-    so targets._voice_attack_offsets alone would misreport it as a fresh attack.
-    is_tied_stop marks a continuation, not a new attack the student would enter.
-    """
-    offsets = []
-    t = 0.0
-    for event in events:
-        if event.get("kind") == "note" and not event.get("is_tied_stop"):
-            offsets.append(round(t, 5))
-        t += float(event.get("duration") or 0)
-    return offsets

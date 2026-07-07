@@ -877,6 +877,18 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       return this.definition;
     },
     /**
+     * Returns the harmonization target at the current pointer, or null.
+     * Shared by click_note.js and exercise_sheet_status.js so both read
+     * the same target the runtime grader is currently scoring against.
+     *
+     * @return {object|null}
+     */
+    getActiveHarmonizationTarget: function () {
+      var def = this.getDefinition();
+      var targets = def && def.getHarmonizationTargets ? def.getHarmonizationTargets() : [];
+      return targets[this._harmonizationPointer || 0] || null;
+    },
+    /**
      * Returns true when the active exercise is identification-like.
      *
      * @return {boolean}
