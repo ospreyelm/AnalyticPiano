@@ -123,6 +123,72 @@ function testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings() {
 
 testBuildHarmonizationOverlayVoiceWithMissingAndPartialSpellings();
 
+function testBuildHarmonizationOverlayVoiceRoutesToBassClef() {
+  var entries = [
+    {
+      onset: 0,
+      durationTicks: 2048,
+      midiNotes: [40], // E2, a tenor answer note
+      spellings: null
+    }
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "bass"
+  );
+  assert.ok(voice, "should return a valid voice for a bass-clef overlay");
+
+  var tickables = voice.getTickables();
+  assert.ok(tickables.length >= 1, "should contain at least the note tickable");
+  var noteTickable = tickables.filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.ok(noteTickable, "should have a non-rest tickable for the answer note");
+  assert.strictEqual(noteTickable.clef, "bass", "answer note should render on the bass clef, not the default treble");
+}
+
+testBuildHarmonizationOverlayVoiceRoutesToBassClef();
+
+function testBuildHarmonizationOverlayVoiceDefaultsToStemUp() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [72], spellings: null }
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "treble"
+  );
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(noteTickable.getStemDirection(), 1, "omitting stemDirection should preserve existing default (up)");
+}
+
+testBuildHarmonizationOverlayVoiceDefaultsToStemUp();
+
+function testBuildHarmonizationOverlayVoiceAppliesDownStemForAltoOrBass() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [64], spellings: null } // an alto answer note
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "treble", -1
+  );
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(
+    noteTickable.getStemDirection(), -1,
+    "alto/bass answer notes must stem down, not the hardcoded-up default that caused the reported alto/bass stem-direction bug"
+  );
+}
+
+testBuildHarmonizationOverlayVoiceAppliesDownStemForAltoOrBass();
+
+function testBuildHarmonizationOverlayVoiceDefaultsToTrebleClef() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [72], spellings: null }
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null
+  );
+  assert.ok(voice);
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(noteTickable.clef, "treble", "omitting clef should preserve existing default (treble)");
+}
+
+testBuildHarmonizationOverlayVoiceDefaultsToTrebleClef();
+
 // Regression: in analysis_match mode, resolveChordNoteStyles() sets a
 // transparent base style on the chord (which VexFlow's StaveNote.setStyle
 // propagates to the shared Stem). setKeyStyle() only recolors individual

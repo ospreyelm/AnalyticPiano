@@ -2,6 +2,13 @@ import Vex from "vexflow";
 import VexflowAdapterLogic from "app/components/music/rendering/vexflow_adapter_logic";
 import HarmonizationRealizationLogic from "app/models/harmonization_realization_logic";
 
+var REST_KEY_BY_CLEF = {
+  treble: "b/4",
+  bass: "d/3",
+  alto: "c/4",
+  tenor: "e/3",
+};
+
 // barAlterations: mutable {step+octave -> alter} tracking within one measure.
   // Pass a shared object across all itemToTickable calls in the same measure+staff
   // so that G# earlier in the bar causes G♮ later to render an explicit natural.
@@ -17,13 +24,7 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     if (item.kind === "rest") {
       var dur = VexflowAdapterLogic.durToVF(item.duration) + "r";
       var numDots = item.duration.dots || 0;
-      var restKeyByClef = {
-        treble: "b/4",
-        bass: "d/3",
-        alto: "c/4",
-        tenor: "e/3",
-      };
-      var restKey = restKeyByClef[clef] || "b/4";
+      var restKey = REST_KEY_BY_CLEF[clef] || "b/4";
       // Shift rests away from the opposing voice to avoid collisions.
       if (clef === "treble" && voiceSlot === "S") restKey = "d/5";  // soprano: above staff
       if (clef === "treble" && voiceSlot === "A") restKey = "g/4";  // alto: below middle line
@@ -160,16 +161,21 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     return voice;
   }
 
-  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride) {
+  function buildHarmonizationOverlayVoice(entriesInMeasure, measureTotalTicks, voiceTime, keySigAlters, colorOverride, clef, stemDirection) {
     if (!entriesInMeasure || !entriesInMeasure.length || !HarmonizationRealizationLogic) return null;
+    clef = clef || "treble";
+    // Defaults to up (1) — matches the pre-existing chord-entry configuration,
+    // where the overlay represents multiple upper voices as one blob and has
+    // no single SATB stem convention to follow.
+    stemDirection = stemDirection || 1;
     var sorted = entriesInMeasure.slice().sort(function (a, b) { return a.onset - b.onset; });
     var tickables = [];
     var cursor = 0;
 
     function makeTransparentRest(chunk) {
       var rest = new Vex.Flow.StaveNote({
-        clef: "treble",
-        keys: ["b/4"],
+        clef: clef,
+        keys: [REST_KEY_BY_CLEF[clef] || "b/4"],
         duration: chunk.type + "r",
         dots: chunk.dots
       });
@@ -237,14 +243,14 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
       });
 
       var note = new Vex.Flow.StaveNote({
-        clef: "treble",
+        clef: clef,
         keys: keys,
         duration: headChunk.type,
         dots: headChunk.dots,
         auto_stem: false
       });
       if (headChunk.dots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
-      note.setStemDirection(1);
+      note.setStemDirection(stemDirection);
 
       for (var ki2 = 0; ki2 < resolvedSpellings.length; ki2 += 1) {
         var sp2 = resolvedSpellings[ki2];
@@ -281,7 +287,7 @@ import HarmonizationRealizationLogic from "app/models/harmonization_realization_
     try {
       voice.beams = Vex.Flow.Beam.generateBeams(notesOnly, {
         beam_rests: false,
-        stem_direction: 1,
+        stem_direction: stemDirection,
       });
     } catch (e) {
       voice.beams = [];

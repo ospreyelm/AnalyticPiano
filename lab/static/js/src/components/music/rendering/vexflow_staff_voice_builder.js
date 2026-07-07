@@ -1,9 +1,10 @@
 import Vex from "vexflow";
 import MeasureEngine from "app/utils/measure_engine";
 import VexflowTickableBuilder from "app/components/music/rendering/vexflow_tickable_builder";
+import HarmonizationRealizationLogic from "app/models/harmonization_realization_logic";
 
 // SATB voice id map: [staffId][voiceIndex] -> voice label
-  var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
+  var SATB_MAP = HarmonizationRealizationLogic.SATB_MAP;
 
   function durationToTicks(dur) {
     return MeasureEngine.getTicks(dur.type, dur.dots || 0);

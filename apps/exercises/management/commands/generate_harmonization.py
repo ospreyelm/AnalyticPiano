@@ -6,6 +6,10 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.harmonization.targets import build_targets_from_umto
+from apps.exercises.harmonization.voice_completion_eligibility import (
+    VoiceCompletionEligibilityError,
+    validate_voice_completion_eligibility,
+)
 from apps.exercises.models import Exercise
 
 
@@ -24,6 +28,17 @@ class Command(BaseCommand):
         parser.add_argument("--source", required=True, help="Source Exercise id.")
         parser.add_argument("--author", required=True, help="Author email.")
         parser.add_argument("--locked-voices", dest="locked_voices", default="B")
+        parser.add_argument(
+            "--input-style",
+            dest="input_style",
+            default=None,
+            choices=["per_voice"],
+            help=(
+                "Set to 'per_voice' to generate the SATB per-voice-completion "
+                "variant (bass always locked, exactly one upper voice missing). "
+                "Omit for the existing chord-entry harmonization exercise."
+            ),
+        )
         parser.add_argument("--prompt", default="figured_bass", choices=["figured_bass", "roman"])
         parser.add_argument("--voice-count", dest="voice_count", type=int, default=None)
         parser.add_argument("--min-voices", dest="min_voices", type=int, default=3)
@@ -70,6 +85,14 @@ class Command(BaseCommand):
         instruction = _harmonization_instruction(umto["metadata"].get("source"))
         umto["metadata"]["source"] = instruction
 
+        input_style = options["input_style"]
+        if input_style == "per_voice":
+            try:
+                validate_voice_completion_eligibility(umto)
+            except VoiceCompletionEligibilityError as exc:
+                raise CommandError(str(exc)) from exc
+            umto["metadata"]["input_style"] = input_style
+
         targets = build_targets_from_umto(umto)
         if not targets:
             raise CommandError(
@@ -92,12 +115,16 @@ class Command(BaseCommand):
         data["harmonizationTargets"] = targets
         data["introText"] = instruction
 
+        skill_tags = list(source.skill_tags or []) + ["mode:harmonization"]
+        if input_style:
+            skill_tags.append(f"input_style:{input_style}")
+
         ex = Exercise.objects.create(
             description=desc,
             authored_by=author,
             data=data,
             is_public=options["public"],
-            skill_tags=list(source.skill_tags or []) + ["mode:harmonization"],
+            skill_tags=skill_tags,
             complexity=source.complexity,
         )
         ex.data["exerciseId"] = ex.id

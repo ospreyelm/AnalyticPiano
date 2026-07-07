@@ -51,6 +51,12 @@ python manage.py generate_harmonization --source EB16DF --author admin@example.c
   --locked-voices B --prompt figured_bass --min-voices 3 --max-voices 4 --public
 ```
 
+Pass `--input-style per_voice` (with `--locked-voices` naming bass plus two of S/A/T) to generate the SATB per-voice-completion variant instead — validates source eligibility (`apps.exercises.harmonization.voice_completion_eligibility`) before building targets and raises `CommandError` on an ineligible source:
+```
+python manage.py generate_harmonization --source EB16DF --author admin@example.com \
+  --locked-voices B,A,T --input-style per_voice --min-voices 4 --max-voices 4 --public
+```
+
 **`render_harmonization_review`** — Render a static HTML review page for a harmonization exercise (debug/QA).
 ```
 python manage.py render_harmonization_review --source EB57LQ

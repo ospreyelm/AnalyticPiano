@@ -166,33 +166,87 @@ function measureTickTotal(meter) {
   return num * (4096 / den);
 }
 
-function dropOneBassInstance(midiArr, target) {
-  var lockedBass = target && target.lockedVoices && target.lockedVoices.B;
-  var bassMidi = lockedBass && lockedBass.midi;
-  var bassPc = lockedBass && lockedBass.pc;
+// Strips one pitch instance per locked voice from a merged commit snapshot
+// (buildCommitSnapshot's locked-voice pitches + the student's entered
+// pitch(es)), leaving only the student-entered answer. Generalizes the old
+// bass-only stripping to an arbitrary locked-voice set — correct for both
+// the current single-bass-locked chord-entry configuration (one voice
+// stripped) and the per-voice-completion variant (three voices stripped:
+// bass plus whichever two of S/A/T are given). Mirrors the locked-voice
+// exclusion `click_note.js#_commit` already applies on the rejected-state
+// path ("must not appear in the ... overlay").
+function dropFirstMatch(arr, predicate) {
   var dropped = false;
+  return arr.filter(function (item) {
+    if (!dropped && predicate(item)) {
+      dropped = true;
+      return false;
+    }
+    return true;
+  });
+}
 
-  if (typeof bassMidi === "number") {
-    return midiArr.filter(function (m) {
-      if (!dropped && m === bassMidi) {
-        dropped = true;
-        return false;
-      }
-      return true;
-    });
+function dropLockedVoiceInstances(midiArr, target) {
+  var lockedVoices = (target && target.lockedVoices) || {};
+  var remaining = midiArr.slice();
+
+  Object.keys(lockedVoices).forEach(function (voiceId) {
+    var locked = lockedVoices[voiceId];
+    var lockedMidi = locked && locked.midi;
+    var lockedPc = locked && locked.pc;
+
+    if (typeof lockedMidi === "number") {
+      remaining = dropFirstMatch(remaining, function (m) {
+        return m === lockedMidi;
+      });
+    } else if (typeof lockedPc === "number") {
+      remaining = dropFirstMatch(remaining, function (m) {
+        return pitchClassForMidi(m) === lockedPc;
+      });
+    }
+  });
+
+  return remaining;
+}
+
+// SATB voice-id -> staff mapping (treble: S/A, bass: T/B). Single source of
+// truth shared with vexflow_staff_voice_builder.js, which imports this
+// module for it. Determines which staff the accepted-answer overlay belongs
+// on. When exactly one SATB voice is missing from target.lockedVoices (the
+// per-voice-completion configurations), the overlay renders on that voice's
+// staff. Otherwise (the current chord-entry configuration, where only bass
+// is locked and S/A/T are all missing as one blob) it defaults to treble,
+// preserving existing behavior exactly.
+var SATB_MAP = { treble: ["S", "A"], bass: ["T", "B"] };
+var ALL_SATB_VOICES = SATB_MAP.treble.concat(SATB_MAP.bass);
+// Outer voices of each staff (soprano on treble, tenor on bass) stem up;
+// inner voices (alto, bass) stem down — standard SATB engraving convention.
+var UP_STEM_VOICES = [SATB_MAP.treble[0], SATB_MAP.bass[0]];
+
+function missingVoiceForTarget(target) {
+  var lockedVoices = (target && target.lockedVoices) || {};
+  var missing = ALL_SATB_VOICES.filter(function (voiceId) {
+    return !Object.prototype.hasOwnProperty.call(lockedVoices, voiceId);
+  });
+  return missing.length === 1 ? missing[0] : null;
+}
+
+function staffForTarget(target) {
+  var missing = missingVoiceForTarget(target);
+  if (missing && SATB_MAP.bass.indexOf(missing) !== -1) {
+    return "bass";
   }
+  return "treble";
+}
 
-  if (typeof bassPc === "number") {
-    return midiArr.filter(function (m) {
-      if (!dropped && pitchClassForMidi(m) === bassPc) {
-        dropped = true;
-        return false;
-      }
-      return true;
-    });
-  }
-
-  return midiArr.slice();
+// Stem direction for the answer-overlay note, per SATB convention. Falls
+// back to up (1) when there isn't exactly one missing voice (the current
+// chord-entry configuration, where the overlay represents multiple upper
+// voices as one blob) — preserves existing behavior exactly for that case.
+function stemDirectionForTarget(target) {
+  var missing = missingVoiceForTarget(target);
+  if (!missing) return 1;
+  return UP_STEM_VOICES.indexOf(missing) !== -1 ? 1 : -1;
 }
 
 function buildRealization(accepted, targets, score, meter) {
@@ -225,9 +279,11 @@ function buildRealization(accepted, targets, score, meter) {
     var measureIndex = Math.floor(absOffsetTicks / measureTotal);
     var onsetWithinMeasure = absOffsetTicks - (measureIndex * measureTotal);
 
-    var upperMidi = dropOneBassInstance(byIndex[ti].midi || [], target);
+    var upperMidi = dropLockedVoiceInstances(byIndex[ti].midi || [], target);
     if (!upperMidi.length) continue;
     upperMidi = upperMidi.slice().sort(function (a, b) { return a - b; });
+    var staff = staffForTarget(target);
+    var stemDirection = stemDirectionForTarget(target);
 
     var pcMap = mergePcSpellingMaps(
       buildPcSpellingMap(score, absOffsetQb),
@@ -264,7 +320,9 @@ function buildRealization(accepted, targets, score, meter) {
       _absOnsetTicks: absOffsetTicks,
       _targetIndex: ti,
       midiNotes: spelledMidi,
-      spellings: spellings
+      spellings: spellings,
+      staff: staff,
+      stemDirection: stemDirection
     });
   }
 
@@ -302,6 +360,9 @@ var exports = {
   spellMidi: spellMidi,
   buildPcSpellingMap: buildPcSpellingMap,
   buildRealization: buildRealization,
+  staffForTarget: staffForTarget,
+  stemDirectionForTarget: stemDirectionForTarget,
+  SATB_MAP: SATB_MAP,
   __setScoreTimeline: __setScoreTimeline
 };
 

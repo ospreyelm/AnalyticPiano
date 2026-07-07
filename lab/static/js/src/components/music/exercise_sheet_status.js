@@ -31,6 +31,16 @@ import ExerciseInstructions from "app/config/exercise_instructions";
 import FbHints from "app/config/figured_bass_hints";
 
 export default  {
+    // Same target lookup click_note.js#_activeTarget uses (both delegate to
+    // ExerciseContext#getActiveHarmonizationTarget): the harmonization target
+    // currently being entered (index = count already accepted). Used to
+    // route the pending/rejected click-preview overlays to the correct
+    // staff, same as the accepted-answer overlay.
+    _activeHarmonizationTarget: function () {
+      var ctx = this.exerciseContext;
+      return ctx && ctx.getActiveHarmonizationTarget ? ctx.getActiveHarmonizationTarget() : null;
+    },
+
     _buildHarmonizationPending: function () {
       var clickComp = this._clickNoteComponent;
       if (!clickComp || typeof clickComp.getPending !== "function") return null;
@@ -54,6 +64,8 @@ export default  {
         spellings: pending.map(function (n) {
           return { step: n.step, alter: n.alter, octave: n.octave };
         }),
+        staff: HarmonizationRealizationLogic.staffForTarget(this._activeHarmonizationTarget()),
+        stemDirection: HarmonizationRealizationLogic.stemDirectionForTarget(this._activeHarmonizationTarget()),
       }];
     },
 
@@ -69,6 +81,8 @@ export default  {
         durationTicks: 2048,
         midiNotes: midiNotes,
         spellings: (rejected.spellings && rejected.spellings.length) ? rejected.spellings : null,
+        staff: HarmonizationRealizationLogic.staffForTarget(this._activeHarmonizationTarget()),
+        stemDirection: HarmonizationRealizationLogic.stemDirectionForTarget(this._activeHarmonizationTarget()),
       }];
     },
 

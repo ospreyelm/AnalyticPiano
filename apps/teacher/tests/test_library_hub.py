@@ -145,6 +145,35 @@ class ExercisePreviewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ExerciseDetailInputStyleTest(TestCase):
+    def setUp(self):
+        self.teacher = _make_teacher()
+        self.client = Client()
+        self.client.login(email=self.teacher.email, password="pass")
+
+    def test_per_voice_input_style_appears_in_umto_meta(self):
+        exercise = _make_exercise(self.teacher)
+        exercise.data["score"]["umto"]["metadata"]["input_style"] = "per_voice"
+        exercise.save(update_fields=["data"])
+
+        response = self.client.get(
+            reverse("teacher:exercise-detail", args=[exercise.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["umto_meta"]["input_style"], "per_voice")
+
+    def test_missing_input_style_omits_without_error(self):
+        exercise = _make_exercise(self.teacher)
+
+        response = self.client.get(
+            reverse("teacher:exercise-detail", args=[exercise.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["umto_meta"]["input_style"], "")
+
+
 class ExercisesSearchTest(TestCase):
     def setUp(self):
         self.teacher = _make_teacher()

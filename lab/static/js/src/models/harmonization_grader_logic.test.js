@@ -66,6 +66,57 @@ assertEqual("locked soprano exact midi passes",
 assertEqual("locked soprano wrong octave fails",
   logic.harmonizationMatch(sopranoTarget, [48, 52, 57, 72]).state, "incorrect");
 
+// Per-voice completion (SATB plan U4): lockedVoices generalizes to any
+// three-of-four SATB voices (bass always given), not just bass+soprano.
+// Fixture chord: C major triad, root position -- B=48, T=60, A=64, S=67.
+var missingSopranoTarget = {
+  bassMidi: 48,
+  bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: { B: { midi: 48, pc: 0 }, A: { midi: 64, pc: 4 }, T: { midi: 60, pc: 0 } },
+  voiceCountPolicy: { expected: 4, min: 4, max: 4 }
+};
+
+assertEqual("missing soprano: correct chord tone (G4) grades correct",
+  logic.harmonizationMatch(missingSopranoTarget, [48, 60, 64, 67]).state, "correct");
+
+assertEqual("missing soprano: non-chord tone grades incorrect",
+  logic.harmonizationMatch(missingSopranoTarget, [48, 60, 64, 62]).state, "incorrect");
+
+var missingAltoTarget = {
+  bassMidi: 48,
+  bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: { B: { midi: 48, pc: 0 }, S: { midi: 67, pc: 7 }, T: { midi: 60, pc: 0 } },
+  voiceCountPolicy: { expected: 4, min: 4, max: 4 }
+};
+
+assertEqual("missing alto: correct chord tone (E4) grades correct",
+  logic.harmonizationMatch(missingAltoTarget, [48, 60, 64, 67]).state, "correct");
+
+assertEqual("missing alto: non-chord tone grades incorrect",
+  logic.harmonizationMatch(missingAltoTarget, [48, 60, 62, 67]).state, "incorrect");
+
+assertEqual("missing alto: voice-crossing chord tone (below tenor) still grades correct",
+  logic.harmonizationMatch(missingAltoTarget, [48, 52, 60, 67]).state, "correct");
+
+var missingTenorTarget = {
+  bassMidi: 48,
+  bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: { B: { midi: 48, pc: 0 }, S: { midi: 67, pc: 7 }, A: { midi: 64, pc: 4 } },
+  voiceCountPolicy: { expected: 4, min: 4, max: 4 }
+};
+
+assertEqual("missing tenor: correct chord tone (C4, doubled bass) grades correct",
+  logic.harmonizationMatch(missingTenorTarget, [48, 60, 64, 67]).state, "correct");
+
+assertEqual("missing tenor: non-chord tone grades incorrect",
+  logic.harmonizationMatch(missingTenorTarget, [48, 62, 64, 67]).state, "incorrect");
+
 // note map
 var result = logic.harmonizationMatch(target, [48, 52, 58]);
 assertEqual("illegal note flagged in note map", result.note[58], "incorrect");

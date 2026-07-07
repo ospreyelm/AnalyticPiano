@@ -140,11 +140,22 @@ def _voice_attacks_at_offset(events: list[dict[str, Any]], offset: float) -> boo
     return False
 
 
-def _voice_attack_offsets(events: list[dict[str, Any]]) -> list[float]:
+def voice_attack_offsets(
+    events: list[dict[str, Any]], exclude_tied_stops: bool = False
+) -> list[float]:
+    """Offsets where a note event begins.
+
+    A tied-continuation event has kind == "note" (it is a real pitched
+    event), so exclude_tied_stops=True is needed by callers that care about
+    fresh attacks specifically -- is_tied_stop marks a continuation, not a
+    new attack a performer/student would play.
+    """
     offsets = []
     t = 0.0
     for event in events:
-        if event.get("kind") == "note":
+        if event.get("kind") == "note" and not (
+            exclude_tied_stops and event.get("is_tied_stop")
+        ):
             offsets.append(round(t, 5))
         t += float(event.get("duration") or 0)
     return offsets
@@ -156,7 +167,7 @@ def _pitch_name(pitch: dict[str, Any]) -> str:
     return f"{pitch['step']}{acc}"
 
 
-def _locked_voice_payload(
+def locked_voice_payload(
     umto: dict[str, Any], voice_id: str, offset: float
 ) -> dict[str, Any] | None:
     event = _voice_event_at_offset(
@@ -263,8 +274,8 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
     grading_pcs_by_offset = _grading_pcs_by_offset(umto)
     used_analysis_indexes: set[int] = set()
     targets = []
-    for offset in _voice_attack_offsets(bass_events):
-        bass = _locked_voice_payload(umto, "B", offset)
+    for offset in voice_attack_offsets(bass_events):
+        bass = locked_voice_payload(umto, "B", offset)
         if bass is None:
             continue
 
@@ -297,7 +308,7 @@ def build_targets_from_umto(umto: dict[str, Any]) -> list[dict[str, Any]]:
 
         locked: dict[str, Any] = {}
         for voice_id in locked_voices:
-            payload = _locked_voice_payload(umto, voice_id, offset)
+            payload = locked_voice_payload(umto, voice_id, offset)
             if payload is not None:
                 locked[voice_id] = payload
 
