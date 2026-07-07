@@ -5,6 +5,7 @@
 
 var { requireDefault } = require("../../../test/require_esm");
 var mod = requireDefault(require("./click_note_logic"));
+var grader = requireDefault(require("../../models/harmonization_grader_logic"));
 
 var fail = 0;
 function assertEqual(label, actual, expected) {
@@ -122,6 +123,87 @@ assertEqual("snapshot merges + dedups + sorts",
   mod.buildCommitSnapshot([48], [67, 60, 64, 48]), [48, 60, 64, 67]);
 assertEqual("snapshot with no locked notes",
   mod.buildCommitSnapshot([], [64, 60]), [60, 64]);
+
+// --- per-voice completion (missing S/A/T) integration ----------------------
+// Confirms the claim from the SATB per-voice-completion plan (U4): the
+// generic lockedVoices + capRemaining mechanism already handles a single
+// missing upper voice (S, A, or T; bass is always given) with no code
+// change, by driving the full click -> commit snapshot -> grade pipeline.
+//
+// Fixture chord: C major triad, root position, full four-voice texture.
+//   Bass = C3 (48), Tenor = C4 (60), Alto = E4 (64), Soprano = G4 (67).
+var PER_VOICE_POLICY = { expected: 4, min: 4, max: 4 };
+
+assertEqual("cap for 3 locked voices (per-voice completion) = 1",
+  mod.capRemaining(PER_VOICE_POLICY, 3), 1);
+
+// Missing soprano: bass, alto, tenor are locked/given.
+var missingSopranoTarget = {
+  bassMidi: 48, bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: {
+    B: { midi: 48, pc: 0 },
+    A: { midi: 64, pc: 4 },
+    T: { midi: 60, pc: 0 }
+  },
+  voiceCountPolicy: PER_VOICE_POLICY
+};
+var missingSopranoSnapshot = mod.buildCommitSnapshot([48, 64, 60], [67]);
+assertEqual("missing soprano: commit snapshot merges locked notes + clicked note",
+  missingSopranoSnapshot, [48, 60, 64, 67]);
+assertEqual("missing soprano: correct click (G4) grades correct",
+  grader.harmonizationMatch(missingSopranoTarget, missingSopranoSnapshot).state, "correct");
+
+// Missing alto: bass, soprano, tenor are locked/given.
+var missingAltoTarget = {
+  bassMidi: 48, bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: {
+    B: { midi: 48, pc: 0 },
+    S: { midi: 67, pc: 7 },
+    T: { midi: 60, pc: 0 }
+  },
+  voiceCountPolicy: PER_VOICE_POLICY
+};
+var missingAltoSnapshot = mod.buildCommitSnapshot([48, 67, 60], [64]);
+assertEqual("missing alto: commit snapshot merges locked notes + clicked note",
+  missingAltoSnapshot, [48, 60, 64, 67]);
+assertEqual("missing alto: correct click (E4) grades correct",
+  grader.harmonizationMatch(missingAltoTarget, missingAltoSnapshot).state, "correct");
+
+// Missing tenor: bass, soprano, alto are locked/given.
+var missingTenorTarget = {
+  bassMidi: 48, bassPc: 0,
+  requiredUpperPcs: [4, 7],
+  allowedPcs: [0, 4, 7],
+  lockedVoices: {
+    B: { midi: 48, pc: 0 },
+    S: { midi: 67, pc: 7 },
+    A: { midi: 64, pc: 4 }
+  },
+  voiceCountPolicy: PER_VOICE_POLICY
+};
+var missingTenorSnapshot = mod.buildCommitSnapshot([48, 67, 64], [60]);
+assertEqual("missing tenor: commit snapshot merges locked notes + clicked note",
+  missingTenorSnapshot, [48, 60, 64, 67]);
+assertEqual("missing tenor: correct click (C4, doubled bass) grades correct",
+  grader.harmonizationMatch(missingTenorTarget, missingTenorSnapshot).state, "correct");
+
+// Edge case: an incorrect (non-chord-tone) click for the missing voice grades
+// incorrect, per existing state semantics (illegal_pc is a hard reason).
+var missingAltoWrongSnapshot = mod.buildCommitSnapshot([48, 67, 60], [62]); // D4 is not a chord tone
+assertEqual("missing alto: non-chord-tone click grades incorrect",
+  grader.harmonizationMatch(missingAltoTarget, missingAltoWrongSnapshot).state, "incorrect");
+
+// Edge case: a voice-crossing click (the alto note lands registrally below the
+// given tenor) is still a valid chord tone, so it grades correct -- this is
+// R7's accepted looseness (no register/voice-crossing constraint) actually
+// happening, not just assumed.
+var missingAltoCrossedSnapshot = mod.buildCommitSnapshot([48, 67, 60], [52]); // E3, below tenor's C4
+assertEqual("missing alto: voice-crossing chord tone still grades correct",
+  grader.harmonizationMatch(missingAltoTarget, missingAltoCrossedSnapshot).state, "correct");
 
 if (fail > 0) {
   console.error("\n" + fail + " assertion(s) failed.");
