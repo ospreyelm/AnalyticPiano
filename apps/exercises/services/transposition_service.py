@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def _sig_for_clean_key(clean_key: str) -> str | None:
-    """Convert a clean key name (e.g. 'G', 'Bb', 'F#m') to a sig string.
+    """Convert a clean key name (e.g. 'G', 'Bb', 'F#m', 'a') to a sig string.
 
     Returns None when the key cannot be resolved.
     """
-    # Minor keys: e.g. 'F#m' → pseudo-key 'f#', 'Am' → 'a'
+    # Minor keys: e.g. 'F#m' → pseudo-key 'f#', 'Am' → 'a', 'a' → 'a'
     if clean_key.endswith("m"):
         root = clean_key[:-1]
         pseudo = root[0].lower() + root[1:]
@@ -37,6 +37,21 @@ def _sig_for_clean_key(clean_key: str) -> str | None:
 
     sig = pseudo_key_to_sig.get(pseudo)
     return sig  # may be None for unknown keys
+
+
+def _canonical_clean_key(clean_key: str) -> str:
+    """Normalize a clean key for identity comparison.
+
+    Lowercase tonic names are interpreted as minor in the key-set convention,
+    so 'a' and 'Am' both become 'Am'. Major keys keep their entered form.
+    """
+    if not clean_key:
+        return clean_key
+    if clean_key.endswith("m"):
+        return clean_key[0].upper() + clean_key[1:]
+    if clean_key[0].islower():
+        return clean_key[0].upper() + clean_key[1:] + "m"
+    return clean_key
 
 
 def _compute_vector_and_key(sig_orig: str, sig_target: str, key_orig_hl: str) -> tuple[int, str | None]:
@@ -281,7 +296,7 @@ def generate_transposed_copies(
     created_exercises = []
 
     for clean_key in key_set:
-        if clean_key == source_clean_key:
+        if _canonical_clean_key(clean_key) == _canonical_clean_key(source_clean_key):
             # Requested key matches the source's own key (e.g. a preset
             # key-set that always includes a fixed key regardless of the
             # source). Skip it instead of creating an exact duplicate of

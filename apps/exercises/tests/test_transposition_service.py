@@ -437,6 +437,72 @@ class TranspositionServiceTest(TestCase):
         self.assertEqual(len(created), 1)
         self.assertEqual(created[0].description, "Test Chords in C (G)")
 
+    def test_minor_source_uses_minor_transposition_keys(self):
+        """Transposing a minor-key source with major-sounding preset labels
+        (e.g. the UI's 'common' set) must land in the corresponding minor keys,
+        not relative major.
+
+        Regression: teacher/play/ always sent C/G/D/F/Bb/Eb regardless of mode,
+        so an A-minor source stayed A minor under every target signature instead
+        of moving to E minor, D minor, etc.
+        """
+        source_minor = save_chordal_umto_exercise(
+            description="Minor Source",
+            author=self.author,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [57, 60, 64], "hidden": []},  # A minor
+                {"offset": 1.0, "duration": 1.0, "visible": [59, 62, 65], "hidden": []},  # B dim
+            ],
+            key="iA_",  # A minor
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+        )
+
+        created = generate_transposed_copies(
+            source_exercise=source_minor,
+            key_set=["Am", "Em", "Dm"],  # identity "Am" should be skipped
+            author=self.author,
+        )
+
+        # Identity key skipped, so only Em and Dm created.
+        self.assertEqual(len(created), 2)
+        target_keys = {
+            ex.data.get("score", {}).get("umto", {}).get("metadata", {}).get("key")
+            for ex in created
+        }
+        self.assertEqual(target_keys, {"iE_", "iD_"})
+
+    def test_lowercase_key_strings_resolve_to_minor(self):
+        """Backend must accept lowercase tonic names (e.g. 'e', 'd') as minor
+        keys, matching the adapted presets the frontend sends for a minor source.
+        """
+        source_minor = save_chordal_umto_exercise(
+            description="Lowercase Minor Source",
+            author=self.author,
+            chords=[
+                {"offset": 0.0, "duration": 1.0, "visible": [57, 60, 64], "hidden": []},
+            ],
+            key="iA_",
+            meter=None,
+            clef="keyboard",
+            staff_distribution="keyboard",
+            barline_offsets=[],
+        )
+
+        # "a" is the source's own key and is skipped; "e"/"d" are valid minor targets.
+        created = generate_transposed_copies(
+            source_exercise=source_minor,
+            key_set=["a", "e", "d"],
+            author=self.author,
+        )
+
+        self.assertEqual(len(created), 2)
+        for ex in created:
+            meta_key = ex.data.get("score", {}).get("umto", {}).get("metadata", {}).get("key")
+            self.assertTrue(meta_key.startswith("i"), f"Expected minor key, got {meta_key}")
+
     def test_preserves_analysis_slices(self):
         """Test that analysis slices are preserved in transposed exercises."""
         # Create source with analysis (free mode, no meter)
