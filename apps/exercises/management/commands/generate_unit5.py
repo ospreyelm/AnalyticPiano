@@ -65,7 +65,8 @@ QUALITY_DISPLAY = {
     "dim7":       "diminished 7",
 }
 
-EXERCISES_PER_PLAYLIST = 12
+PROBLEMS_PER_PLAYLIST = 48
+CHORDS_PER_WORKSHEET = 4
 
 
 def _chord_notes_and_key(key_str, quality, chord_type):
@@ -89,8 +90,8 @@ def _chord_notes_and_key(key_str, quality, chord_type):
     return midi_notes, display_key
 
 
-def _generate_problems(quality_pool, eligible_roots, n=EXERCISES_PER_PLAYLIST):
-    """Round-robin (quality, root) pairs to produce n exercises."""
+def _generate_problems(quality_pool, eligible_roots, n=PROBLEMS_PER_PLAYLIST):
+    """Round-robin (quality, root) pairs to produce n individual chord problems."""
     problems = []
     i = 0
     while len(problems) < n:
@@ -99,6 +100,11 @@ def _generate_problems(quality_pool, eligible_roots, n=EXERCISES_PER_PLAYLIST):
         problems.append((key_str, root_label, quality))
         i += 1
     return problems
+
+
+def _chunk_problems(items, size):
+    """Split items into chunks of at most size."""
+    return [items[i:i + size] for i in range(0, len(items), size)]
 
 
 class Command(BaseCommand):
@@ -133,24 +139,33 @@ class Command(BaseCommand):
         for stage_num, display_choices, quality_pool, max_acc in stages:
             eligible_roots = [(k, r, a) for k, r, a in ALL_ROOTS if a <= max_acc]
             problems = _generate_problems(quality_pool, eligible_roots)
+            worksheets = _chunk_problems(problems, CHORDS_PER_WORKSHEET)
 
             created_exercises = []
-            for key_str, root_label, quality in problems:
-                display_answer = QUALITY_DISPLAY[quality]
-                midi_notes, display_key = _chord_notes_and_key(key_str, quality, chord_type)
+            for worksheet_idx, worksheet in enumerate(worksheets, start=1):
+                chords = []
+                worksheet_key = None
+                for key_str, root_label, quality in worksheet:
+                    display_answer = QUALITY_DISPLAY[quality]
+                    midi_notes, display_key = _chord_notes_and_key(key_str, quality, chord_type)
+                    if worksheet_key is None:
+                        worksheet_key = display_key
+                    chords.append({
+                        "notes": midi_notes,
+                        "answer": display_answer,
+                        "choices": display_choices,
+                        "rhythmValue": "w",
+                    })
 
-                quality_label = quality.replace("_", "-")
-                desc = f"Unit 5 {chord_type.replace('_', ' ').title()} — {root_label} {quality_label}"
+                desc = f"Unit 5 {chord_type.replace('_', ' ').title()}: Stage {stage_num} — Worksheet {worksheet_idx}"
 
                 skill_tags = ["unit:5", skill_root, f"unit:5_L{stage_num}"]
 
                 ex = save_umto_chord_id_exercise(
                     description=desc,
                     author=author,
-                    chord_key=display_key,
-                    midi_notes=midi_notes,
-                    answer=display_answer,
-                    choices=display_choices,
+                    chord_key=worksheet_key,
+                    chords=chords,
                     skill_tags=skill_tags,
                     complexity=5,
                     is_public=options["public"],
@@ -158,7 +173,7 @@ class Command(BaseCommand):
                 )
                 created_exercises.append(ex)
                 self.stdout.write(
-                    f"  {desc}: {display_answer!r} in {display_key} (id={ex.id})"
+                    f"  {desc}: {len(chords)} chords (id={ex.id})"
                 )
 
             self._build_playlist(

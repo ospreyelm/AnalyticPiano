@@ -754,6 +754,19 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
       stave.setKeySignature(this.keySignature);
       // timeSignature not required here
       // stave.setFirstBarWidth(this.keySignature);
+
+      // Identification exercises present the chord as the prompt, not as
+      // user-played input, so the notation should render black rather than
+      // the default gray for unplayed notes.
+      if (
+        typeof this._isIdentificationLikeExercise === "function" &&
+        this._isIdentificationLikeExercise()
+      ) {
+        displayChord.setNoteProps(displayChord.getNoteNumbers(), {
+          correctness: true,
+        });
+      }
+
       stave.setNoteFactory(
         new ExerciseNoteFactory({
           clef: clef,

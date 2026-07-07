@@ -1044,7 +1044,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
                 var notes = ExerciseDefinition.sortNotes(chord.notes || []);
                 return {
                   visible: notes.slice(),
-                  hidden: [],
+                  hidden: false,
                   notes: notes,
                   answer: chord.answer || "",
                   choices: chord.choices || [],
@@ -1098,7 +1098,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
             var notes = ExerciseDefinition.sortNotes(chord.notes || []);
             return {
               visible: notes.slice(),
-              hidden: [],
+              hidden: false,
               notes: notes,
               answer: chord.answer || "",
               choices: chord.choices || [],
@@ -1282,7 +1282,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
           normalized.hidden = normalized.notes.slice(1);
         } else if (exercise.type === "identification") {
           normalized.visible = normalized.notes.slice();
-          normalized.hidden = [];
+          normalized.hidden = false;
           if (_.isObject(chord)) {
             normalized.answer = chord.answer || "";
             normalized.choices = chord.choices || [];
