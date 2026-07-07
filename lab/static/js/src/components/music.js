@@ -291,9 +291,18 @@ import KeySignature from "app/models/key_signature";
         sheetComponent.barlines = [];
         this.settings.sheet.barlines = [];
 
-        // TODO: work in progress code to enable URL to change dynamically with exercise without refreshing
-        //   postponed because of wide range of intersections/conflicts with Django's view features
-        if (!!newData?.exerciseNum && !window.PLAYER_DEFINITION_URL) {
+        // Update the URL to reflect the served exercise without a full reload.
+        // For the student player (PLAYER_DEFINITION_URL set) the backend pins
+        // exercise_num to the DB-derived slot and returns pinnedUrl; use it.
+        // For the legacy /exercise/<id>/ flow, rebuild the path from exerciseNum.
+        //   (the path-based branch was the long-postponed "URL changes dynamically
+        //   with exercise without refreshing" TODO; the player flow now ships the
+        //   pinned URL from the server so no client-side path guesswork is needed)
+        if (!!newData?.exerciseNum && window.PLAYER_DEFINITION_URL && newData.pinnedUrl) {
+          if (newData.pinnedUrl !== window.location.pathname + window.location.search) {
+            window.history.replaceState(null, "", newData.pinnedUrl);
+          }
+        } else if (!!newData?.exerciseNum && !window.PLAYER_DEFINITION_URL) {
           const newPath = location.pathname.split("/").slice(0, -2);
           newPath.push(newData.exerciseNum);
           newPath.push("");
