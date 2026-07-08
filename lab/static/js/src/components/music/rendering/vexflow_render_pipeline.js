@@ -230,7 +230,8 @@ import VexflowAnnotationPass from "app/components/music/rendering/vexflow_annota
       var allVoices = trebleVoices.concat(bassVoices);
       if (allVoices.length) {
         var formatter = new Vex.Flow.Formatter();
-        formatter.joinVoices(allVoices);
+        if (trebleVoices.length) formatter.joinVoices(trebleVoices);
+        if (bassVoices.length) formatter.joinVoices(bassVoices);
 
         var leftPadTreble = trebleStave ? (trebleStave.getNoteStartX() - trebleStave.getX()) : 0;
         var leftPadBass = bassStave ? (bassStave.getNoteStartX() - bassStave.getX()) : 0;
