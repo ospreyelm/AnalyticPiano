@@ -10,6 +10,7 @@ without starting the HTTP stack.
 """
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 from django.urls import reverse, NoReverseMatch
@@ -28,7 +29,10 @@ from apps.student.player_progression import (
 from apps.exercises.taxonomy_reader import TaxonomyReader
 from apps.student.access import accessible_playlist_queryset
 from apps.student.progress import TAG_ALIASES
-from apps.student.unit1_curriculum import get_unit1_lane_groups
+from apps.student.unit1_curriculum import (
+    UNIT1_CANONICAL_LANES,
+    resolve_unit1_lane_playlists,
+)
 
 
 @dataclass
@@ -489,10 +493,78 @@ def _compute_unit1_lane_mastery_level(user, lane_key, playlist_id) -> str:
             
     if advanced_successes >= 1:
         return StudentSkillMastery.LEVEL_PROFICIENT
-        
+
     if has_any_attempt:
         return StudentSkillMastery.LEVEL_ATTEMPTED
-        
+
+    return StudentSkillMastery.LEVEL_NOT_STARTED
+
+
+def _compute_unit1_lane_mastery_from_batched(
+    user,
+    lane_key: str,
+    epo_rows: list,
+    perf_rows: list,
+    ident_attempts: list,
+    challenge_cache: dict[str, bool],
+) -> str:
+    """Pure-compute Unit-1 lane mastery over pre-fetched rows.
+
+    Same logic as ``_compute_unit1_lane_mastery_level`` but takes batched data
+    (one EPO query + data already fetched by ``_batch_playlist_data``) so it
+    fires no queries beyond ``_check_challenge_mastery``. ``challenge_cache``
+    memoizes that per group_key (treble/bass) across the 6 lanes.
+    """
+    group_key = "treble" if "treble" in lane_key else "bass"
+    if group_key not in challenge_cache:
+        challenge_cache[group_key] = _check_challenge_mastery(user, group_key)
+    if challenge_cache[group_key]:
+        return StudentSkillMastery.LEVEL_MASTERED
+
+    if not epo_rows:
+        return StudentSkillMastery.LEVEL_NOT_STARTED
+
+    epo_map = {epo.exercise.id[:6]: epo for epo in epo_rows}
+
+    advanced_successes = 0
+    has_any_attempt = False
+
+    for pd in perf_rows:
+        if pd.data:
+            has_any_attempt = True
+        for entry in (pd.data or []):
+            ex_id = entry.get("id", "")[:6]
+            epo = epo_map.get(ex_id)
+            if not epo:
+                continue
+            numerator = entry.get("score_numerator")
+            denominator = entry.get("score_denominator")
+            if denominator not in (None, 0):
+                is_success = (numerator == denominator)
+            else:
+                is_success = (entry.get("error_tally") in (0, -1, "n/a"))
+            if is_success and epo.difficulty_tier >= 3:
+                advanced_successes += 1
+
+    if ident_attempts:
+        has_any_attempt = True
+
+    for attempt in ident_attempts:
+        ex_id = attempt.exercise.id[:6] if attempt.exercise else ""
+        epo = epo_map.get(ex_id)
+        if not epo:
+            continue
+        score_data = attempt.score or {}
+        is_success = (score_data.get("incorrect", 0) == 0 and score_data.get("unanswered", 0) == 0)
+        if is_success and epo.difficulty_tier >= 3:
+            advanced_successes += 1
+
+    if advanced_successes >= 1:
+        return StudentSkillMastery.LEVEL_PROFICIENT
+
+    if has_any_attempt:
+        return StudentSkillMastery.LEVEL_ATTEMPTED
+
     return StudentSkillMastery.LEVEL_NOT_STARTED
 
 
@@ -511,6 +583,63 @@ def _get_practice_band(done, total):
     if pct <= 80:
         return "fluency_building"
     return "polishing" if pct < 100 else "completed"
+
+
+def _load_unit1_lane_data(user) -> list[dict]:
+    """Fetch all Unit-1 lane data in a constant number of queries.
+
+    Resolves the 6 canonical lane playlists in one query, batch-fetches their
+    progress data (perf + ident + ordered exercise ids, priming the
+    ``untransposed_exercises_ids`` cache) in three queries, and fetches the
+    ExercisePlaylistOrdered rows (with ``difficulty_tier`` + ``exercise``) for
+    mastery in one query. ``_check_challenge_mastery`` is NOT called here —
+    callers memoize it per group_key via ``challenge_cache``.
+
+    Returns an ordered list (``UNIT1_CANONICAL_LANES`` order) of dicts:
+        {lane_key, lane, playlist, raw, epo_rows}
+    where ``raw`` is the ``PlaylistRawData`` from ``_batch_playlist_data``.
+    Raises ``Playlist.DoesNotExist`` / ``ImproperlyConfigured`` per
+    ``resolve_unit1_lane_playlists``.
+    """
+    resolved = resolve_unit1_lane_playlists()
+    playlists = [resolved[lane_key] for lane_key in UNIT1_CANONICAL_LANES]
+    raw_by_pk = _batch_playlist_data(user, playlists)
+
+    epo_by_pk: dict[int, list] = defaultdict(list)
+    for epo in (
+        ExercisePlaylistOrdered.objects
+        .filter(playlist_id__in=[pl.pk for pl in playlists])
+        .select_related("exercise")
+    ):
+        epo_by_pk[epo.playlist_id].append(epo)
+
+    return [
+        {
+            "lane_key": lane_key,
+            "lane": lane,
+            "playlist": resolved[lane_key],
+            "raw": raw_by_pk[resolved[lane_key].pk],
+            "epo_rows": epo_by_pk.get(resolved[lane_key].pk, []),
+        }
+        for lane_key, lane in UNIT1_CANONICAL_LANES.items()
+    ]
+
+
+def _group_unit1_lanes(lane_data: list[dict]) -> list[dict]:
+    """Group flat lane data into activity-keyed groups, preserving lane order."""
+    groups: list[dict] = []
+    current: dict | None = None
+    for entry in lane_data:
+        lane = entry["lane"]
+        if current is None or current["key"] != lane["activity_key"]:
+            current = {
+                "key": lane["activity_key"],
+                "title": lane["activity_title"],
+                "entries": [],
+            }
+            groups.append(current)
+        current["entries"].append(entry)
+    return groups
 
 
 def get_unit_progress_data(user, unit_n: str) -> dict | None:
@@ -544,23 +673,34 @@ def get_unit_progress_data(user, unit_n: str) -> dict | None:
     if unit_n == "1":
         bar_segments = []
         try:
-            lane_groups = get_unit1_lane_groups()
+            lane_data = _load_unit1_lane_data(user)
         except Playlist.DoesNotExist:
-            lane_groups = []
+            lane_data = []
 
-        for group in lane_groups:
+        challenge_cache: dict[str, bool] = {}
+        for group in _group_unit1_lanes(lane_data):
             rows = []
-            for lane in group.get("lanes", []):
-                stats = _playlist_stats_by_id(user, lane["playlist_id"])
-                lane_mastery = _compute_unit1_lane_mastery_level(user, lane["lane_key"], lane["playlist_id"])
+            for entry in group["entries"]:
+                lane = entry["lane"]
+                playlist = entry["playlist"]
+                raw = entry["raw"]
+                stats = _playlist_stats(playlist, raw)
+                lane_mastery = _compute_unit1_lane_mastery_from_batched(
+                    user,
+                    entry["lane_key"],
+                    entry["epo_rows"],
+                    raw.perf_rows,
+                    raw.ident_attempts,
+                    challenge_cache,
+                )
                 is_proficient = (lane_mastery in ["proficient", "mastered"])
                 practice_band = _get_practice_band(stats["done"], stats["total"])
-                
+
                 rows.append(
                     {
                         "slug": lane["lane_key"],
                         "label": lane["label"],
-                        "playlist_id": lane["playlist_id"],
+                        "playlist_id": playlist.id,
                         "playlist_name": stats["name"],
                         "done": stats["done"],
                         "total": stats["total"],
