@@ -89,6 +89,7 @@ class AnalysisLayer(BaseModel):
     spacing: Optional[str] = None
     interval_specific: Optional[str] = None
     interval_generic: Optional[str] = None
+    chord_quality: Optional[str] = None
 
 class VisualMetadata(BaseModel):
     """
@@ -150,6 +151,7 @@ class Metadata(BaseModel):
     chord_settle_ms: int = 150
     release_grace_ms: int = 120
     max_voice_displacement: int = 4
+    allowed_answers: Optional[List[str]] = None
 
     @model_validator(mode="after")
     def _meter_required_for_voices(self):
@@ -235,6 +237,8 @@ class UMTO(BaseModel):
                     labels.add(slice.content.figured_bass)
                 elif slice.content.functional_label:
                     labels.add(slice.content.functional_label)
+                elif getattr(slice.content, "chord_quality", None):
+                    labels.add(slice.content.chord_quality)
 
         # Unit 1 Bridge: If no theory labels found and it's Unit 1, 
         # use the Pitch names sounding at those offsets.
@@ -268,7 +272,7 @@ class UMTO(BaseModel):
             "introText": self.metadata.source,
             "reviewText": "Well done!",
             "inputMode": self.metadata.input_mode,
-            "allowed_answers": self.get_allowed_answers(unit),
+            "allowed_answers": self.metadata.allowed_answers if self.metadata.allowed_answers is not None else self.get_allowed_answers(unit),
             "score": {
                 "meta": {
                     "key": self.metadata.key, 

@@ -681,6 +681,7 @@ def build_chordal_umto_payload(
     analysis_review_status: Literal["none", "generated", "reviewed"] = "none",
     barline_offsets: Optional[list] = None,
     analysis_type: Optional[str] = None,
+    allowed_answers: Optional[list] = None,
 ) -> dict:
     """Build a UMTO frontend payload for a chordal score-kind exercise.
 
@@ -705,6 +706,7 @@ def build_chordal_umto_payload(
             score_kind="chordal",
             analysis_review_status=analysis_review_status,
             barline_offsets=barline_offsets or [],
+            allowed_answers=allowed_answers,
         ),
         chords=[ChordEvent(**c) for c in chords],
         analysis=[AnalysisSlice(**a) for a in analysis],
@@ -720,6 +722,7 @@ def build_chordal_umto_payload(
         "meter": meter,
         "clef": clef,
         "complexity_score": complexity_score,
+        "allowed_answers": allowed_answers,
         "score": {
             "meta": {"key": key, "time": meter, "clef": clef},
             "measures": _chordal_to_measures(chords, meter, barline_offsets or []),
@@ -926,6 +929,7 @@ def save_chordal_umto_exercise(
     display: Optional[dict] = None,
     mode: "InteractionMode" = None,
     analysis_type: Optional[str] = None,
+    allowed_answers: Optional[list] = None,
 ) -> Exercise:
     """Normalize and validate incoming chords, build a Chordal UMTO exercise payload,
     validate it, save it, and backfill IDs.
@@ -1023,6 +1027,7 @@ def save_chordal_umto_exercise(
             analysis_review_status=review_status,
             barline_offsets=barline_offsets or [],
             analysis_type=analysis_type,
+            allowed_answers=allowed_answers,
         )
     except Exception as e:
         raise NonUMTOExerciseError(f"Failed to build chordal UMTO payload: {e}") from e

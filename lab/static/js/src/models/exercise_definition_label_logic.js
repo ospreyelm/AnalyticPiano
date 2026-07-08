@@ -137,6 +137,8 @@ function normalizeAnalysisLabel(label) {
       ? (compoundIntervals
         ? ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "m9", "M9", "m10", "M10", "P11", "P12", "m13", "M13", "m14", "M14"]
         : ["m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8"])
+      : analysisType === "chord_quality"
+      ? ["major", "minor", "diminished", "augmented", "dominant 7", "major 7", "minor 7", "half-dim 7", "diminished 7"]
       : ["I", "ii", "IV", "V", "vi", "I6/4", "i6/4", "V6/4", "Cad6/4", "Cadb6/4"];
 
     if (pool.length < 4) {

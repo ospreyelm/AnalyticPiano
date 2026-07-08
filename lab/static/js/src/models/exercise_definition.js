@@ -11,6 +11,7 @@ import ChordalProblemsLogic from "app/models/chordal_problems_logic";
 import Tonal from "tonal";
 import LabelLogic from "app/models/exercise_definition_label_logic";
 import ResolvedModeModule from "./resolved_mode";
+import { resolveAnalysisAnswer } from "app/models/exercise_definition_analysis_resolver";
 
 var resolvePipeline = ResolvedModeModule.resolvePipeline;
 
@@ -363,20 +364,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
           isTarget = false;
       }
 
-      // Use !== null/undefined checks (not truthiness) for figured bass fields.
-      if (analysisType === "figured_bass_unabbreviated" && slice.content.raw_figured_bass != null) {
-        answer = slice.content.raw_figured_bass;
-      } else if (analysisType === "figured_bass" && slice.content.figured_bass != null) {
-        answer = slice.content.figured_bass;
-      } else if (slice.content.roman_numeral) {
-        answer = LabelLogic.stripFiguredBassTokens(slice.content.roman_numeral);
-      } else if (slice.content.pop_symbol) {
-        answer = slice.content.pop_symbol;
-      } else if (slice.content.figured_bass != null) {
-        answer = slice.content.figured_bass;
-      } else if (slice.content.functional_label) {
-        answer = slice.content.functional_label;
-      }
+      answer = resolveAnalysisAnswer(analysisType, slice.content);
 
       // Unit 1 Bridge: Note Names
       var isNoteNameEx = (exercise.analysisType === "note_name") || 
@@ -960,21 +948,7 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
                   return Math.abs((s.offset || 0) - offset) < 0.001;
                 });
                 var content = (slice && slice.content) || {};
-                var answer = "";
-                if (exercise.analysisType === "figured_bass" && content.figured_bass != null) {
-                  answer = content.figured_bass;
-                } else if (exercise.analysisType === "figured_bass_unabbreviated" && content.raw_figured_bass != null) {
-                  answer = content.raw_figured_bass;
-                } else if (content.roman_numeral) {
-                  answer = LabelLogic.stripFiguredBassTokens(content.roman_numeral);
-                } else if (content.pop_symbol) {
-                  answer = content.pop_symbol;
-                } else if (content.figured_bass != null) {
-                  answer = content.figured_bass;
-                } else if (content.functional_label) {
-                  answer = content.functional_label;
-                }
-                answer = LabelLogic.normalizeAnalysisLabel(answer);
+                var answer = resolveAnalysisAnswer(exercise.analysisType, content);
                 if (answer && !chordalSeen[answer]) {
                   chordalSeen[answer] = true;
                   chordalAnswers.push(answer);

@@ -11,7 +11,8 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.generation.music21_builder import chord_notes_key_and_spelling
-from apps.exercises.identification_factory import save_umto_chord_id_exercise
+from apps.exercises.umto_factory import save_chordal_umto_exercise
+from apps.exercises.umto import InteractionMode
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
 
 User = get_user_model()
@@ -123,38 +124,62 @@ class Command(BaseCommand):
 
             created_exercises = []
             for worksheet_idx, worksheet in enumerate(worksheets, start=1):
-                chords = []
+                chord_events = []
+                analysis_slices = []
                 worksheet_key = None
-                for key_str, root_label, quality in worksheet:
+                for idx, (key_str, root_label, quality) in enumerate(worksheet):
                     display_answer = QUALITY_DISPLAY[quality]
                     midi_notes, display_key, spelling = chord_notes_key_and_spelling(key_str, quality, chord_type)
                     if worksheet_key is None:
                         worksheet_key = display_key
-                    chords.append({
+                    
+                    offset = idx * 4.0
+                    chord_events.append({
                         "notes": midi_notes,
-                        "answer": display_answer,
-                        "choices": display_choices,
-                        "rhythmValue": "w",
                         "spelling": spelling,
+                        "duration": 4.0,
+                        "offset": offset,
+                    })
+                    analysis_slices.append({
+                        "offset": offset,
+                        "is_target": True,
+                        "content": {
+                            "chord_quality": display_answer,
+                        }
                     })
 
                 desc = f"Unit 5 {chord_type.replace('_', ' ').title()}: Stage {stage_num} — Worksheet {worksheet_idx}"
 
                 skill_tags = ["unit:5", skill_root, f"unit:5_L{stage_num}"]
 
-                ex = save_umto_chord_id_exercise(
+                ex = save_chordal_umto_exercise(
                     description=desc,
                     author=author,
-                    chord_key=worksheet_key,
-                    chords=chords,
+                    chords=chord_events,
+                    key=worksheet_key,
+                    meter="4/4",
+                    clef="keyboard",
+                    staff_distribution="keyboard",
                     skill_tags=skill_tags,
                     complexity=5,
                     is_public=options["public"],
                     overwrite=options["overwrite"],
+                    barline_offsets=[float(i * 4.0) for i in range(1, len(chord_events))],
+                    analysis=analysis_slices,
+                    mode=InteractionMode.IDENTIFICATION,
+                    analysis_type="chord_quality",
+                    allowed_answers=display_choices,
+                    display={
+                        "showRomans": False,
+                        "showFigures": False,
+                        "showNoteNames": False,
+                        "showChordLabels": False,
+                        "showScaleDegrees": False,
+                    }
                 )
                 created_exercises.append(ex)
                 self.stdout.write(
-                    f"  {desc}: {len(chords)} chords (id={ex.id})"
+                    f"  {desc}: {len(chord_events)} chords (id={ex.id})"
                 )
 
             self._build_playlist(
