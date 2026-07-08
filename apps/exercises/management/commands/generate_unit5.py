@@ -11,8 +11,8 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.exercises.generation.music21_builder import chord_notes_key_and_spelling
+from apps.exercises.identification_factory import save_umto_chord_id_exercise
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
-from apps.exercises.umto_factory import save_umto_chord_id_exercise
 
 User = get_user_model()
 
