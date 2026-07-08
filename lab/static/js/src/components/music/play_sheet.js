@@ -519,7 +519,7 @@ import PlayAuthoringToolbar from "./play_authoring_toolbar";
         const staffSig = this.keySignature.signatureSpec;
         // Reserve extra first-bar width for the time-signature glyph when a meter
         // is set, otherwise the glyph is clipped/overlapped and never shows.
-        stave.setFirstBarWidth(staffSig, 4, !!this._meter);
+        stave.setFirstBarWidth(staffSig, 4, !!this._meter, this._meter);
       }
       stave.updatePosition();
 
@@ -580,7 +580,7 @@ import PlayAuthoringToolbar from "./play_authoring_toolbar";
 
       if (typeof this.keySignature.signatureSpec === "string") {
         const staffSig = this.keySignature.signatureSpec;
-        stave.setFirstBarWidth(staffSig, 4);
+        stave.setFirstBarWidth(staffSig, 4, !!this._meter, this._meter);
       }
       stave.updatePosition();
       stave.updateAlterations(activeAlterations);

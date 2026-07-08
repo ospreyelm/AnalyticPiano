@@ -67,7 +67,7 @@ export default  {
         staff: HarmonizationRealizationLogic.staffForTarget(this._activeHarmonizationTarget()),
         stemDirection: HarmonizationRealizationLogic.stemDirectionForTarget(
           this._activeHarmonizationTarget(),
-          ctx && ctx.definition && ctx.definition.exercise && ctx.definition.exercise.score
+          this.exerciseContext && this.exerciseContext.definition && this.exerciseContext.definition.exercise && this.exerciseContext.definition.exercise.score
         ),
       }];
     },

@@ -717,7 +717,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
         const minimum = 0;
         const hasTimeSig =
           BarlineSpacingUtils.timeSignatureParsed(this.timeSignature) != false;
-        stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
+        stave.setFirstBarWidth(staffSig, minimum, hasTimeSig, this.timeSignature);
       }
       stave.updatePosition();
 
@@ -791,7 +791,7 @@ var CHORD_BANK_SIZE = Config.get("general.chordBank.displaySize") - 1;
         const minimum = 0;
         const hasTimeSig =
           BarlineSpacingUtils.timeSignatureParsed(this.timeSignature) != false;
-        stave.setFirstBarWidth(staffSig, minimum, hasTimeSig);
+        stave.setFirstBarWidth(staffSig, minimum, hasTimeSig, this.timeSignature);
       }
       stave.updatePositionWithRhythm(widthUnits, elapsedWidthUnits);
       stave.updateAlterations(activeAlterations);
