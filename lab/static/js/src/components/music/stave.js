@@ -773,7 +773,40 @@ function _isOpenNotehead(staveNote) {
     setTimeSignature: function (timeSignature) {
       this.timeSignature = timeSignature;
     },
-    setFirstBarWidth: function (staffSig, minimum = 0, hasTimeSig = false) {
+    setFirstBarWidth: function (staffSig, minimum = 0, hasTimeSig = false, timeSignature = false) {
+      // Measure the real width VexFlow needs for the clef, key signature,
+      // and optional time signature.  The old hand-tuned estimate has drifted
+      // from the vendored VexFlow glyph metrics, causing the first chord to
+      // collide with the clef/key/time area on Unit 5 identification sheets.
+      if (
+        this.vexRenderer &&
+        this.keySignature &&
+        typeof this.keySignature.getVexKey === "function" &&
+        Vex.Flow.Stave &&
+        Vex.Flow.Barline
+      ) {
+        try {
+          var style = { num_lines: 5, fill_style: "rgba(0, 0, 0, 1)" };
+          var measureStave = new Vex.Flow.Stave(0, 0, 1000, style);
+          measureStave.setBegBarType(Vex.Flow.Barline.type.NONE);
+          measureStave.setEndBarType(Vex.Flow.Barline.type.NONE);
+          measureStave.clef = this.clef;
+          measureStave.setContext(this.vexRenderer.getContext());
+          measureStave.addClef(this.clef);
+          measureStave.addKeySignature(this.keySignature.getVexKey());
+          if (hasTimeSig && timeSignature) {
+            measureStave.addTimeSignature(timeSignature);
+          }
+          var noteStartX = measureStave.getNoteStartX();
+          if (typeof noteStartX === "number" && noteStartX > 0) {
+            this.firstBarWidth = Math.ceil(noteStartX);
+            return;
+          }
+        } catch (e) {
+          // Fall through to the legacy estimate.
+        }
+      }
+
       const minimize_movement = false;
       const length = Math.max(staffSig.length, minimum);
 
