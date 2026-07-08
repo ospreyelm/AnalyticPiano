@@ -166,6 +166,14 @@ gh pr create --repo avnerdorman/HarmonyLab --base master
 Do not let GitHub CLI infer the target from the `upstream` remote, which may
 point to `ospreyelm/AnalyticPiano`.
 
+project_tracker: github
+
+Issues track against `avnerdorman/HarmonyLab` (same fork as PRs above), e.g.:
+
+```bash
+gh issue create --repo avnerdorman/HarmonyLab --title "..." --body-file <plan>
+```
+
 ## Deployment safety
 
 Never run `fly deploy` from the main repository root. Deploy from:
