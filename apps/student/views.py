@@ -1190,11 +1190,15 @@ class PlayerDefinitionView(View):
             state = resolve_adaptive_step(request.user, playlist, exercise_num, course)
         else:
             state = resolve_requested_step(request.user, playlist, exercise_num)
-        if state.should_redirect:
-            return JsonResponse(
-                {"redirect": reverse("student:player", kwargs={"unit_num": unit_num})
-                 + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"}
-            )
+        # When the URL's exercise_num doesn't match the DB-derived slot, serve the
+        # derived-slot exercise in place and expose the pinned URL so the client
+        # can history.replaceState. Returning a hard {redirect} here would make
+        # the client set window.location.href, turning every SPA advance (the
+        # auto-advance after the score card) into a full page reload.
+        pinned_url = (
+            reverse("student:player", kwargs={"unit_num": unit_num})
+            + f"?playlist={playlist.id}&exercise_num={state.exercise_num}"
+        )
 
         if is_dynamic_or_adaptive:
             exercise = get_adaptive_exercise_for_view(
@@ -1214,6 +1218,7 @@ class PlayerDefinitionView(View):
         exercise_context["playlistId"] = playlist.id
         exercise_context["totalExercises"] = served_count
         exercise_context["reviewMode"] = state.mode == "review"
+        exercise_context["pinnedUrl"] = pinned_url
         if state.mode == "review":
             attempts = (
                 IdentificationAttempt.objects.filter(

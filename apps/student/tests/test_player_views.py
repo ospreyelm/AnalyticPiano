@@ -329,7 +329,13 @@ class PlayerViewTests(TransactionTestCase):
         self.assertEqual(payload["totalExercises"], 1)
         self.assertFalse(payload["reviewMode"])
 
-    def test_player_definition_returns_redirect_payload_for_skipped_step(self):
+    def test_player_definition_serves_pinned_slot_in_place_for_skipped_step(self):
+        # Requesting an exercise_num that doesn't match the DB-derived slot
+        # (here exercise_num=2 when only slot 1 is next-pending) must NOT return
+        # a hard {redirect} payload — that forces window.location.href on the
+        # client and turns SPA auto-advance into a full page reload. Instead
+        # the endpoint serves the derived-slot exercise in place and exposes
+        # the pinned URL so the client can history.replaceState.
         second_exercise = Exercise.objects.create(
             _id=21006,
             description="Unit 1 note names 6",
@@ -351,12 +357,14 @@ class PlayerViewTests(TransactionTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertNotIn("redirect", payload)
+        # Derived slot is 1 (the only pending slot); served in place.
+        self.assertEqual(payload["exerciseNum"], 1)
         self.assertEqual(
-            response.json(),
-            {
-                "redirect": reverse("student:player", kwargs={"unit_num": 1})
-                + f"?playlist={self.playlist.id}&exercise_num=1"
-            },
+            payload["pinnedUrl"],
+            reverse("student:player", kwargs={"unit_num": 1})
+            + f"?playlist={self.playlist.id}&exercise_num=1",
         )
 
     def test_player_definition_includes_review_answers_in_review_mode(self):

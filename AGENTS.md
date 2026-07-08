@@ -115,6 +115,7 @@ for architectural changes. In summary:
 | Bach/Riemenschneider bulk generation or deduplication | [Efficient Bach generation plan](docs/superpowers/plans/2026-06-02-efficient-bach-generation.md) |
 | Refresh/backfill code that passes keys to music21 | [Music21 key normalization plan](docs/superpowers/plans/2026-06-02-music21-key-normalization.md) |
 | Chorale grading, timeline, or rendering | [Chorale system guide](docs/architecture/chorale-system.md) |
+| Implementing in a previously solved problem area | [Solutions knowledge base](docs/solutions/) (check before re-deriving; capture new learnings via `/ce-compound`) |
 | Deployment | Deployment section below |
 
 ## Documentation requirements
