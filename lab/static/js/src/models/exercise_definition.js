@@ -1104,6 +1104,9 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
               choices: chord.choices || [],
               unison_idx: null,
               rhythm: chord.rhythmValue || "w",
+              // Recorded enharmonic spelling (VexFlow keys, e.g. "eb/4"); null when
+              // absent (legacy exercises) so the stave renderer falls back to Analyze.
+              spelling: chord.spelling || null,
             };
           });
           exercise.mode = "identification";
@@ -1111,6 +1114,10 @@ var ANALYSIS_SETTINGS = Config.get("general.analysisSettings");
           exercise.analysisType = definition.analysisType || "chord_quality";
           exercise.inputMode = definition.inputMode || "dropdown";
           exercise.staffDistribution = definition.staffDistribution || "keyboard";
+          // KTD4: this branch returns at line 1120, before the generic
+          // exercise.timeSignature read (~line 1375) is reached. Assign it here so
+          // barline placement (exercise_sheet_staves.js) fires for Unit 5 worksheets.
+          exercise.timeSignature = definition.timeSignature || false;
           exercise.analysis = { enabled: false, mode: {} };
         }
         exercise.playlistTags = definition.playlistTags || [];

@@ -1351,13 +1351,14 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
         ? this.getVisibleProblems()
         : this.definition.getProblems();
       var CORRECT = this.grader.STATE.CORRECT;
-      var g_problem, chord, chords, rhythm, full_context, unison_idx;
+      var g_problem, chord, chords, rhythm, full_context, unison_idx, spelling;
 
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].visible;
         full_context = problems[i].notes;
         rhythm = problems[i].rhythm;
         unison_idx = problems[i].unison_idx;
+        spelling = problems[i].spelling;
 
         g_problem = false;
         if (this.graded !== false && this.graded.problems[i]) {
@@ -1374,6 +1375,7 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
           full_context: full_context,
           rhythm: rhythm,
           unison_idx: unison_idx,
+          spelling: spelling,
         });
 
         if (g_problem) {
@@ -1413,18 +1415,20 @@ var AUTO_ADVANCE = Config.get("general.autoAdvance");
       var exercise_chords = [];
       var chords;
       var rhythm;
-      var chord, unison_idx;
+      var chord, unison_idx, spelling;
 
       for (var i = 0, len = problems.length; i < len; i++) {
         notes = problems[i].notes;
         rhythm = problems[i].rhythm;
         unison_idx = problems[i].unison_idx;
+        spelling = problems[i].spelling;
         // we can push any notewise features through this entry point!
         chord = new ExerciseChord({
           staffDistribution: staffDistribution,
           notes: notes,
           rhythm: rhythm,
           unison_idx: unison_idx,
+          spelling: spelling,
         });
         exercise_chords.push(chord);
       }
