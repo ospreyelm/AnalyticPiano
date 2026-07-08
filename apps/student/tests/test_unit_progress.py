@@ -844,3 +844,73 @@ class AdaptivePlaylistMasteryLevelTest(TestCase):
         card = next(c for c in result["skill_cards"] if c["tag"] == "Intervals")
         row = next(p for p in card["playlists"] if p["id"] == static_playlist.id)
         self.assertNotIn("mastery_level", row)
+
+
+class Unit5PrefixedTagsProgressTest(TestCase):
+    """Verify that get_unit_progress_data correctly maps prefixed skill tags to base taxonomy tags
+    and fetches student mastery correctly."""
+
+    def setUp(self):
+        self.author = _make_author(65001)
+        self.student = _make_student(65002)
+
+    @patch("apps.student.unit_progress.TaxonomyReader.get_unit")
+    @patch("apps.student.unit_progress.TaxonomyReader.get_tier_for_unit", return_value=STUB_TIER)
+    @patch(
+        "apps.student.unit_progress.TaxonomyReader.get_skill_label",
+        side_effect=lambda tag: tag.replace("_", " ").title(),
+    )
+    def test_prefixed_tags_grouping_and_mastery(self, mock_label, mock_tier, mock_unit):
+        # Stub Unit 5
+        mock_unit.return_value = {
+            "n": "5",
+            "title": "Triads & Seventh Chords",
+            "feat": "Chords",
+            "tags": ["triad_quality", "seventh_chord_quality"],
+        }
+        
+        # Create playlists with prefixed skill tags
+        triad_pl = _make_playlist(
+            pk=65010,
+            author=self.author,
+            skill_tags=["unit:5", "unit:5_triad_quality", "unit:5_L1"],
+            name="Triad Quality Playlist",
+        )
+        triad_pl.is_adaptive = True
+        triad_pl.save()
+        
+        seventh_pl = _make_playlist(
+            pk=65020,
+            author=self.author,
+            skill_tags=["unit:5", "unit:5_seventh_chord_quality", "unit:5_L1"],
+            name="Seventh Chord Quality Playlist",
+        )
+        seventh_pl.is_adaptive = True
+        seventh_pl.save()
+
+        # Set student mastery on prefixed tags
+        StudentSkillMastery.objects.create(
+            user=self.student,
+            skill_tag="unit:5_triad_quality",
+            level=StudentSkillMastery.LEVEL_MASTERED,
+        )
+        StudentSkillMastery.objects.create(
+            user=self.student,
+            skill_tag="unit:5_seventh_chord_quality",
+            level=StudentSkillMastery.LEVEL_FAMILIAR,
+        )
+
+        result = get_unit_progress_data(self.student, "5")
+        
+        # Verify they are correctly mapped to their respective cards
+        triad_card = next(c for c in result["skill_cards"] if c["tag"] == "triad_quality")
+        seventh_card = next(c for c in result["skill_cards"] if c["tag"] == "seventh_chord_quality")
+        
+        self.assertEqual(len(triad_card["playlists"]), 1)
+        self.assertEqual(triad_card["playlists"][0]["id"], triad_pl.id)
+        self.assertEqual(triad_card["level"], StudentSkillMastery.LEVEL_MASTERED)
+        
+        self.assertEqual(len(seventh_card["playlists"]), 1)
+        self.assertEqual(seventh_card["playlists"][0]["id"], seventh_pl.id)
+        self.assertEqual(seventh_card["level"], StudentSkillMastery.LEVEL_FAMILIAR)
+

@@ -50,7 +50,16 @@ def _batch_skill_levels(user, display_tags: list[str]) -> dict[str, str]:
         StudentSkillMastery.LEVEL_ATTEMPTED,
         StudentSkillMastery.LEVEL_NOT_STARTED,
     ]
-    canonical_by_display = {t: TAG_ALIASES.get(t, [t]) for t in display_tags}
+    canonical_by_display = {}
+    for t in display_tags:
+        canon = list(TAG_ALIASES.get(t, [t]))
+        unit = TaxonomyReader.get_unit_for_tag(t)
+        if unit:
+            prefixed = f"unit:{unit['n']}_{t}"
+            if prefixed not in canon:
+                canon.append(prefixed)
+        canonical_by_display[t] = canon
+
     all_canonical = {c for tags in canonical_by_display.values() for c in tags}
     mastery_map = dict(
         StudentSkillMastery.objects
@@ -136,6 +145,11 @@ def _playlist_primary_tag(playlist: Playlist, unit_tags: list[str]) -> str | Non
     for tag in (playlist.skill_tags or []):
         if tag in unit_tag_set:
             return tag
+        # Handle prefixed tags, e.g. "unit:5_triad_quality" -> "triad_quality"
+        if "_" in tag:
+            parts = tag.split("_", 1)
+            if parts[0].startswith("unit:") and parts[1] in unit_tag_set:
+                return parts[1]
     return None
 
 
