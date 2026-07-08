@@ -127,7 +127,7 @@ class Command(BaseCommand):
                 worksheet_key = None
                 for key_str, root_label, quality in worksheet:
                     display_answer = QUALITY_DISPLAY[quality]
-                    midi_notes, display_key, _ = chord_notes_key_and_spelling(key_str, quality, chord_type)
+                    midi_notes, display_key, spelling = chord_notes_key_and_spelling(key_str, quality, chord_type)
                     if worksheet_key is None:
                         worksheet_key = display_key
                     chords.append({
@@ -135,6 +135,7 @@ class Command(BaseCommand):
                         "answer": display_answer,
                         "choices": display_choices,
                         "rhythmValue": "w",
+                        "spelling": spelling,
                     })
 
                 desc = f"Unit 5 {chord_type.replace('_', ' ').title()}: Stage {stage_num} — Worksheet {worksheet_idx}"
