@@ -243,9 +243,13 @@ function staffForTarget(target) {
 // back to up (1) when there isn't exactly one missing voice (the current
 // chord-entry configuration, where the overlay represents multiple upper
 // voices as one blob) — preserves existing behavior exactly for that case.
-function stemDirectionForTarget(target) {
+// If the exercise is chordal (i.e. score_kind is "chordal"), it returns "auto".
+function stemDirectionForTarget(target, score) {
   var missing = missingVoiceForTarget(target);
-  if (!missing) return 1;
+  if (!missing) {
+    var isChordal = !!(score && score.umto && score.umto.metadata && score.umto.metadata.score_kind === "chordal");
+    return isChordal ? "auto" : 1;
+  }
   return UP_STEM_VOICES.indexOf(missing) !== -1 ? 1 : -1;
 }
 
@@ -283,7 +287,7 @@ function buildRealization(accepted, targets, score, meter) {
     if (!upperMidi.length) continue;
     upperMidi = upperMidi.slice().sort(function (a, b) { return a - b; });
     var staff = staffForTarget(target);
-    var stemDirection = stemDirectionForTarget(target);
+    var stemDirection = stemDirectionForTarget(target, score);
 
     var pcMap = mergePcSpellingMaps(
       buildPcSpellingMap(score, absOffsetQb),

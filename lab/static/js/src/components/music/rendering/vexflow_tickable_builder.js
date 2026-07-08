@@ -167,7 +167,11 @@ var REST_KEY_BY_CLEF = {
     // Defaults to up (1) — matches the pre-existing chord-entry configuration,
     // where the overlay represents multiple upper voices as one blob and has
     // no single SATB stem convention to follow.
-    stemDirection = stemDirection || 1;
+    var hasStemDirection = (stemDirection === 1 || stemDirection === -1);
+    if (!hasStemDirection && stemDirection !== "auto") {
+      stemDirection = 1;
+      hasStemDirection = true;
+    }
     var sorted = entriesInMeasure.slice().sort(function (a, b) { return a.onset - b.onset; });
     var tickables = [];
     var cursor = 0;
@@ -247,10 +251,12 @@ var REST_KEY_BY_CLEF = {
         keys: keys,
         duration: headChunk.type,
         dots: headChunk.dots,
-        auto_stem: false
+        auto_stem: !hasStemDirection
       });
       if (headChunk.dots > 0) Vex.Flow.Dot.buildAndAttach([note], { all: true });
-      note.setStemDirection(stemDirection);
+      if (hasStemDirection) {
+        note.setStemDirection(stemDirection);
+      }
 
       for (var ki2 = 0; ki2 < resolvedSpellings.length; ki2 += 1) {
         var sp2 = resolvedSpellings[ki2];
@@ -285,10 +291,13 @@ var REST_KEY_BY_CLEF = {
     // span only adjacent noteheads within a beat.
     var notesOnly = tickables.filter(function (t) { return !t._isOverlayRest; });
     try {
-      voice.beams = Vex.Flow.Beam.generateBeams(notesOnly, {
-        beam_rests: false,
-        stem_direction: stemDirection,
-      });
+      var beamOpts = {
+        beam_rests: false
+      };
+      if (hasStemDirection) {
+        beamOpts.stem_direction = stemDirection;
+      }
+      voice.beams = Vex.Flow.Beam.generateBeams(notesOnly, beamOpts);
     } catch (e) {
       voice.beams = [];
     }

@@ -218,7 +218,19 @@ function testChordKeepsStemHiddenWhenNothingPlayedYet() {
     "stem should match the hidden notehead base style until something is played"
   );
 }
-
 testChordKeepsStemHiddenWhenNothingPlayedYet();
+
+function testBuildHarmonizationOverlayVoiceSupportsAutoStem() {
+  var entries = [
+    { onset: 0, durationTicks: 2048, midiNotes: [72], spellings: null } // C5
+  ];
+  var voice = TickableBuilder.buildHarmonizationOverlayVoice(
+    entries, 4096, { num_beats: 4, beat_value: 4 }, {}, null, "treble", "auto"
+  );
+  var noteTickable = voice.getTickables().filter(function (t) { return !t._isOverlayRest; })[0];
+  assert.strictEqual(noteTickable.getStemDirection(), -1, "auto-stemmed high note should stem down per vexflow default rules");
+}
+
+testBuildHarmonizationOverlayVoiceSupportsAutoStem();
 
 console.log("vexflow_tickable_builder tests passed");
