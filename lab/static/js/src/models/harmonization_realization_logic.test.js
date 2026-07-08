@@ -389,10 +389,28 @@ ScoreTimelineStub.events = [
   { onset: 0, duration: 4096, midi: 67, step: "G", alter: 0, staff: "bass",   voiceIndex: 0, measureIndex: 0, itemIndex: 0, headIndex: 0 },
   { onset: 0, duration: 4096, midi: 36, step: "C", alter: 0, staff: "bass",   voiceIndex: 1, measureIndex: 0, itemIndex: 0, headIndex: 0 }
 ];
-assertEqual("regression: bass-only-locked exercise accepted overlay unchanged (full upper chord, treble staff)",
+assertEqual("regression: bass-only-locked exercise accepted overlay unchanged (full upper chord, treble staff, chordal) -> auto stem",
   logic.buildRealization(
     [{ midi: [36, 60, 64, 67], targetIndex: 0, ts: 1 }],
-    targets, {}, meter),
+    targets, { umto: { metadata: { score_kind: "chordal" } } }, meter),
+  [{
+    measureIndex: 0,
+    onset: 0,
+    midiNotes: [60, 64, 67],
+    spellings: [
+      { step: "C", alter: 0, octave: 4 },
+      { step: "E", alter: 0, octave: 4 },
+      { step: "G", alter: 0, octave: 4 }
+    ],
+    staff: "treble",
+    stemDirection: "auto",
+    durationTicks: 4096
+  }]);
+
+assertEqual("regression: bass-only-locked exercise accepted overlay unchanged (full upper chord, treble staff, chorale) -> up stem",
+  logic.buildRealization(
+    [{ midi: [36, 60, 64, 67], targetIndex: 0, ts: 1 }],
+    targets, { umto: { metadata: { score_kind: "chorale" } } }, meter),
   [{
     measureIndex: 0,
     onset: 0,
@@ -417,8 +435,10 @@ assertEqual("stemDirectionForTarget: missing alto -> down",
   logic.stemDirectionForTarget({ lockedVoices: { B: {}, S: {}, T: {} } }), -1);
 assertEqual("stemDirectionForTarget: missing tenor -> up",
   logic.stemDirectionForTarget({ lockedVoices: { B: {}, S: {}, A: {} } }), 1);
-assertEqual("stemDirectionForTarget: only bass locked (chordal) -> up (unchanged default)",
-  logic.stemDirectionForTarget({ lockedVoices: { B: {} } }), 1);
+assertEqual("stemDirectionForTarget: only bass locked (chordal) -> auto",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {} } }, { umto: { metadata: { score_kind: "chordal" } } }), "auto");
+assertEqual("stemDirectionForTarget: only bass locked (chorale) -> 1 (preserves up default)",
+  logic.stemDirectionForTarget({ lockedVoices: { B: {} } }, { umto: { metadata: { score_kind: "chorale" } } }), 1);
 
 if (failed > 0) {
   console.log("\n" + failed + " test(s) FAILED");
