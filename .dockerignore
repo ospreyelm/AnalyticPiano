@@ -1,4 +1,6 @@
 .git
+.claude
+.codegraph
 .env
 db.sqlite3
 __pycache__

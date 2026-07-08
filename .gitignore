@@ -26,7 +26,8 @@ venv/
 .prettierignore
 .venv/
 .worktrees/
-.claude/worktrees/
+.claude/
+.codegraph/
 .superpowers/
 .gstack/
 
