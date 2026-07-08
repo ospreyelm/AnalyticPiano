@@ -2,6 +2,7 @@ import _ from "lodash";
 import Vex from "vexflow";
 import Analyze from "app/utils/analyze";
 import Config from "app/config";
+import ChordalSpelling from "./chordal_spelling";
 
 var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
 
@@ -226,6 +227,26 @@ var DEFAULT_NOTE_COLOR = Config.get("general.defaultNoteColor");
      * @return {string} the note name or spelling
      */
     getNoteName: function (note, notes) {
+      // Recorded enharmonic spelling (VexFlow keys from the backend, e.g.
+      // ["eb/4","g/4","bb/4"]) overrides the Analyze-based re-derivation, so
+      // notes render with the chord's actual spelling (R1) — e.g. an augmented
+      // 5th keeps G# instead of its enharmonic Ab neighbor. When spelling is
+      // absent (legacy exercises, or non-Unit-5 identification), fall straight
+      // through to Analyze exactly as before (KTD7). Resolution is by MIDI
+      // value inside resolveChordPitches, so a keyboard-split chord resolves
+      // correctly on both staves from the one full-chord spelling (KTD5).
+      var spelling =
+        this.chord && this.chord.settings && this.chord.settings.spelling;
+      if (spelling) {
+        var resolved = ChordalSpelling.resolveChordPitches(
+          { visible: notes, hidden: [], spelling: spelling },
+          null
+        );
+        var pitch = resolved ? resolved[note] : null;
+        if (pitch) {
+          return ChordalSpelling.pitchDictToVexKey(pitch);
+        }
+      }
       var analyzer = this._makeAnalyzer();
       return analyzer.getNoteName(note, notes);
     },

@@ -8,6 +8,7 @@ No Django dependency. No pytest needed — uses stdlib unittest.
 """
 import sys
 import os
+import re
 import unittest
 
 # Allow running from repo root
@@ -495,6 +496,72 @@ class TestScoreToCIR(unittest.TestCase):
     def test_score_to_cir_serializes_minor_key_explicitly(self):
         cir = score_to_cir(_make_satb_minor_score())
         self.assertEqual(cir["meta"]["key"], "Gm")
+
+
+class TestChordNotesKeyAndSpelling(unittest.TestCase):
+    """Tests for chord_notes_key_and_spelling / pitches_to_vexflow_spelling (U1)."""
+
+    VEX_KEY_RE = re.compile(r"^[a-g](?:b+|#+)*/[0-9]+$")
+
+    def _pc_of_spelling(self, spelling: str) -> int:
+        """Pitch class encoded by a VexFlow key like 'eb/4'."""
+        m = re.match(r"^([a-g])(b*|#*)/[0-9]+$", spelling)
+        letter, accs = m.group(1), m.group(2)
+        base = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}[letter]
+        alter = accs.count("#") - accs.count("b")
+        return (base + alter) % 12
+
+    def test_pitches_to_vexflow_spelling_flats_sharps_octave(self):
+        p_flat = pitch.Pitch("E-4")
+        p_sharp = pitch.Pitch("G#4")
+        p_nat = pitch.Pitch("C4")
+        self.assertEqual(
+            mb.pitches_to_vexflow_spelling([p_flat, p_sharp, p_nat]),
+            ["eb/4", "g#/4", "c/4"],
+        )
+
+    def test_c_major_triad_returns_four_voices(self):
+        # keyboard_4voice doubles the root in the soprano -> 4 notes.
+        midi_notes, display_key, spelling = mb.chord_notes_key_and_spelling("jC_", "major", "triad")
+        self.assertEqual(midi_notes, [48, 64, 67, 72])
+        self.assertEqual(spelling, ["c/3", "e/4", "g/4", "c/5"])
+        self.assertEqual(display_key, "jC_")
+
+    def test_eb_major_triad_spells_with_flats(self):
+        midi_notes, _display_key, spelling = mb.chord_notes_key_and_spelling("jEb", "major", "triad")
+        self.assertEqual(spelling, ["eb/3", "g/4", "bb/4", "eb/5"])
+
+    def test_augmented_triad_raised_fifth_is_sharp_not_flat_neighbor(self):
+        # The reported bug: an augmented 5th rendered as its enharmonic
+        # minor-6th neighbor. Recorded spelling must keep G# (sharp).
+        midi_notes, _display_key, spelling = mb.chord_notes_key_and_spelling("jC_", "augmented", "triad")
+        self.assertEqual(spelling, ["c/3", "e/4", "g#/4", "c/5"])
+        self.assertIn("g#/4", spelling)
+        self.assertNotIn("ab/4", spelling)
+
+    def test_diminished_seventh_in_flat_key_has_no_sharps(self):
+        midi_notes, _display_key, spelling = mb.chord_notes_key_and_spelling("jBb", "dim7", "seventh_chord")
+        self.assertTrue(all(self.VEX_KEY_RE.match(s) for s in spelling))
+        self.assertFalse(any("#" in s for s in spelling))
+
+    def test_index_alignment_spelling_matches_midi_per_position(self):
+        # KTD3 guard test: spelling[i] and midi_notes[i] describe the same pitch.
+        triad_qualities = ["major", "minor", "diminished", "augmented"]
+        seventh_qualities = ["dominant", "major7", "minor7", "half_dim", "dim7"]
+        roots = ["jC_", "jG_", "jF_", "jD_", "jBb", "jA_", "jEb", "jE_", "jAb", "jB_", "jDb", "jF#"]
+        for key_str in roots:
+            for quality in triad_qualities:
+                midi_notes, _dk, spelling = mb.chord_notes_key_and_spelling(key_str, quality, "triad")
+                self.assertEqual(len(midi_notes), len(spelling))
+                for midi, sp in zip(midi_notes, spelling):
+                    self.assertEqual(midi % 12, self._pc_of_spelling(sp),
+                                     f"{key_str} {quality}: midi {midi} vs spelling {sp}")
+            for quality in seventh_qualities:
+                midi_notes, _dk, spelling = mb.chord_notes_key_and_spelling(key_str, quality, "seventh_chord")
+                self.assertEqual(len(midi_notes), len(spelling))
+                for midi, sp in zip(midi_notes, spelling):
+                    self.assertEqual(midi % 12, self._pc_of_spelling(sp),
+                                     f"{key_str} {quality}: midi {midi} vs spelling {sp}")
 
 
 # ---------------------------------------------------------------------------

@@ -25,10 +25,14 @@ var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   }
 
   // pitchFromSpellingString(str) -> { step, alter, octave } | null
-  // Parses a pitch spelling string like "C#4", "Eb5", "F##3" into a pitch object.
-  // Returns null if the string doesn't match the expected format.
+  // Parses a pitch spelling string into a pitch object. Accepts BOTH:
+  //   - scientific form: "C#4", "Eb5", "F##3" (no slash)
+  //   - VexFlow key form: "c#/4", "eb/5", "f##/3" (lowercase, slash before octave)
+  // The VexFlow form is what Unit 5 identification exercises record as the
+  // chord's `spelling` (KTD2 — always carries octave). Returns null if the
+  // string doesn't match either format.
   function pitchFromSpellingString(str) {
-    var m = /^([A-Ga-g])([#b♭♯x]*)(-?\d+)$/.exec(String(str).trim());
+    var m = /^([A-Ga-g])([#b♭♯x]*)\/?(-?\d+)$/.exec(String(str).trim());
     if (!m) return null;
     var step = m[1].toUpperCase();
     var alter = 0;
@@ -87,10 +91,28 @@ var STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
     return nm.charAt(0).toUpperCase() + nm.slice(1) + parts[1];
   }
 
+  // pitchDictToVexKey({ step, alter, octave }) -> "eb/4"
+  // Structural sibling of vexKeyToSpellingString in the opposite direction:
+  // a spelled-pitch dict (as returned by resolveChordPitches / keyAwarePitch)
+  // into VexFlow's lowercase "<step><accidentals>/<octave>" key form. Used by
+  // stave_note_factory.getNoteName to render a note's recorded spelling.
+  function pitchDictToVexKey(pitch) {
+    var step = String(pitch.step).toLowerCase();
+    var alter = pitch.alter || 0;
+    var acc = "";
+    if (alter > 0) {
+      for (var i = 0; i < alter; i++) acc += "#";
+    } else if (alter < 0) {
+      for (var j = 0; j < -alter; j++) acc += "b";
+    }
+    return step + acc + "/" + pitch.octave;
+  }
+
 export default {
   spelledPitchFromName: spelledPitchFromName,
     pitchFromSpellingString: pitchFromSpellingString,
     keyAwarePitch: keyAwarePitch,
     resolveChordPitches: resolveChordPitches,
     vexKeyToSpellingString: vexKeyToSpellingString,
+    pitchDictToVexKey: pitchDictToVexKey,
 };

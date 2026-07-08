@@ -187,6 +187,52 @@ def spelling_key_for_pitches(m21_pitches, prefer_major: bool = True) -> str:
     return "jC_"   # fallback
 
 
+def pitches_to_vexflow_spelling(m21_pitches) -> list:
+    """
+    Convert music21 Pitch objects into VexFlow key strings (``"eb/4"`` form),
+    preserving the pitch's recorded enharmonic spelling and octave.
+
+    VexFlow keys are ``<step><accidentals>/<octave>``: lowercase step letter,
+    ``b`` for flat (music21's ``-``), ``#`` for sharp, then the octave. Using
+    ``Pitch.name`` (not ``Pitch.nameWithOctave``) plus the separate ``.octave``
+    attribute avoids any string parsing of the octave boundary — the spelling
+    and octave come straight from music21, so the result always carries an
+    octave (KTD2: pitch spelling without octave silently corrupts downstream
+    bass/interval computation).
+    """
+    out = []
+    for p in m21_pitches:
+        name = p.name.replace("-", "b").lower()
+        out.append(f"{name}/{p.octave}")
+    return out
+
+
+def chord_notes_key_and_spelling(key_str: str, quality: str, chord_type: str):
+    """Return ``(midi_notes, display_key, spelling)`` for a root-position chord.
+
+    Builds the chord on the key's tonic in a 4-voice keyboard voicing, then sorts
+    the voiced pitches by MIDI **once** and derives both ``midi_notes`` and
+    ``spelling`` from that single ordering (KTD3: sorting the two lists
+    independently would risk index misalignment between them). ``display_key``
+    is the HarmonyLab key whose keyMap renders these pitches correctly, via
+    :func:`spelling_key_for_pitches` — kept for the call site's existing
+    ``worksheet_key``/``chord_key`` use.
+
+    ``chord_type`` ("triad"/"seventh_chord") is accepted for call-site parity
+    with the prior ``_chord_notes_and_key`` helper but does not change the
+    voicing here; both triads and sevenths use the same 4-voice keyboard
+    voicing.
+    """
+    k = _m21_key(key_str)
+    pitches = _pitches_for_quality(k.tonic, quality)
+    voiced = _keyboard_4voice(pitches, inversion=0)
+    ordered = sorted(voiced, key=lambda p: p.midi)
+    midi_notes = [p.midi for p in ordered]
+    spelling = pitches_to_vexflow_spelling(ordered)
+    display_key = spelling_key_for_pitches(voiced)
+    return midi_notes, display_key, spelling
+
+
 def _get_interval_pitches(key_str: str, interval_name: str):
     """
     Return the two music21 Pitch objects for an interval exercise (root + top).

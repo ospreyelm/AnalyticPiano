@@ -10,8 +10,9 @@ Difficulty is staged by expanding the choice set:
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.exercises.generation.music21_builder import chord_notes_key_and_spelling
+from apps.exercises.identification_factory import save_umto_chord_id_exercise
 from apps.exercises.models import ExercisePlaylistOrdered, Playlist
-from apps.exercises.umto_factory import save_umto_chord_id_exercise
 
 User = get_user_model()
 
@@ -67,27 +68,6 @@ QUALITY_DISPLAY = {
 
 PROBLEMS_PER_PLAYLIST = 48
 CHORDS_PER_WORKSHEET = 4
-
-
-def _chord_notes_and_key(key_str, quality, chord_type):
-    """Return (sorted_midi_notes, display_key_str) for a root-position chord.
-
-    Uses the key string's tonic as the chord root. Derives the correct display
-    key via spelling_key_for_pitches() so accidentals render correctly.
-    """
-    from apps.exercises.generation.music21_builder import (
-        _m21_key,
-        _pitches_for_quality,
-        _keyboard_4voice,
-        spelling_key_for_pitches,
-    )
-
-    k = _m21_key(key_str)
-    pitches = _pitches_for_quality(k.tonic, quality)
-    voiced = _keyboard_4voice(pitches, inversion=0)
-    midi_notes = sorted(p.midi for p in voiced)
-    display_key = spelling_key_for_pitches(voiced)
-    return midi_notes, display_key
 
 
 def _generate_problems(quality_pool, eligible_roots, n=PROBLEMS_PER_PLAYLIST):
@@ -147,7 +127,7 @@ class Command(BaseCommand):
                 worksheet_key = None
                 for key_str, root_label, quality in worksheet:
                     display_answer = QUALITY_DISPLAY[quality]
-                    midi_notes, display_key = _chord_notes_and_key(key_str, quality, chord_type)
+                    midi_notes, display_key, spelling = chord_notes_key_and_spelling(key_str, quality, chord_type)
                     if worksheet_key is None:
                         worksheet_key = display_key
                     chords.append({
@@ -155,6 +135,7 @@ class Command(BaseCommand):
                         "answer": display_answer,
                         "choices": display_choices,
                         "rhythmValue": "w",
+                        "spelling": spelling,
                     })
 
                 desc = f"Unit 5 {chord_type.replace('_', ' ').title()}: Stage {stage_num} — Worksheet {worksheet_idx}"
