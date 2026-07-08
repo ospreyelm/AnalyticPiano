@@ -334,3 +334,128 @@ class StudentHomeQueryBudgetTests(TransactionTestCase):
 
         self.assertEqual(summaries["2"]["percent"], expected["percent"])
         self.assertEqual(summaries["2"]["mastered_count"], expected["mastered_count"])
+
+
+@override_settings(
+    UNIT1_CURRICULUM_AUTHOR_EMAIL="unit1-budget-author@test.com",
+    ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"],
+)
+class StudentHomeUnit1QueryBudgetTests(TransactionTestCase):
+    """Guard the Unit-1 batched query path on the home page.
+
+    The generic ``StudentHomeQueryBudgetTests`` patches TaxonomyReader to
+    units 2..7, so its ``assertNumQueries`` never reaches the
+    ``if str(unit_n) == "1"`` special-case in ``_batch_home_unit_summaries``
+    (home_context.py) nor the batched ``_get_unit1_resume_target``. With real
+    Unit-1 lanes seeded, every home load in prod expands Unit-1 — these tests
+    pin that expansion to a constant, batched budget so a per-lane N+1
+    regression (the ~70-query storm fixed alongside PR #74) is caught.
+    """
+
+    reset_sequences = True
+    # session + user + accessible-playlist discovery + Unit-1 summary
+    # (one batched get_unit_progress_data) + resume-target lookup + the two
+    # constant PCO joins. Both the fully-mastered and partially-complete
+    # Unit-1 scenarios land here — resume into a player lane (Task 3 batched
+    # path) adds no extra queries over the unit-page fallback.
+    HOME_QUERY_BUDGET = 16
+    # resolve lanes (1) + batched playlist data (3) + EPO grouping (1) +
+    # two memoized challenge-mastery lookups (treble/bass).
+    PROGRESS_QUERY_BUDGET = 7
+
+    def setUp(self):
+        from apps.student.unit1_curriculum import UNIT1_CANONICAL_LANES
+
+        self.client = Client()
+        self.student = User.objects.create_user(
+            id=41001,
+            email="unit1-budget-student@test.com",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.author = User.objects.create_user(
+            id=41002,
+            email="unit1-budget-author@test.com",
+            password="x",
+            is_staff=True,
+        )
+        self.client.force_login(self.student)
+        self._canon = UNIT1_CANONICAL_LANES
+        self._pk = 41100
+
+    def _next_pk(self):
+        self._pk += 1
+        return self._pk
+
+    def _seed_unit1_lane(self, lane_key, lane, with_performance):
+        exercise = Exercise.objects.create(
+            _id=self._next_pk(),
+            description=f"u1 {lane_key}",
+            data={"chord": []},
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1"],
+        )
+        playlist = Playlist.objects.create(
+            _id=self._next_pk(),
+            name=lane["playlist_name"],
+            authored_by=self.author,
+            is_public=True,
+            skill_tags=["unit:1"],
+            tags=["unit:1"],
+        )
+        ExercisePlaylistOrdered.objects.create(
+            _id=self._next_pk(),
+            playlist=playlist,
+            exercise=exercise,
+            order=1,
+            difficulty_tier=3,
+        )
+        if with_performance:
+            PerformanceData.objects.create(
+                user=self.student,
+                playlist=playlist,
+                data=[{"id": exercise.id, "score_numerator": 1, "score_denominator": 1}],
+            )
+        return playlist, exercise
+
+    def _seed_all_unit1_lanes(self, mastered):
+        lanes = {}
+        for lane_key, lane in self._canon.items():
+            lanes[lane_key] = self._seed_unit1_lane(lane_key, lane, with_performance=mastered)
+        return lanes
+
+    def test_home_unit1_query_count_is_constant(self):
+        # Partially-complete Unit-1: only identify_treble is mastered, so the
+        # resume target resolves INTO a Unit-1 player lane — exercising the
+        # batched _get_unit1_resume_target (Task 3) alongside the batched
+        # Unit-1 summary (Task 2) and lane resolution (Task 1).
+        self._seed_unit1_lane("identify_treble", self._canon["identify_treble"], with_performance=True)
+        for lane_key, lane in self._canon.items():
+            if lane_key == "identify_treble":
+                continue
+            self._seed_unit1_lane(lane_key, lane, with_performance=False)
+
+        # Warm any lazy/cached state first, then pin the steady-state budget.
+        self.client.get(reverse("student:home"))
+        with self.assertNumQueries(self.HOME_QUERY_BUDGET):
+            response = self.client.get(reverse("student:home"))
+
+        self.assertEqual(response.status_code, 200)
+        # Sanity: resume really did resolve into a Unit-1 player lane (the
+        # Task 3 batched path), not the unit-page fallback.
+        self.assertIn("/s/units/1/play/", response.context["resume_url"])
+
+    def test_get_unit_progress_data_unit1_query_count_is_constant(self):
+        # Fully-mastered Unit-1 — every lane has PerformanceData, so the
+        # bar-segment / mastery compute walks all six lanes through the
+        # batched path.
+        self._seed_all_unit1_lanes(mastered=True)
+
+        from apps.student.unit_progress import get_unit_progress_data
+
+        get_unit_progress_data(self.student, "1")  # warm
+        with self.assertNumQueries(self.PROGRESS_QUERY_BUDGET):
+            data = get_unit_progress_data(self.student, "1")
+
+        self.assertEqual(len(data["activity_cards"]), 3)
