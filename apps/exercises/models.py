@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import JSONField
+from django.db.models.fields.json import KT
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models, connections
@@ -220,6 +221,17 @@ class Exercise(ClonableModelMixin, BaseContentModel):
         indexes = [
             GinIndex(fields=['skill_tags']),
             models.Index(fields=['complexity']),
+            # Functional expression indexes on the JSONB text keys used by the
+            # ExerciseAdmin Mode/AnalysisType list_filter. These serve the
+            # *filtering* path (`queryset()`: WHERE data->>'mode' = 'roman'),
+            # which is selective and the planner will use the index. The
+            # distinct-value *enumeration* (lookups()) is handled by a cached
+            # helper instead — the planner picks a seq scan for unfiltered
+            # DISTINCT regardless of this index, so the enumeration is cached.
+            models.Index(KT("data__mode"), name="ex_data_mode_txt_idx"),
+            models.Index(
+                KT("data__analysisType"), name="ex_data_analtype_txt_idx"
+            ),
         ]
 
     @classmethod

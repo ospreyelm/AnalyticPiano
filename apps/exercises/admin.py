@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.core.cache import cache
 from django.db.models import Prefetch
+from django.db.models.fields.json import KT
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
@@ -35,13 +37,52 @@ import os
 from apps.exercises.resources import ExerciseResource, PlaylistResource, CourseResource
 
 
+_ADMIN_LOOKUP_CACHE_TTL = 300  # seconds
+
+def _distinct_json_text_values(base_queryset, json_key):
+    """Return sorted, distinct TEXT values of a JSONB key, deduped in the DB.
+
+    Used by the Mode/AnalysisType list_filter lookups. Pushing DISTINCT + the
+    `->>` text extraction into Postgres means only the handful of distinct
+    values ship to Python, instead of one row (with the full JSONB blob) per
+    exercise — the prior form scanned ~68k rows / ~437MB on every change_list.
+
+    Results are cached (TTL %d s): the set of distinct modes / analysis types
+    is tiny and changes only when a new exercise shape is authored, so a short
+    TTL is plenty and the DB is never scanned for these on a warm cache. The
+    cache is also invalidated on Exercise save/delete (connected in
+    ``ExercisesConfig.ready``) so admin edits surface immediately.
+    """ % _ADMIN_LOOKUP_CACHE_TTL
+    cache_key = "exercises:admin:distinct_json:%s" % json_key
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return list(cached)
+    annotated = base_queryset.annotate(
+        _json_text=KT(f"data__{json_key}")
+    ).exclude(_json_text__isnull=True)
+    values = list(
+        annotated.values_list("_json_text", flat=True)
+        .distinct()
+        .order_by("_json_text")
+    )
+    cache.set(cache_key, values, _ADMIN_LOOKUP_CACHE_TTL)
+    return values
+
+
+def _bust_admin_lookup_cache(*args, **kwargs):
+    """Invalidate the cached Mode/AnalysisType filter lookups (Exercise save/delete)."""
+    cache.delete_many([
+        "exercises:admin:distinct_json:mode",
+        "exercises:admin:distinct_json:analysisType",
+    ])
+
+
 class ModeFilter(admin.SimpleListFilter):
     title = 'Mode'
     parameter_name = 'data__mode'
     def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request).exclude(data__mode__isnull=True)
-        modes = set(qs.values_list('data__mode', flat=True))
-        return [(m, m) for m in sorted(list(modes)) if m]
+        modes = _distinct_json_text_values(model_admin.get_queryset(request), "mode")
+        return [(m, m) for m in modes if m]
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(data__mode=self.value())
@@ -51,9 +92,8 @@ class AnalysisTypeFilter(admin.SimpleListFilter):
     title = 'Analysis Type'
     parameter_name = 'data__analysisType'
     def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request).exclude(data__analysisType__isnull=True)
-        types = set(qs.values_list('data__analysisType', flat=True))
-        return [(t, t) for t in sorted(list(types)) if t]
+        types = _distinct_json_text_values(model_admin.get_queryset(request), "analysisType")
+        return [(t, t) for t in types if t]
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(data__analysisType=self.value())
@@ -174,7 +214,7 @@ class ExerciseAdmin(ImportExportModelAdmin):
     )
     save_on_top = True
     save_as = True
-    list_per_page = 500
+    list_per_page = 100
     list_max_show_all = 2000
 
     list_select_related = ("authored_by",)

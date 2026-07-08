@@ -31,6 +31,23 @@ class TaxonomyReaderTestCase(unittest.TestCase):
         self.assertEqual(TaxonomyReader.get_skill_label("Note_Names"), "Note Names")
         self.assertEqual(TaxonomyReader.get_skill_label("satb_spacing"), "Satb Spacing")
 
+    def test_get_all_units_is_cached_not_rebuilt_per_call(self):
+        # The admin Exercise change_list calls TaxonomyReader.get_unit_for_tag
+        # per row via _playlist_unit_num. get_unit_for_tag delegates to
+        # get_all_units, so the flat unit list must be built once and reused,
+        # not reallocated + rescanned on every call.
+        first = TaxonomyReader.get_all_units()
+        second = TaxonomyReader.get_all_units()
+        self.assertIs(first, second)
+
+    def test_get_unit_for_tag_uses_cached_unit_index(self):
+        # A tag->unit lookup index is built once; repeated lookups for the
+        # same tag return the same cached unit dict without rebuilding.
+        unit_a = TaxonomyReader.get_unit_for_tag("Note_Names")
+        unit_b = TaxonomyReader.get_unit_for_tag("Note_Names")
+        self.assertIsNotNone(unit_a)
+        self.assertIs(unit_a, unit_b)
+
 
 class TaxonomyReaderAnalysisTestCase(unittest.TestCase):
     def test_get_unit_analysis_returns_dict_for_unit_with_analysis(self):
