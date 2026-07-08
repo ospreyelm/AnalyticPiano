@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TypedDict
 
 from django.conf import settings
@@ -73,15 +74,20 @@ def _is_unit1_tagged(playlist: Playlist) -> bool:
     return "unit:1" in (playlist.skill_tags or []) or "unit:1" in (playlist.tags or [])
 
 
-def _resolve_unit1_playlist_id(lane_key: str, lane: Unit1Lane) -> str:
-    canonical_author_email = getattr(settings, "UNIT1_CURRICULUM_AUTHOR_EMAIL", None)
+def _pick_lane_playlist(
+    lane_key: str,
+    lane: Unit1Lane,
+    by_name: dict[str, list[Playlist]],
+    canonical_author_email: str | None,
+) -> Playlist:
+    """Resolve one lane against a pre-fetched name→playlists map.
 
+    Replicates the old per-lane resolver's candidate iteration order, author
+    scoping, ambiguity (ImproperlyConfigured), and miss (DoesNotExist) semantics
+    on data fetched in a single query by ``resolve_unit1_lane_playlists``.
+    """
     for candidate_name in lane["playlist_name_candidates"]:
-        candidates = [
-            playlist
-            for playlist in Playlist.objects.filter(name=candidate_name).order_by("_id")
-            if _is_unit1_tagged(playlist)
-        ]
+        candidates = by_name.get(candidate_name, [])
         if not candidates:
             continue
 
@@ -92,7 +98,7 @@ def _resolve_unit1_playlist_id(lane_key: str, lane: Unit1Lane) -> str:
                 if playlist.authored_by and playlist.authored_by.email == canonical_author_email
             ]
             if len(author_scoped) == 1:
-                return author_scoped[0].id
+                return author_scoped[0]
             if len(author_scoped) > 1:
                 raise ImproperlyConfigured(
                     f"Ambiguous Unit 1 playlist mapping for {lane_key}: {candidate_name} "
@@ -106,11 +112,41 @@ def _resolve_unit1_playlist_id(lane_key: str, lane: Unit1Lane) -> str:
                 "Set UNIT1_CURRICULUM_AUTHOR_EMAIL to scope the curated Unit 1 source."
             )
 
-        return candidates[0].id
+        return candidates[0]
 
     raise Playlist.DoesNotExist(
         f"No Unit 1 playlist found for canonical lane {lane_key}. Tried: {lane['playlist_name_candidates']}"
     )
+
+
+def resolve_unit1_lane_playlists() -> dict[str, Playlist]:
+    """Resolve every canonical Unit-1 lane to its curated Playlist in ONE query.
+
+    Returns ``{lane_key: Playlist}`` in ``UNIT1_CANONICAL_LANES`` order. The
+    playlists' ``authored_by`` is prefetched so author scoping needs no extra
+    query. Raises ``Playlist.DoesNotExist`` if any lane is unresolved and
+    ``ImproperlyConfigured`` on ambiguous mappings — same contract as the old
+    per-lane resolver, batched.
+    """
+    canonical_author_email = getattr(settings, "UNIT1_CURRICULUM_AUTHOR_EMAIL", None)
+
+    candidate_names = sorted(
+        {name for lane in UNIT1_CANONICAL_LANES.values() for name in lane["playlist_name_candidates"]}
+    )
+    rows = (
+        Playlist.objects.filter(name__in=candidate_names)
+        .select_related("authored_by")
+        .order_by("_id")
+    )
+    by_name: dict[str, list[Playlist]] = defaultdict(list)
+    for playlist in rows:
+        if _is_unit1_tagged(playlist):
+            by_name[playlist.name].append(playlist)
+
+    resolved: dict[str, Playlist] = {}
+    for lane_key, lane in UNIT1_CANONICAL_LANES.items():
+        resolved[lane_key] = _pick_lane_playlist(lane_key, lane, by_name, canonical_author_email)
+    return resolved
 
 
 def get_unit1_lane_groups() -> list[dict[str, object]]:
@@ -135,11 +171,10 @@ def get_unit1_lane_groups() -> list[dict[str, object]]:
 
 
 def get_unit1_playlist_ids() -> dict[str, str]:
-    playlist_ids: dict[str, str] = {}
-    for lane_key, lane in UNIT1_CANONICAL_LANES.items():
-        playlist_ids[lane_key] = _resolve_unit1_playlist_id(lane_key, lane)
-
-    return playlist_ids
+    return {
+        lane_key: playlist.id
+        for lane_key, playlist in resolve_unit1_lane_playlists().items()
+    }
 
 
 CHALLENGE_GROUPS = {

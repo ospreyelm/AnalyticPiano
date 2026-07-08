@@ -94,22 +94,44 @@ def _user_completed_exercise_ids(user, playlist: Playlist) -> set[str]:
 
 
 def _get_unit1_resume_target(user) -> tuple[str, str]:
+    from apps.student.unit_progress import _batch_playlist_data
+    from apps.student.unit1_curriculum import (
+        UNIT1_CANONICAL_LANES,
+        resolve_unit1_lane_playlists,
+    )
+
     try:
-        lane_groups = get_unit1_lane_groups()
+        resolved = resolve_unit1_lane_playlists()
     except (ImproperlyConfigured, Playlist.DoesNotExist):
         return reverse("student:unit-progress", kwargs={"unit_n": "1"}), "Unit 1"
 
-    for group in lane_groups:
-        for lane in group.get("lanes", []):
-            playlist = Playlist.objects.get(id=lane["playlist_id"])
-            completed_ids = _user_completed_exercise_ids(user, playlist)
-            for idx, exercise_id in enumerate(playlist.untransposed_exercises_ids, 1):
-                if exercise_id not in completed_ids:
-                    return (
-                        reverse("student:player", kwargs={"unit_num": 1})
-                        + f"?playlist={playlist.id}&exercise_num={idx}",
-                        f"{group['title']} · {lane['label']}",
-                    )
+    playlists = [resolved[lane_key] for lane_key in UNIT1_CANONICAL_LANES]
+    raw_by_pk = _batch_playlist_data(user, playlists) if playlists else {}
+
+    for lane_key in UNIT1_CANONICAL_LANES:
+        lane = UNIT1_CANONICAL_LANES[lane_key]
+        playlist = resolved[lane_key]
+        raw = raw_by_pk[playlist.pk]
+        completed_ids = {
+            entry["id"]
+            for pd in raw.perf_rows
+            for entry in (pd.data or [])
+            if "id" in entry
+        }
+        completed_ids.update(
+            attempt.exercise.id
+            for attempt in raw.ident_attempts
+            if attempt.exercise and is_completed_identification_attempt(attempt)
+        )
+        # untransposed_exercises_ids is primed by _batch_playlist_data, so this
+        # iterate-and-find-first-incomplete is pure compute (no per-lane queries).
+        for idx, exercise_id in enumerate(playlist.untransposed_exercises_ids, 1):
+            if exercise_id not in completed_ids:
+                return (
+                    reverse("student:player", kwargs={"unit_num": 1})
+                    + f"?playlist={playlist.id}&exercise_num={idx}",
+                    f"{lane['activity_title']} · {lane['label']}",
+                )
 
     return reverse("student:unit-progress", kwargs={"unit_n": "1"}), "Unit 1"
 
