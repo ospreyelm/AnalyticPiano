@@ -70,6 +70,17 @@ class ExercisesConfig(AppConfig):
 
         connection_created.connect(disable_psycopg2_json_casting)
 
+        # Invalidate the cached Mode/AnalysisType admin list_filter lookups
+        # when exercises change, so newly-authored modes surface immediately
+        # instead of waiting for the TTL.
+        from django.db.models.signals import post_save, post_delete
+
+        from apps.exercises.admin import _bust_admin_lookup_cache
+        from apps.exercises.models import Exercise
+
+        post_save.connect(_bust_admin_lookup_cache, sender=Exercise)
+        post_delete.connect(_bust_admin_lookup_cache, sender=Exercise)
+
         if _should_warm():
             threading.Thread(
                 target=_warm_music21, name="music21-warmup", daemon=True
